@@ -1,0 +1,176 @@
+@{ Layout = null; }
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wave Function Simulator</title>
+    <!-- Tailwind CSS for sleek UI -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js for graph -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Math.js for parsing and evaluating math expressions safely -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/11.8.0/math.min.js"></script>
+    <style>
+        body { background-color: #0f172a; color: #f8fafc; }
+        .glass-panel { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center justify-center p-6">
+
+    <div class="glass-panel p-8 rounded-2xl shadow-2xl w-full max-w-4xl">
+        <h1 class="text-3xl font-bold mb-6 text-cyan-400 text-center">🌊 Wave Function Simulator</h1>
+        
+        <div class="flex flex-col md:flex-row gap-4 mb-6">
+            <div class="flex-grow">
+                <label class="block text-sm font-medium mb-2 text-slate-300">Function (y=f(x))</label>
+                <input type="text" id="funcInput" value="sin(x) * x" placeholder="Example: sin(x), cos(x), x^2, 2*x + 1" 
+                       class="w-full bg-slate-800 border border-slate-600 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 font-mono text-lg">
+                <p class="text-xs text-slate-400 mt-2">Use `x` as the variable. Supported: sin, cos, tan, sqrt, ^, *, /, +, -</p>
+            </div>
+            
+            <div class="flex items-end flex-shrink-0">
+                <button id="simulateBtn" class="w-full md:w-auto bg-cyan-600 hover:bg-cyan-500 text-white font-bold py-3 px-8 rounded-lg shadow-lg shadow-cyan-500/50 transition-all transform active:scale-95">
+                    🚀 Simulate
+                </button>
+            </div>
+        </div>
+
+        <!-- Range Controls -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6 text-sm">
+            <div>
+                <label class="block text-slate-300 mb-1">X Min</label>
+                <input type="number" id="xMin" value="-10" class="w-full bg-slate-800 border border-slate-600 rounded px-3 py-2 text-white">
+            </div>
+            <div>
+                <label class="block text-slate-300 mb-1">X Max</label>
+                <input type="number" id="xMax" value="10" class="w-full bg-slate-800 border border-slate-600 rounded px-3 py-2 text-white">
+            </div>
+            <div>
+                <label class="block text-slate-300 mb-1">Step (Resolution)</label>
+                <input type="number" id="step" value="0.1" step="0.05" class="w-full bg-slate-800 border border-slate-600 rounded px-3 py-2 text-white">
+            </div>
+        </div>
+
+        <!-- Graph Container -->
+        <div class="bg-slate-900 p-4 rounded-xl border border-slate-700 w-full h-[400px]">
+            <canvas id="waveChart"></canvas>
+        </div>
+    </div>
+
+    <script>
+        let chartInstance = null;
+
+        function simulate() {
+            const funcStr = document.getElementById('funcInput').value;
+            const xMin = parseFloat(document.getElementById('xMin').value);
+            const xMax = parseFloat(document.getElementById('xMax').value);
+            const step = parseFloat(document.getElementById('step').value);
+
+            if (xMin >= xMax || step <= 0) {
+                alert("Invalid X range or step value");
+                return;
+            }
+
+            const xValues = [];
+            const yValues = [];
+
+            try {
+                // Compile expression once for performance using math.js (safe parser)
+                const node = math.parse(funcStr);
+                const code = node.compile();
+
+                for (let x = xMin; x <= xMax; x += step) {
+                    // Use a small epsilon rounding to avoid floating point weirdness
+                    const currentX = Math.round(x * 100000) / 100000;
+                    xValues.push(currentX);
+                    
+                    // Evaluate function at 'x'
+                    let y = code.evaluate({ x: currentX });
+                    yValues.push(y);
+                }
+
+                drawChart(xValues, yValues, funcStr);
+            } catch (err) {
+                alert("Error evaluating function: " + err.message + "\n\nTry writing mathematically clear statements. E.g. sin(x) + cos(x)");
+            }
+        }
+
+        function drawChart(xValues, yValues, label) {
+            const ctx = document.getElementById('waveChart').getContext('2d');
+            
+            if (chartInstance) {
+                chartInstance.destroy();
+            }
+
+            // Create gradient for fill
+            let gradient = ctx.createLinearGradient(0, 0, 0, 400);
+            gradient.addColorStop(0, 'rgba(6, 182, 212, 0.5)'); // Cyan trans
+            gradient.addColorStop(1, 'rgba(6, 182, 212, 0.0)'); 
+
+            chartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: xValues,
+                    datasets: [{
+                        label: 'f(x) = ' + label,
+                        data: yValues,
+                        borderColor: '#06b6d4', // tailwind cyan-500
+                        backgroundColor: gradient,
+                        borderWidth: 2,
+                        pointRadius: 0, // hide dots for smooth curve
+                        pointHoverRadius: 6,
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        intersect: false,
+                        mode: 'index',
+                    },
+                    scales: {
+                        x: {
+                            grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                            ticks: {
+                                color: '#94a3b8',
+                                maxTicksLimit: 12,
+                                callback: function(val, index) {
+                                    return xValues[index].toFixed(1);
+                                }
+                            }
+                        },
+                        y: {
+                            grid: { color: 'rgba(255, 255, 255, 0.1)' },
+                            ticks: { color: '#94a3b8' }
+                        }
+                    },
+                    plugins: {
+                        legend: { labels: { color: '#f8fafc', font: { size: 14 } } },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `f(x) = ${context.parsed.y.toFixed(3)}`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Attach event listener
+        document.getElementById('simulateBtn').addEventListener('click', simulate);
+        
+        // Execute on enter key
+        document.getElementById('funcInput').addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') simulate();
+        });
+        
+        // Render initial default wave
+        simulate();
+    </script>
+</body>
+</html>

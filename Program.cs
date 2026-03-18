@@ -3,6 +3,6 @@ builder.Services.AddControllersWithViews();
 var app = builder.Build();
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=Game}/{action=Index}/{id?}");
+    pattern: "{controller=Wave}/{action=Index}/{id?}");
     
 app.Run();
