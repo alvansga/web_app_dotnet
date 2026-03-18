@@ -1,0 +1,22 @@
+@model MyFirstApp.Models.HangmanGame
+
+<h2>Hangman Game</h2>
+
+<p>Kata: @Model.GetMaskedWord()</p>
+<p>Salah: @Model.WrongAttempts() / @Model.MaxAttempts</p>
+
+@if (Model.IsWon())
+{
+    <p>🎉 Menang!</p>
+}
+else if (Model.IsLost())
+{
+    <p>💀 Kalah! Kata: @Model.Word</p>
+}
+else
+{
+    <form method="post" action="/Game/Guess">
+        <input type="text" name="letter" maxlength="1" required />
+        <button type="submit">Tebak</button>
+    </form>
+}
