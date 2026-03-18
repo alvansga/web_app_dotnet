@@ -1,0 +1,145 @@
+@model MyFirstApp.Models.CoupGame
+@{ Layout = null; }
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <title>Coup Game Sederhana</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #2c3e50; color: #ecf0f1; margin: 0; padding: 20px; }
+        .container { max-width: 800px; margin: 0 auto; background: #34495e; padding: 20px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
+        h1, h2 { color: #f1c40f; text-align: center; }
+        .log-box { background: #1abc9c; color: white; padding: 15px; border-radius: 8px; margin-bottom: 20px; font-weight: bold; }
+        .card-container { display: flex; flex-wrap: wrap; gap: 15px; justify-content: center; }
+        .player-card { background: #2c3e50; border: 2px solid #bdc3c7; border-radius: 8px; padding: 15px; width: 220px; position: relative; }
+        .player-card.active { border-color: #e74c3c; box-shadow: 0 0 15px #e74c3c; }
+        .player-card.dead { opacity: 0.5; border-color: #7f8c8d; }
+        .badge { display: inline-block; padding: 4px 8px; border-radius: 4px; font-size: 0.8em; margin-right: 5px; }
+        .badge.coin { background: #f1c40f; color: #2c3e50; font-weight: bold; }
+        .badge.influence { background: #3498db; color: white; }
+        .badge.revealed { background: #e74c3c; color: white; text-decoration: line-through; }
+        .btn { padding: 10px 15px; border: none; border-radius: 5px; cursor: pointer; color: white; font-weight: bold; margin: 5px; }
+        .btn-green { background: #2ecc71; } .btn-green:hover { background: #27ae60; }
+        .btn-blue { background: #3498db; } .btn-blue:hover { background: #2980b9; }
+        .btn-red { background: #e74c3c; } .btn-red:hover { background: #c0392b; }
+        .btn-yellow { background: #f1c40f; color: #2c3e50; } .btn-yellow:hover { background: #f39c12; }
+        .action-panel { background: #e74c3c; padding: 15px; border-radius: 8px; margin-top: 20px; text-align: center; }
+        .form-group { margin-bottom: 10px; }
+        input[type="text"] { padding: 8px; width: calc(100% - 20px); border-radius: 4px; border: none; margin-bottom: 10px; }
+        select { padding: 8px; border-radius: 4px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Coup Card Game 🎭</h1>
+        
+        <div class="log-box">Log: @Model.Log</div>
+
+        @if (Model.GameState == "Lobby")
+        {
+            <h2>Lobby - Tambah Pemain</h2>
+            <form method="post" action="/Coup/AddPlayer" style="text-align:center;">
+                <input type="text" name="name" placeholder="Nama Pemain" required />
+                <input type="text" name="description" placeholder="Karakter / Metadata (misal: Suka nge-bluff)" />
+                <br>
+                <button type="submit" class="btn btn-blue">Tambah Pemain</button>
+            </form>
+
+            @if (Model.Players.Count > 0)
+            {
+                <h3>Daftar Pemain (@Model.Players.Count)</h3>
+                <ul>
+                    @foreach (var p in Model.Players)
+                    {
+                        <li>@p.Name <i>(@p.Description)</i></li>
+                    }
+                </ul>
+            }
+
+            @if (Model.Players.Count >= 2)
+            {
+                <form method="post" action="/Coup/Start" style="text-align:center; margin-top:20px;">
+                    <button type="submit" class="btn btn-green" style="font-size: 1.2em;">Start Game</button>
+                </form>
+            }
+        }
+        else
+        {
+            <h2>Giliran: @(Model.Players.Count > 0 ? Model.Players[Model.CurrentTurnIndex].Name : "")</h2>
+
+            <div class="card-container">
+                @for (int i = 0; i < Model.Players.Count; i++)
+                {
+                    var p = Model.Players[i];
+                    var isActive = (i == Model.CurrentTurnIndex && !p.IsDead) ? "active" : "";
+                    var isDead = p.IsDead ? "dead" : "";
+
+                    <div class="player-card @isActive @isDead">
+                        <h3>@p.Name</h3>
+                        <p style="font-size:0.8em; margin-top:-10px;">@p.Description</p>
+                        <div>
+                            <span class="badge coin">🪙 @p.Coins Coins</span>
+                        </div>
+                        <div style="margin-top: 10px;">
+                            <strong>Kartu/Influence:</strong><br>
+                            @foreach (var card in p.Hand)
+                            {
+                                <span class="badge influence">Sembunyi/Hidup</span>
+                            }
+                            @foreach (var card in p.Revealed)
+                            {
+                                <span class="badge revealed">@card</span>
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
+
+            @if (Model.GameState == "Playing")
+            {
+                var cp = Model.Players[Model.CurrentTurnIndex];
+                <div class="action-panel">
+                    <h3>Action untuk @cp.Name</h3>
+                    <form method="post" action="/Coup/Action" style="display:inline-block;">
+                        <input type="hidden" name="type" value="Income" />
+                        <button type="submit" class="btn btn-blue">Income (+1 🪙)</button>
+                    </form>
+                    
+                    <form method="post" action="/Coup/Action" style="display:inline-block;">
+                        <input type="hidden" name="type" value="ForeignAid" />
+                        <button type="submit" class="btn btn-blue">Foreign Aid (+2 🪙)</button>
+                    </form>
+
+                    <form method="post" action="/Coup/Action" style="display:inline-block;">
+                        <input type="hidden" name="type" value="Tax" />
+                        <button type="submit" class="btn btn-yellow">Tax / Duke (+3 🪙)</button>
+                    </form>
+
+                    @if (cp.Coins >= 7)
+                    {
+                        <form method="post" action="/Coup/Action" style="display:inline-block; margin-top:10px;">
+                            <input type="hidden" name="type" value="Coup" />
+                            <select name="targetId" required>
+                                <option value="">-- Pilih Target Coup --</option>
+                                @foreach (var p in Model.Players.Where(x => !x.IsDead && x.Id != cp.Id))
+                                {
+                                    <option value="@p.Id">@p.Name</option>
+                                }
+                            </select>
+                            <button type="submit" class="btn btn-red">⚔️ COUP (-7 🪙)</button>
+                        </form>
+                    }
+                    else
+                    {
+                        <p style="color:#f1c40f; font-size:0.9em; margin-top:10px;">(Butuh 7 koin untuk Coup)</p>
+                    }
+                </div>
+            }
+
+            <form method="post" action="/Coup/Reset" style="text-align:center; margin-top:30px;">
+                <button type="submit" class="btn btn-red">Reset Game & Kembali ke Lobby</button>
+            </form>
+        }
+    </div>
+</body>
+</html>
