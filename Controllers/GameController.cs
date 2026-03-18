@@ -1,11 +1,15 @@
 using Microsoft.AspNetCore.Mvc;
 using MyFirstApp.Models;
+using System;
+using System.Collections.Generic;
 
 namespace MyFirstApp.Controllers
 {
     public class GameController : Controller
     {
-        static HangmanGame game = new HangmanGame("kotlin");
+        static List<string> WordList = new List<string> { "kotlin", "javascript", "csharp", "python", "golang" };
+        static Random Rnd = new Random();
+        static HangmanGame game = new HangmanGame(WordList[Rnd.Next(WordList.Count)]);
 
         public IActionResult Index()
         {
@@ -15,7 +19,17 @@ namespace MyFirstApp.Controllers
         [HttpPost]
         public IActionResult Guess(char letter)
         {
-            game.Guess(letter);
+            if (char.IsLetter(letter))
+            {
+                game.Guess(char.ToLower(letter));
+            }
+            return RedirectToAction("Index");
+        }
+
+        [HttpPost]
+        public IActionResult Reset()
+        {
+            game = new HangmanGame(WordList[Rnd.Next(WordList.Count)]);
             return RedirectToAction("Index");
         }
     }
