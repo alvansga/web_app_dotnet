@@ -16,6 +16,12 @@ namespace MyFirstApp.Controllers
             return View(Game);
         }
 
+        public IActionResult GamePartial()
+        {
+            ViewBag.MyPlayerId = HttpContext.Session.GetString("PlayerId");
+            return PartialView("_GameContent", Game);
+        }
+
         [HttpPost]
         public IActionResult AddPlayer(string name, string description)
         {

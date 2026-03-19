@@ -75,7 +75,7 @@ namespace MyFirstApp.Models
             Log += $" | Sekarang giliran: {Players[CurrentTurnIndex].Name}";
         }
 
-        public void PerformAction(string actionType, string targetId = null)
+        public void PerformAction(string actionType, string? targetId = null)
         {
             var player = Players[CurrentTurnIndex];
             if (actionType == "Income")
