@@ -23,9 +23,11 @@ namespace MyFirstApp.Models
         public string GameState { get; set; } = "Lobby"; // Lobby, Playing, GameOver
         public string Log { get; set; } = "Menunggu pemain masuk...";
 
-        public void AddPlayer(string name, string description)
+        public CoupPlayer AddPlayer(string name, string description)
         {
-            Players.Add(new CoupPlayer { Name = name, Description = description });
+            var p = new CoupPlayer { Name = name, Description = description };
+            Players.Add(p);
+            return p;
         }
 
         public void StartGame()

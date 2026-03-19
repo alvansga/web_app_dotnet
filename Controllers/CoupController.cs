@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using MyFirstApp.Models;
+using Microsoft.AspNetCore.Http;
 
 namespace MyFirstApp.Controllers
 {
@@ -10,6 +11,8 @@ namespace MyFirstApp.Controllers
 
         public IActionResult Index()
         {
+            // Ambil playerId dari session. Jika tidak ada, user belum "Join" sebagai pemain.
+            ViewBag.MyPlayerId = HttpContext.Session.GetString("PlayerId");
             return View(Game);
         }
 
@@ -18,7 +21,9 @@ namespace MyFirstApp.Controllers
         {
             if (!string.IsNullOrWhiteSpace(name))
             {
-                Game.AddPlayer(name, description);
+                var newPlayer = Game.AddPlayer(name, description);
+                // Simpan ID pemain ke session supaya tab ini tahu dia adalah pemain tersebut.
+                HttpContext.Session.SetString("PlayerId", newPlayer.Id);
             }
             return RedirectToAction("Index");
         }
@@ -33,7 +38,10 @@ namespace MyFirstApp.Controllers
         [HttpPost]
         public IActionResult Action(string type, string targetId)
         {
-            if (Game.GameState == "Playing")
+            var myId = HttpContext.Session.GetString("PlayerId");
+            
+            // Validasi: Apakah benar giliran si pemain yang memegang session ini?
+            if (Game.GameState == "Playing" && Game.Players[Game.CurrentTurnIndex].Id == myId)
             {
                 Game.PerformAction(type, targetId);
             }
@@ -44,6 +52,7 @@ namespace MyFirstApp.Controllers
         public IActionResult Reset()
         {
             Game = new CoupGame();
+            HttpContext.Session.Clear(); // Hapus session biar semua tab join ulang
             return RedirectToAction("Index");
         }
     }
