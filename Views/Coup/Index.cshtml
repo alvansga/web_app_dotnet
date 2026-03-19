@@ -62,7 +62,9 @@
 </head>
 <body>
     <div class="container">
-        <h1>Coup Card Game</h1>
+        <div style="text-align: center;">
+            <h1>Coup Card Game</h1>
+        </div>
         
         <div id="game-container">
             @await Html.PartialAsync("_GameContent", Model)
@@ -107,5 +109,82 @@
             // setInterval(refreshGame, 10000);
         </script>
     </div>
+    <footer>
+        <details style="margin-top: 20px; background: #2c3e50; border-radius: 8px; overflow: hidden; border: 1px solid #7f8c8d;">
+            <summary style="padding: 15px; cursor: pointer; font-weight: bold; background: #34495e; color: #f1c40f;">
+                📖 Manual 
+            </summary>
+            <div style="padding: 15px; overflow-x: auto;">
+                <table style="width: 100%; border-collapse: collapse; font-size: 0.9em; text-align: left;">
+                    <thead>
+                        <tr style="border-bottom: 2px solid #7f8c8d; color: #1abc9c;">
+                            <th style="padding: 8px;">Karakter</th>
+                            <th style="padding: 8px;">Aksi</th>
+                            <th style="padding: 8px;">Efek</th>
+                            <th style="padding: 8px;">Bisa Di-Block Oleh</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr style="border-bottom: 1px solid #3d5a75;">
+                            <td><b>Duke</b></td>
+                            <td>Tax</td>
+                            <td>Ambil 3 koin</td>
+                            <td>-</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid #3d5a75;">
+                            <td><b>Assassin</b></td>
+                            <td>Assassinate</td>
+                            <td>Bayar 3 koin, bunuh 1 influence pemain</td>
+                            <td>Contessa</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid #3d5a75;">
+                            <td><b>Captain</b></td>
+                            <td>Steal</td>
+                            <td>Ambil 2 koin dari musuh</td>
+                            <td>Captain / Ambassador</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid #3d5a75;">
+                            <td><b>Ambassador</b></td>
+                            <td>Exchange</td>
+                            <td>Tukar kartu dengan Deck</td>
+                            <td>-</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid #3d5a75;">
+                            <td><b>Contessa</b></td>
+                            <td>-</td>
+                            <td>(Pasif)</td>
+                            <td>Blokir Assassin</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid #3d5a75;">
+                            <td>Umum</td>
+                            <td>Foreign Aid</td>
+                            <td>Ambil 2 koin</td>
+                            <td>Duke</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid #3d5a75;">
+                            <td>Umum</td>
+                            <td>Income</td>
+                            <td>Ambil 1 koin</td>
+                            <td>-</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid #3d5a75;">
+                            <td>Umum</td>
+                            <td>Coup</td>
+                            <td>Bayar 7 koin, bunuh 1 influence pemain </td>
+                            <td>-</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <br>
+                <div style="font-size: 0.9em; text-align: center;">
+                    <b> * Semua action bisa di-challenge kecuali income, foreign aid, dan coup !</b>
+                </div>
+            </div>
+        </details>
+            <div style="font-size: 0.5em; text-align: right;">
+                <p>v5@@zralvansga. Built with ASP.NET.</p>
+            </div>
+    </footer>
 </body>
+
 </html>
