@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Wave Function Simulator</title>
+    <title>Wave Function Simulator & Transforms</title>
     <!-- Tailwind CSS for sleek UI -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Chart.js for graph -->
@@ -19,16 +19,27 @@
 <body class="min-h-screen flex flex-col items-center justify-center p-6">
 
     <div class="glass-panel p-8 rounded-2xl shadow-2xl w-full max-w-4xl">
-        <h1 class="text-3xl font-bold mb-6 text-cyan-400 text-center">🌊 Wave Function Simulator</h1>
+        <h1 class="text-3xl font-bold mb-6 text-cyan-400 text-center">🌊 Wave & Transform Simulator</h1>
         
-        <div class="flex flex-col md:flex-row gap-4 mb-6">
+        <div class="flex flex-col md:flex-row gap-4 mb-4">
             <div class="flex-grow">
-                <label class="block text-sm font-medium mb-2 text-slate-300">Function (y=f(x))</label>
-                <input type="text" id="funcInput" value="sin(x) * x" placeholder="Example: sin(x), cos(x), x^2, 2*x + 1" 
+                <label class="block text-sm font-medium mb-2 text-slate-300">Function f(t)</label>
+                <input type="text" id="funcInput" value="sin(2 * pi * t)" placeholder="Example: sin(t), exp(-t), t^2" 
                        class="w-full bg-slate-800 border border-slate-600 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 font-mono text-lg">
-                <p class="text-xs text-slate-400 mt-2">Use `x` as the variable. Supported: sin, cos, tan, sqrt, ^, *, /, +, -</p>
+                <p class="text-xs text-slate-400 mt-2">Gunakan `t` atau `x` sebagai variabel utama.</p>
             </div>
             
+            <div class="w-full md:w-64">
+                <label class="block text-sm font-medium mb-2 text-slate-300">Tipe Visualisasi</label>
+                <select id="analysisType" class="w-full bg-slate-800 border border-slate-600 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-cyan-500 font-mono text-base">
+                    <option value="time">Time Domain f(t)</option>
+                    <option value="fourier">Fourier Transform |F(ω)|</option>
+                    <option value="freq_mag">Freq Response (Mag dB)</option>
+                    <option value="freq_phase">Freq Response (Phase)</option>
+                    <option value="laplace">Laplace Transform F(s) (Real)</option>
+                </select>
+            </div>
+
             <div class="flex items-end flex-shrink-0">
                 <button id="simulateBtn" class="w-full md:w-auto bg-cyan-600 hover:bg-cyan-500 text-white font-bold py-3 px-8 rounded-lg shadow-lg shadow-cyan-500/50 transition-all transform active:scale-95">
                     🚀 Simulate
@@ -39,16 +50,16 @@
         <!-- Range Controls -->
         <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6 text-sm">
             <div>
-                <label class="block text-slate-300 mb-1">X Min</label>
-                <input type="number" id="xMin" value="-10" class="w-full bg-slate-800 border border-slate-600 rounded px-3 py-2 text-white">
+                <label class="block text-slate-300 mb-1" id="lblMin">Waktu Min (t)</label>
+                <input type="number" id="xMin" value="0" class="w-full bg-slate-800 border border-slate-600 rounded px-3 py-2 text-white">
             </div>
             <div>
-                <label class="block text-slate-300 mb-1">X Max</label>
+                <label class="block text-slate-300 mb-1" id="lblMax">Waktu Max (t)</label>
                 <input type="number" id="xMax" value="10" class="w-full bg-slate-800 border border-slate-600 rounded px-3 py-2 text-white">
             </div>
             <div>
-                <label class="block text-slate-300 mb-1">Step (Resolution)</label>
-                <input type="number" id="step" value="0.1" step="0.05" class="w-full bg-slate-800 border border-slate-600 rounded px-3 py-2 text-white">
+                <label class="block text-slate-300 mb-1">Step (Resolusi / Titik)</label>
+                <input type="number" id="step" value="0.05" step="0.05" class="w-full bg-slate-800 border border-slate-600 rounded px-3 py-2 text-white">
             </div>
         </div>
 
@@ -61,14 +72,47 @@
     <script>
         let chartInstance = null;
 
+        // Auto update labels and default ranges depending on transform type
+        document.getElementById('analysisType').addEventListener('change', function(e) {
+            const type = e.target.value;
+            if (type === 'time') {
+                document.getElementById('lblMin').innerText = 'Waktu Min (t)';
+                document.getElementById('lblMax').innerText = 'Waktu Max (t)';
+                document.getElementById('xMin').value = '0';
+                document.getElementById('xMax').value = '10';
+                document.getElementById('step').value = '0.05';
+            } else if (type === 'fourier') {
+                document.getElementById('lblMin').innerText = 'Frekuensi Min (ω)';
+                document.getElementById('lblMax').innerText = 'Frekuensi Max (ω)';
+                document.getElementById('xMin').value = '-10';
+                document.getElementById('xMax').value = '10';
+                document.getElementById('step').value = '0.1';
+            } else if (type === 'freq_mag' || type === 'freq_phase') {
+                document.getElementById('lblMin').innerText = 'Frekuensi Min (ω)';
+                document.getElementById('lblMax').innerText = 'Frekuensi Max (ω)';
+                // Bode plots usually start from small positive freqs to max
+                document.getElementById('xMin').value = '0.1';
+                document.getElementById('xMax').value = '20';
+                document.getElementById('step').value = '0.1';
+            } else if (type === 'laplace') {
+                document.getElementById('lblMin').innerText = 's Min (Real)';
+                document.getElementById('lblMax').innerText = 's Max (Real)';
+                document.getElementById('xMin').value = '0.1';
+                document.getElementById('xMax').value = '5';
+                document.getElementById('step').value = '0.1';
+            }
+            simulate();
+        });
+
         function simulate() {
             const funcStr = document.getElementById('funcInput').value;
             const xMin = parseFloat(document.getElementById('xMin').value);
             const xMax = parseFloat(document.getElementById('xMax').value);
             const step = parseFloat(document.getElementById('step').value);
+            const analysisType = document.getElementById('analysisType').value;
 
             if (xMin >= xMax || step <= 0) {
-                alert("Invalid X range or step value");
+                alert("Invalid range or step value");
                 return;
             }
 
@@ -76,36 +120,90 @@
             const yValues = [];
 
             try {
-                // Compile expression once for performance using math.js (safe parser)
+                // Compile the user's function f(t)
                 const node = math.parse(funcStr);
                 const code = node.compile();
 
-                for (let x = xMin; x <= xMax; x += step) {
-                    // Use a small epsilon rounding to avoid floating point weirdness
-                    const currentX = Math.round(x * 100000) / 100000;
-                    xValues.push(currentX);
+                // Helper to evaluate f(t). We provide both t and x variables for convenience.
+                const evalFunc = (t_val) => code.evaluate({ t: t_val, x: t_val });
+
+                if (analysisType === 'time') {
+                    for (let t = xMin; t <= xMax; t += step) {
+                        const currentT = Math.round(t * 100000) / 100000;
+                        xValues.push(currentT);
+                        let y = evalFunc(currentT);
+                        if (!isFinite(y)) y = 0;
+                        yValues.push(y);
+                    }
+                    drawChart(xValues, yValues, `f(t) = ${funcStr}`, 't (Waktu)', 'f(t)');
+                } 
+                else if (analysisType === 'fourier' || analysisType === 'freq_mag' || analysisType === 'freq_phase') {
+                    // Approximate numerical Fourier Transform integrals over t in [-50, 50]
+                    const tMin = -50, tMax = 50, dt = 0.05;
+                    for (let w = xMin; w <= xMax; w += step) {
+                        let re = 0, im = 0;
+                        for (let t = tMin; t <= tMax; t += dt) {
+                            let ft = evalFunc(t);
+                            if (isFinite(ft)) {
+                                re += ft * Math.cos(w * t) * dt;
+                                im -= ft * Math.sin(w * t) * dt;
+                            }
+                        }
+                        const magnitude = Math.sqrt(re*re + im*im);
+                        xValues.push(Math.round(w * 1000) / 1000);
+                        
+                        if (analysisType === 'fourier') {
+                            yValues.push(magnitude);
+                        } else if (analysisType === 'freq_mag') {
+                            // Magnitude in dB: 20 * log10(magnitude)
+                            const magDb = magnitude > 1e-10 ? 20 * Math.log10(magnitude) : -200;
+                            yValues.push(magDb);
+                        } else if (analysisType === 'freq_phase') {
+                            // Phase in radians: atan2(im, re)
+                            let phase = Math.atan2(im, re);
+                            yValues.push(phase);
+                        }
+                    }
                     
-                    // Evaluate function at 'x'
-                    let y = code.evaluate({ x: currentX });
-                    yValues.push(y);
+                    if (analysisType === 'fourier') {
+                        drawChart(xValues, yValues, `|F(ω)| dari ${funcStr}`, 'ω (Frekuensi)', 'Magnitude |F(ω)|');
+                    } else if (analysisType === 'freq_mag') {
+                        drawChart(xValues, yValues, `Magnitude (dB) dari ${funcStr}`, 'ω (Frekuensi)', 'Magnituda (dB)');
+                    } else if (analysisType === 'freq_phase') {
+                        drawChart(xValues, yValues, `Fase (Rad) dari ${funcStr}`, 'ω (Frekuensi)', 'Phase (Radian)');
+                    }
+                }
+                else if (analysisType === 'laplace') {
+                    // Approximate numerical Laplace Transform (real s) over t in [0, 80]
+                    const tMax = 80, dt = 0.05;
+                    for (let s = xMin; s <= xMax; s += step) {
+                        let integral = 0;
+                        for (let t = 0; t <= tMax; t += dt) {
+                            let ft = evalFunc(t);
+                            if (isFinite(ft)) {
+                                integral += ft * Math.exp(-s * t) * dt;
+                            }
+                        }
+                        xValues.push(Math.round(s * 1000) / 1000);
+                        yValues.push(integral);
+                    }
+                    drawChart(xValues, yValues, `F(s) dari ${funcStr}`, 's (Real Domain)', 'Amplitudo F(s)');
                 }
 
-                drawChart(xValues, yValues, funcStr);
             } catch (err) {
-                alert("Error evaluating function: " + err.message + "\n\nTry writing mathematically clear statements. E.g. sin(x) + cos(x)");
+                alert("Error saat memproses fungsi matematis: " + err.message);
             }
         }
 
-        function drawChart(xValues, yValues, label) {
+        function drawChart(xValues, yValues, labelStr, xLabel, yLabel) {
             const ctx = document.getElementById('waveChart').getContext('2d');
             
             if (chartInstance) {
                 chartInstance.destroy();
             }
 
-            // Create gradient for fill
             let gradient = ctx.createLinearGradient(0, 0, 0, 400);
-            gradient.addColorStop(0, 'rgba(6, 182, 212, 0.5)'); // Cyan trans
+            gradient.addColorStop(0, 'rgba(6, 182, 212, 0.5)'); 
             gradient.addColorStop(1, 'rgba(6, 182, 212, 0.0)'); 
 
             chartInstance = new Chart(ctx, {
@@ -113,12 +211,12 @@
                 data: {
                     labels: xValues,
                     datasets: [{
-                        label: 'f(x) = ' + label,
+                        label: labelStr,
                         data: yValues,
-                        borderColor: '#06b6d4', // tailwind cyan-500
+                        borderColor: '#06b6d4',
                         backgroundColor: gradient,
                         borderWidth: 2,
-                        pointRadius: 0, // hide dots for smooth curve
+                        pointRadius: 0, 
                         pointHoverRadius: 6,
                         fill: true,
                         tension: 0.4
@@ -133,16 +231,16 @@
                     },
                     scales: {
                         x: {
+                            title: { display: true, text: xLabel, color: '#f8fafc', font: {size: 14} },
                             grid: { color: 'rgba(255, 255, 255, 0.05)' },
                             ticks: {
                                 color: '#94a3b8',
                                 maxTicksLimit: 12,
-                                callback: function(val, index) {
-                                    return xValues[index].toFixed(1);
-                                }
+                                callback: function(val, index) { return xValues[index].toFixed(1); }
                             }
                         },
                         y: {
+                            title: { display: true, text: yLabel, color: '#f8fafc', font: {size: 14} },
                             grid: { color: 'rgba(255, 255, 255, 0.1)' },
                             ticks: { color: '#94a3b8' }
                         }
@@ -152,7 +250,7 @@
                         tooltip: {
                             callbacks: {
                                 label: function(context) {
-                                    return `f(x) = ${context.parsed.y.toFixed(3)}`;
+                                    return `${yLabel} = ${context.parsed.y.toFixed(3)}`;
                                 }
                             }
                         }
@@ -161,10 +259,7 @@
             });
         }
 
-        // Attach event listener
         document.getElementById('simulateBtn').addEventListener('click', simulate);
-        
-        // Execute on enter key
         document.getElementById('funcInput').addEventListener('keypress', function (e) {
             if (e.key === 'Enter') simulate();
         });
