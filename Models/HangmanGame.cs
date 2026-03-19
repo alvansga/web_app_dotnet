@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 
-namespace MyFirstApp.Models
+namespace WebAppSandbox.Models
 {
     public class HangmanGame
     {

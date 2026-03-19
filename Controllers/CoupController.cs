@@ -1,11 +1,11 @@
 using Microsoft.AspNetCore.Mvc;
-using MyFirstApp.Models;
+using WebAppSandbox.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.SignalR;
-using MyFirstApp.Hubs;
+using WebAppSandbox.Hubs;
 using System.Threading.Tasks;
 
-namespace MyFirstApp.Controllers
+namespace WebAppSandbox.Controllers
 {
     public class CoupController : Controller
     {

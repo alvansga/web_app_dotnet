@@ -1,4 +1,4 @@
-@model MyFirstApp.Models.CoupGame
+@model WebAppSandbox.Models.CoupGame
 <div class="log-box">Log: @Model.Log</div>
 
 @{
@@ -102,7 +102,7 @@ else
     @if (Model.GameState == "Playing" && isMyTurn)
     {
         <div class="action-panel" style="border: 4px solid #f1c40f; background: #2c3e50; color: white;">
-            <h3>Aksi untuk Anda (@currentPlayer.Name)</h3>
+            <h3>Aksi untuk Anda (@currentPlayer?.Name)</h3>
             
             <div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 5px;">
                 @* Aksi Dasar *@
@@ -113,7 +113,7 @@ else
                 <form method="post" action="/Coup/Action"><input type="hidden" name="type" value="Tax" /><button type="submit" class="btn btn-yellow">Tax (Duke)</button></form>
                 <form method="post" action="/Coup/Action"><input type="hidden" name="type" value="Exchange" /><button type="submit" class="btn btn-yellow">Exchange (Ambassador)</button></form>
                 
-                @if (currentPlayer.Coins >= 3) {
+                @if (currentPlayer?.Coins >= 3) {
                    <form method="post" action="/Coup/Action" style="display:flex; align-items:center;">
                         <input type="hidden" name="type" value="Assassinate" />
                         <select name="targetId" required style="width:100px;">
@@ -131,7 +131,7 @@ else
                     <button type="submit" class="btn btn-yellow">Steal (Captain)</button>
                 </form>
 
-                @if (currentPlayer.Coins >= 7) {
+                @if (currentPlayer?.Coins >= 7) {
                     <form method="post" action="/Coup/Action">
                         <input type="hidden" name="type" value="Coup" />
                         <select name="targetId" required style="width:100px;">
@@ -209,9 +209,67 @@ else
         </div>
     }
 
-    <form method="post" action="/Coup/Reset" style="text-align:center; margin-top:30px;">
-        <button type="submit" class="btn btn-red">Reset Game</button>
-    </form>
+    <div style="text-align:center; margin-top:30px; border-top: 1px solid #7f8c8d; padding-top: 20px;">
+        <form method="post" action="/Coup/Reset" onsubmit="return confirm('Apakah Anda yakin ingin meriset game? Semua progres pemain akan hilang.');">
+            <button type="submit" class="btn btn-red" style="opacity: 0.8;">⚠️ Reset Game </button>
+        </form>
+
+        <details style="margin-top: 20px; background: #2c3e50; border-radius: 8px; overflow: hidden; border: 1px solid #7f8c8d;">
+            <summary style="padding: 15px; cursor: pointer; font-weight: bold; background: #34495e; color: #f1c40f;">
+                📖 Manual 
+            </summary>
+            <div style="padding: 15px; overflow-x: auto;">
+                <table style="width: 100%; border-collapse: collapse; font-size: 0.9em; text-align: left;">
+                    <thead>
+                        <tr style="border-bottom: 2px solid #7f8c8d; color: #1abc9c;">
+                            <th style="padding: 8px;">Karakter</th>
+                            <th style="padding: 8px;">Aksi</th>
+                            <th style="padding: 8px;">Efek</th>
+                            <th style="padding: 8px;">Bisa Di-Block Oleh</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr style="border-bottom: 1px solid #3d5a75;">
+                            <td><b>Duke</b></td>
+                            <td>Tax</td>
+                            <td>Ambil 3 koin</td>
+                            <td>-</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid #3d5a75;">
+                            <td><b>Assassin</b></td>
+                            <td>Assassinate</td>
+                            <td>Bayar 3 koin, pilih target mati</td>
+                            <td>Contessa</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid #3d5a75;">
+                            <td><b>Captain</b></td>
+                            <td>Steal</td>
+                            <td>Ambil 2 koin dari musuh</td>
+                            <td>Captain / Ambassador</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid #3d5a75;">
+                            <td><b>Ambassador</b></td>
+                            <td>Exchange</td>
+                            <td>Tukar kartu dengan Deck</td>
+                            <td>-</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid #3d5a75;">
+                            <td><b>Contessa</b></td>
+                            <td>-</td>
+                            <td>(Pasif)</td>
+                            <td>Blokir Assassin</td>
+                        </tr>
+                        <tr style="background: rgba(255,255,255,0.05);">
+                            <td>Umum</td>
+                            <td>Foreign Aid</td>
+                            <td>Ambil 2 koin</td>
+                            <td>Duke</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </details>
+    </div>
 }
 
 <script>

@@ -1,9 +1,9 @@
 using Microsoft.AspNetCore.Mvc;
-using MyFirstApp.Models;
+using WebAppSandbox.Models;
 using System;
 using System.Collections.Generic;
 
-namespace MyFirstApp.Controllers
+namespace WebAppSandbox.Controllers
 {
     public class GameController : Controller
     {

@@ -7,7 +7,7 @@ builder.Services.AddSignalR(); // Tambah SignalR
 var app = builder.Build();
 
 app.UseSession();
-app.MapHub<MyFirstApp.Hubs.GameHub>("/gameHub"); // Map SignalR Hub
+app.MapHub<WebAppSandbox.Hubs.GameHub>("/gameHub"); // Map SignalR Hub
 
 app.MapControllerRoute(
     name: "default",

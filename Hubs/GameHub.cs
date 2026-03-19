@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.SignalR;
 using System.Threading.Tasks;
 
-namespace MyFirstApp.Hubs
+namespace WebAppSandbox.Hubs
 {
     public class GameHub : Hub
     {
