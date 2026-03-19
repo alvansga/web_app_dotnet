@@ -118,13 +118,13 @@ else
                 <button type="submit" class="btn btn-yellow">Tax (Klaim DUKE)</button>
             </form>
 
-            @if (currentPlayer.Coins >= 7)
+            @if (currentPlayer?.Coins >= 7)
             {
                 <form method="post" action="/Coup/Action" style="display:inline-block; margin-top:10px;">
                     <input type="hidden" name="type" value="Coup" />
                     <select name="targetId" required style="padding:10px; border-radius:5px;">
                         <option value="">-- Pilih Target Coup --</option>
-                        @foreach (var p in Model.Players.Where(x => !x.IsDead && x.Id != currentPlayer.Id))
+                        @foreach (var p in Model.Players.Where(x => !x.IsDead && x.Id != (currentPlayer?.Id ?? "")))
                         {
                             <option value="@p.Id">@p.Name</option>
                         }
@@ -135,25 +135,26 @@ else
         </div>
     }
 
-    @if (Model.GameState == "WaitingForChallenge")
+    @if (Model.GameState == "WaitingForChallenge" && Model.PendingAction != null)
     {
-        var pendingId = Model.PendingAction?.SourceId;
+        var pa = Model.PendingAction;
+        var pendingId = pa.SourceId;
         var pendingPlayer = Model.Players.FirstOrDefault(p => p.Id == pendingId);
         
         <div class="action-panel" style="background: #e67e22; border: 4px solid #d35400;">
             <h3>📢 CHALLENGE PHASE!</h3>
-            <p><strong>@pendingPlayer?.Name</strong> mengklaim aksi <strong>@Model.PendingAction?.ActionType</strong> dengan peran <strong>@Model.PendingAction?.ClaimedRole</strong>.</p>
+            <p><strong>@(pendingPlayer?.Name ?? "Pemain")</strong> mengklaim aksi <strong>@pa.ActionType</strong> dengan peran <strong>@pa.ClaimedRole</strong>.</p>
             
             @if (myId != null && myId != pendingId)
             {
-                @if (Model.PendingAction.PlayersPassed.Contains(myId))
+                @if (pa.PlayersPassed.Contains(myId))
                 {
                     <p style="color:#2ecc71;">✅ Anda sudah setuju (Passed).</p>
                 }
                 else
                 {
                     <div style="display:flex; justify-content:center; gap:20px;">
-                        <form method="post" action="/Coup/Challenge">
+                        <form method="post" action="/Coup/SubmitChallenge">
                             <button type="submit" class="btn btn-red" style="font-size:1.2em;">🔍 CHALLENGE!</button>
                         </form>
                         <form method="post" action="/Coup/Pass">

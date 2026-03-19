@@ -84,7 +84,7 @@ namespace MyFirstApp.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> Challenge()
+        public async Task<IActionResult> SubmitChallenge()
         {
             var myId = HttpContext.Session.GetString("PlayerId");
             if (Game.GameState == "WaitingForChallenge" && myId != null && myId != Game.PendingAction?.SourceId)
