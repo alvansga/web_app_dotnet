@@ -21,13 +21,7 @@ namespace MyFirstApp.Controllers
         public IActionResult Index()
         {
             var myId = HttpContext.Session.GetString("PlayerId");
-            // Cek apakah ID di session masih ada di daftar pemain game (penting setelah Reset)
-            if (myId != null && !Game.Players.Any(p => p.Id == myId))
-            {
-                HttpContext.Session.Remove("PlayerId");
-                myId = null;
-            }
-
+            if (myId != null && !Game.Players.Any(p => p.Id == myId)) { HttpContext.Session.Remove("PlayerId"); myId = null; }
             ViewBag.MyPlayerId = myId;
             return View(Game);
         }
@@ -35,21 +29,12 @@ namespace MyFirstApp.Controllers
         public IActionResult GamePartial()
         {
             var myId = HttpContext.Session.GetString("PlayerId");
-            // Validasi ID yang sama untuk Partial Refresh
-            if (myId != null && !Game.Players.Any(p => p.Id == myId))
-            {
-                HttpContext.Session.Remove("PlayerId");
-                myId = null;
-            }
-
+            if (myId != null && !Game.Players.Any(p => p.Id == myId)) { HttpContext.Session.Remove("PlayerId"); myId = null; }
             ViewBag.MyPlayerId = myId;
             return PartialView("_GameContent", Game);
         }
 
-        private async Task NotifyClients()
-        {
-            await _hubContext.Clients.All.SendAsync("ReceiveUpdate");
-        }
+        private async Task NotifyClients() { await _hubContext.Clients.All.SendAsync("ReceiveUpdate"); }
 
         [HttpPost]
         public async Task<IActionResult> AddPlayer(string name, string description)
@@ -64,12 +49,7 @@ namespace MyFirstApp.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> Start()
-        {
-            Game.StartGame();
-            await NotifyClients();
-            return RedirectToAction("Index");
-        }
+        public async Task<IActionResult> Start() { Game.StartGame(); await NotifyClients(); return RedirectToAction("Index"); }
 
         [HttpPost]
         public async Task<IActionResult> Action(string type, string? targetId)
@@ -77,8 +57,7 @@ namespace MyFirstApp.Controllers
             var myId = HttpContext.Session.GetString("PlayerId");
             if (Game.GameState == "Playing" && Game.Players[Game.CurrentTurnIndex].Id == myId)
             {
-                Game.PerformAction(type, targetId);
-                await NotifyClients();
+                Game.PerformAction(type, targetId); await NotifyClients();
             }
             return RedirectToAction("Index");
         }
@@ -87,10 +66,9 @@ namespace MyFirstApp.Controllers
         public async Task<IActionResult> SubmitChallenge()
         {
             var myId = HttpContext.Session.GetString("PlayerId");
-            if (Game.GameState == "WaitingForChallenge" && myId != null && myId != Game.PendingAction?.SourceId)
+            if ((Game.GameState == "WaitingForChallenge" || Game.GameState == "WaitingForBlockChallenge") && myId != null)
             {
-                Game.Challenge(myId);
-                await NotifyClients();
+                Game.Challenge(myId); await NotifyClients();
             }
             return RedirectToAction("Index");
         }
@@ -99,10 +77,31 @@ namespace MyFirstApp.Controllers
         public async Task<IActionResult> Pass()
         {
             var myId = HttpContext.Session.GetString("PlayerId");
-            if (Game.GameState == "WaitingForChallenge" && myId != null && myId != Game.PendingAction?.SourceId)
+            if ((Game.GameState == "WaitingForChallenge" || Game.GameState == "WaitingForBlockChallenge") && myId != null)
             {
-                Game.PassChallenge(myId);
-                await NotifyClients();
+                Game.PassChallenge(myId); await NotifyClients();
+            }
+            return RedirectToAction("Index");
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> Block(string role)
+        {
+            var myId = HttpContext.Session.GetString("PlayerId");
+            if (Game.GameState == "WaitingForBlock" && myId != null)
+            {
+                Game.Block(myId, role); await NotifyClients();
+            }
+            return RedirectToAction("Index");
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> PassBlock()
+        {
+            var myId = HttpContext.Session.GetString("PlayerId");
+            if (Game.GameState == "WaitingForBlock" && myId != null)
+            {
+                Game.PassBlock(myId); await NotifyClients();
             }
             return RedirectToAction("Index");
         }

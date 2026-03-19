@@ -101,71 +101,110 @@ else
 
     @if (Model.GameState == "Playing" && isMyTurn)
     {
-        <div class="action-panel" style="border: 4px solid #f1c40f;">
-            <h3>Pilih Aksi Anda</h3>
-            <form method="post" action="/Coup/Action" style="display:inline-block;">
-                <input type="hidden" name="type" value="Income" />
-                <button type="submit" class="btn btn-blue">Income (+1 🪙)</button>
-            </form>
+        <div class="action-panel" style="border: 4px solid #f1c40f; background: #2c3e50; color: white;">
+            <h3>Aksi untuk Anda (@currentPlayer.Name)</h3>
             
-            <form method="post" action="/Coup/Action" style="display:inline-block;">
-                <input type="hidden" name="type" value="ForeignAid" />
-                <button type="submit" class="btn btn-blue">Foreign Aid (+2 🪙)</button>
-            </form>
+            <div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 5px;">
+                @* Aksi Dasar *@
+                <form method="post" action="/Coup/Action"><input type="hidden" name="type" value="Income" /><button type="submit" class="btn btn-blue">Income (+1)</button></form>
+                <form method="post" action="/Coup/Action"><input type="hidden" name="type" value="ForeignAid" /><button type="submit" class="btn btn-blue">Foreign Aid (+2)</button></form>
+                
+                @* Aksi Peran *@
+                <form method="post" action="/Coup/Action"><input type="hidden" name="type" value="Tax" /><button type="submit" class="btn btn-yellow">Tax (Duke)</button></form>
+                <form method="post" action="/Coup/Action"><input type="hidden" name="type" value="Exchange" /><button type="submit" class="btn btn-yellow">Exchange (Ambassador)</button></form>
+                
+                @if (currentPlayer.Coins >= 3) {
+                   <form method="post" action="/Coup/Action" style="display:flex; align-items:center;">
+                        <input type="hidden" name="type" value="Assassinate" />
+                        <select name="targetId" required style="width:100px;">
+                            @foreach (var p in Model.Players.Where(x => !x.IsDead && x.Id != myId)) { <option value="@p.Id">@p.Name</option> }
+                        </select>
+                        <button type="submit" class="btn btn-red">Assassinate (-3)</button>
+                    </form>
+                }
 
-            <form method="post" action="/Coup/Action" style="display:inline-block;">
-                <input type="hidden" name="type" value="Tax" />
-                <button type="submit" class="btn btn-yellow">Tax (Klaim DUKE)</button>
-            </form>
-
-            @if (currentPlayer?.Coins >= 7)
-            {
-                <form method="post" action="/Coup/Action" style="display:inline-block; margin-top:10px;">
-                    <input type="hidden" name="type" value="Coup" />
-                    <select name="targetId" required style="padding:10px; border-radius:5px;">
-                        <option value="">-- Pilih Target Coup --</option>
-                        @foreach (var p in Model.Players.Where(x => !x.IsDead && x.Id != (currentPlayer?.Id ?? "")))
-                        {
-                            <option value="@p.Id">@p.Name</option>
-                        }
+                <form method="post" action="/Coup/Action" style="display:flex; align-items:center;">
+                    <input type="hidden" name="type" value="Steal" />
+                    <select name="targetId" required style="width:100px;">
+                        @foreach (var p in Model.Players.Where(x => !x.IsDead && x.Id != myId)) { <option value="@p.Id">@p.Name</option> }
                     </select>
-                    <button type="submit" class="btn btn-red">⚔️ COUP (-7 🪙)</button>
+                    <button type="submit" class="btn btn-yellow">Steal (Captain)</button>
                 </form>
+
+                @if (currentPlayer.Coins >= 7) {
+                    <form method="post" action="/Coup/Action">
+                        <input type="hidden" name="type" value="Coup" />
+                        <select name="targetId" required style="width:100px;">
+                            @foreach (var p in Model.Players.Where(x => !x.IsDead && x.Id != myId)) { <option value="@p.Id">@p.Name</option> }
+                        </select>
+                        <button type="submit" class="btn btn-red">⚔️ COUP (-7)</button>
+                    </form>
+                }
+            </div>
+        </div>
+    }
+
+    @if ((Model.GameState == "WaitingForChallenge" || Model.GameState == "WaitingForBlockChallenge") && Model.PendingAction != null)
+    {
+        var pa = Model.PendingAction;
+        var subjectId = Model.GameState == "WaitingForChallenge" ? pa.SourceId : pa.BlockingPlayerId;
+        var subjectPlayer = Model.Players.FirstOrDefault(p => p.Id == subjectId);
+        var role = Model.GameState == "WaitingForChallenge" ? pa.ClaimedRole : pa.BlockClaimedRole;
+        
+        <div class="action-panel" style="background: #e67e22; border: 4px solid #d35400;">
+            <h3>📢 CHALLENGE PHASE!</h3>
+            <p><strong>@subjectPlayer?.Name</strong> mengklaim peran <strong>@role</strong>.</p>
+            
+            @if (myId != null && myId != subjectId)
+            {
+                var passes = Model.GameState == "WaitingForChallenge" ? pa.PlayersPassedChallenge : pa.PlayersPassedBlockChallenge;
+                @if (passes.Contains(myId))
+                {
+                    <p style="color:#2ecc71;">✅ Anda sudah setuju.</p>
+                }
+                else
+                {
+                    <div style="display:flex; justify-content:center; gap:10px;">
+                        <form method="post" action="/Coup/SubmitChallenge"><button type="submit" class="btn btn-red">🔍 CHALLENGE!</button></form>
+                        <form method="post" action="/Coup/Pass"><button type="submit" class="btn btn-green">✅ PASS / OK</button></form>
+                    </div>
+                }
+            }
+            else
+            {
+                <p style="font-style:italic;">Menunggu respon pemain lain...</p>
             }
         </div>
     }
 
-    @if (Model.GameState == "WaitingForChallenge" && Model.PendingAction != null)
+    @if (Model.GameState == "WaitingForBlock" && Model.PendingAction != null)
     {
         var pa = Model.PendingAction;
-        var pendingId = pa.SourceId;
-        var pendingPlayer = Model.Players.FirstOrDefault(p => p.Id == pendingId);
+        var canBlock = (pa.ActionType == "ForeignAid") || (myId == pa.TargetId);
         
-        <div class="action-panel" style="background: #e67e22; border: 4px solid #d35400;">
-            <h3>📢 CHALLENGE PHASE!</h3>
-            <p><strong>@(pendingPlayer?.Name ?? "Pemain")</strong> mengklaim aksi <strong>@pa.ActionType</strong> dengan peran <strong>@pa.ClaimedRole</strong>.</p>
+        <div class="action-panel" style="background: #2980b9; border: 4px solid #3498db;">
+            <h3>🛡️ BLOCK PHASE!</h3>
+            <p>Aksi <strong>@pa.ActionType</strong> sedang diproses. @(canBlock ? "Apakah Anda ingin melakukan BLOCK?" : "Hanya target yang bisa menghalangi.")</p>
             
-            @if (myId != null && myId != pendingId)
+            @if (canBlock)
             {
-                @if (pa.PlayersPassed.Contains(myId))
-                {
-                    <p style="color:#2ecc71;">✅ Anda sudah setuju (Passed).</p>
-                }
-                else
-                {
-                    <div style="display:flex; justify-content:center; gap:20px;">
-                        <form method="post" action="/Coup/SubmitChallenge">
-                            <button type="submit" class="btn btn-red" style="font-size:1.2em;">🔍 CHALLENGE!</button>
-                        </form>
-                        <form method="post" action="/Coup/Pass">
-                            <button type="submit" class="btn btn-green" style="font-size:1.2em;">✅ PASS / OK</button>
-                        </form>
-                    </div>
-                }
+                <div style="display:flex; justify-content:center; gap:5px; flex-wrap:wrap;">
+                    @if (pa.ActionType == "ForeignAid") {
+                       <form method="post" action="/Coup/Block"><input type="hidden" name="role" value="Duke" /><button type="submit" class="btn btn-yellow">Block with Duke</button></form>
+                    }
+                    @if (pa.ActionType == "Assassinate") {
+                       <form method="post" action="/Coup/Block"><input type="hidden" name="role" value="Contessa" /><button type="submit" class="btn btn-yellow">Block with Contessa</button></form>
+                    }
+                    @if (pa.ActionType == "Steal") {
+                       <form method="post" action="/Coup/Block"><input type="hidden" name="role" value="Captain" /><button type="submit" class="btn btn-yellow">Block with Captain</button></form>
+                       <form method="post" action="/Coup/Block"><input type="hidden" name="role" value="Ambassador" /><button type="submit" class="btn btn-yellow">Block with Ambassador</button></form>
+                    }
+                    <form method="post" action="/Coup/PassBlock"><button type="submit" class="btn btn-green">Allow Action</button></form>
+                </div>
             }
-            else if (myId == pendingId)
+            else
             {
-                <p style="font-style:italic;">Menunggu pemain lain memberikan tanggapan...</p>
+                <p style="font-style:italic;">Menunggu respon dari target (@(Model.Players.FirstOrDefault(x => x.Id == pa.TargetId)?.Name ?? "semua")...</p>
             }
         </div>
     }
