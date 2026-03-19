@@ -20,13 +20,29 @@ namespace MyFirstApp.Controllers
 
         public IActionResult Index()
         {
-            ViewBag.MyPlayerId = HttpContext.Session.GetString("PlayerId");
+            var myId = HttpContext.Session.GetString("PlayerId");
+            // Cek apakah ID di session masih ada di daftar pemain game (penting setelah Reset)
+            if (myId != null && !Game.Players.Any(p => p.Id == myId))
+            {
+                HttpContext.Session.Remove("PlayerId");
+                myId = null;
+            }
+
+            ViewBag.MyPlayerId = myId;
             return View(Game);
         }
 
         public IActionResult GamePartial()
         {
-            ViewBag.MyPlayerId = HttpContext.Session.GetString("PlayerId");
+            var myId = HttpContext.Session.GetString("PlayerId");
+            // Validasi ID yang sama untuk Partial Refresh
+            if (myId != null && !Game.Players.Any(p => p.Id == myId))
+            {
+                HttpContext.Session.Remove("PlayerId");
+                myId = null;
+            }
+
+            ViewBag.MyPlayerId = myId;
             return PartialView("_GameContent", Game);
         }
 
