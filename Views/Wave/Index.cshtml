@@ -77,6 +77,27 @@
                             <input type="number" id="step" value="0.05" step="0.01" class="w-full bg-slate-800/80 border border-slate-700/50 rounded-xl px-3 py-2.5 text-white outline-none focus:border-cyan-500/40 transition-all text-sm">
                         </div>
                     </div>
+
+                    <!-- Amplitude Controls -->
+                    <div class="space-y-3 pt-4 border-t border-white/5">
+                        <div class="flex items-center justify-between">
+                            <h3 class="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Amplitude (Y)</h3>
+                            <label class="flex items-center gap-2 text-[10px] text-slate-400 font-bold uppercase cursor-pointer group">
+                                <input type="checkbox" id="autoY" checked class="w-3 h-3 accent-cyan-500"> 
+                                <span class="group-hover:text-cyan-400 transition-colors">AUTO</span>
+                            </label>
+                        </div>
+                        <div id="yControlRow" class="grid grid-cols-2 gap-3 opacity-40 pointer-events-none transition-all duration-300">
+                            <div class="space-y-1.5">
+                                <label class="block text-[10px] text-slate-400 font-bold uppercase tracking-wider">Min Amp</label>
+                                <input type="number" id="yMin" value="-2" step="0.5" class="w-full bg-slate-800/80 border border-slate-700/50 rounded-xl px-3 py-2 text-white outline-none focus:border-cyan-500/40 transition-all text-sm">
+                            </div>
+                            <div class="space-y-1.5">
+                                <label class="block text-[10px] text-slate-400 font-bold uppercase tracking-wider">Max Amp</label>
+                                <input type="number" id="yMax" value="2" step="0.5" class="w-full bg-slate-800/80 border border-slate-700/50 rounded-xl px-3 py-2 text-white outline-none focus:border-cyan-500/40 transition-all text-sm">
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -194,6 +215,11 @@
             const step = parseFloat(document.getElementById('step').value);
             const analysisType = document.getElementById('analysisType').value;
 
+            // Y Axis Settings
+            const autoY = document.getElementById('autoY').checked;
+            const yMin = parseFloat(document.getElementById('yMin').value);
+            const yMax = parseFloat(document.getElementById('yMax').value);
+
             if (xMin >= xMax || step <= 0) return;
 
             const allDatasets = [];
@@ -276,17 +302,28 @@
             });
 
             if (allDatasets.length > 0) {
-                drawChart(globalXValues, allDatasets, analysisType);
+                drawChart(globalXValues, allDatasets, analysisType, autoY, yMin, yMax);
             }
         }
 
-        function drawChart(xValues, datasets, type) {
+        function drawChart(xValues, datasets, type, autoY, yMin, yMax) {
             const ctx = document.getElementById('waveChart').getContext('2d');
             
             if (chartInstance) chartInstance.destroy();
 
             const xLabel = type === 'time' ? 'Time (t)' : 'Domain Variable';
             const yLabel = type === 'time' ? 'Amplitude f(t)' : 'Magnitude / Value';
+
+            const yAxisConfig = {
+                title: { display: true, text: yLabel, color: '#64748b' },
+                grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                ticks: { color: '#64748b' }
+            };
+
+            if (!autoY) {
+                yAxisConfig.min = yMin;
+                yAxisConfig.max = yMax;
+            }
 
             chartInstance = new Chart(ctx, {
                 type: 'line',
@@ -301,11 +338,7 @@
                             grid: { color: 'rgba(255, 255, 255, 0.03)' },
                             ticks: { color: '#64748b', maxTicksLimit: 10 }
                         },
-                        y: {
-                            title: { display: true, text: yLabel, color: '#64748b' },
-                            grid: { color: 'rgba(255, 255, 255, 0.05)' },
-                            ticks: { color: '#64748b' }
-                        }
+                        y: yAxisConfig
                     },
                     plugins: {
                         legend: { position: 'top', labels: { color: '#f8fafc', boxWidth: 12, usePointStyle: true, font: { size: 12 } } },
@@ -314,6 +347,21 @@
                 }
             });
         }
+
+        // Toggle Y Controls
+        const autoYCheckbox = document.getElementById('autoY');
+        const yControlRow = document.getElementById('yControlRow');
+        autoYCheckbox.addEventListener('change', () => {
+            if (autoYCheckbox.checked) {
+                yControlRow.classList.add('opacity-40', 'pointer-events-none');
+            } else {
+                yControlRow.classList.remove('opacity-40', 'pointer-events-none');
+            }
+            simulate();
+        });
+
+        document.getElementById('yMin').addEventListener('input', simulate);
+        document.getElementById('yMax').addEventListener('input', simulate);
 
         document.getElementById('simulateBtn').addEventListener('click', simulate);
         
