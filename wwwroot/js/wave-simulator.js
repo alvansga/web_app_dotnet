@@ -11,18 +11,18 @@ function createFunctionRow(value = '', color = null) {
     }
     
     const div = document.createElement('div');
-    div.className = 'func-row flex items-center gap-3 group';
+    div.className = 'func-row flex items-center gap-2 sm:gap-3 group';
     div.innerHTML = `
         <div class="flex-grow relative">
-            <div class="absolute inset-y-0 left-0 pl-3 flex items-center">
-                <input type="color" class="colorPicker w-6 h-6 bg-transparent border-none cursor-pointer p-0 rounded-full overflow-hidden" 
+            <div class="absolute inset-y-0 left-0 pl-2 sm:pl-3 flex items-center">
+                <input type="color" class="colorPicker w-5 h-5 sm:w-6 sm:h-6 bg-transparent border-none cursor-pointer p-0 rounded-full overflow-hidden" 
                        value="${color}" title="Custom Color">
             </div>
-            <input type="text" class="funcInput w-full bg-slate-800/50 border border-slate-700 rounded-xl pl-11 pr-4 py-3 text-white focus:outline-none focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/20 font-mono text-base transition-all" 
+            <input type="text" class="funcInput w-full bg-slate-800/50 border border-slate-700 rounded-xl pl-9 sm:pl-11 pr-3 sm:pr-4 py-2 sm:py-3 text-white focus:outline-none focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/20 font-mono text-sm sm:text-base transition-all" 
                    value="${value}" placeholder="e.g., sin(t)">
         </div>
-        <button class="removeFuncBtn opacity-0 group-hover:opacity-100 p-2 text-slate-500 hover:text-red-400 transition-all transform hover:scale-110" title="Remove">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+        <button class="removeFuncBtn opacity-100 lg:opacity-0 group-hover:opacity-100 p-1.5 sm:p-2 text-slate-500 hover:text-red-400 transition-all transform hover:scale-110" title="Remove">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 sm:h-5 sm:w-5" viewBox="0 0 20 20" fill="currentColor">
                 <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
             </svg>
         </button>
