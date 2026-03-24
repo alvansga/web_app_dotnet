@@ -1,6 +1,8 @@
  var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllersWithViews();
-builder.Services.AddSignalR();
+builder.Services.AddSignalR(hubOptions => {
+    hubOptions.MaximumReceiveMessageSize = 10 * 1024 * 1024; // 10MB
+});
 
 var app = builder.Build();
 app.UseStaticFiles();

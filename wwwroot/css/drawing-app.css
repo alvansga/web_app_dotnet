@@ -120,11 +120,43 @@ body {
 .canvas-wrapper {
     position: relative;
     transform-origin: center;
-    background: white; /* Actual canvas backing */
+    background: white;
     box-shadow: 0 0 100px rgba(0,0,0,0.5);
 }
 
+.bg-layer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 2500px;
+    height: 2500px;
+    z-index: 0;
+    pointer-events: none;
+    object-fit: fill;
+}
+
+#drawing-canvas {
+    position: relative;
+    z-index: 1;
+    background: transparent;
+    display: block;
+}
+
 /* Side Panel (Settings) */
+#bg-options {
+    margin-top: 0.5rem;
+}
+
+.ghost-slider {
+    height: 120px;
+    gap: 0.5rem !important;
+}
+
+#bg-opacity-label {
+    font-size: 1.1rem;
+    color: var(--accent);
+}
+
 .side-panel {
     position: absolute;
     top: 50%;

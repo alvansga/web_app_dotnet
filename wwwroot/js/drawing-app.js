@@ -41,8 +41,7 @@ canvas.height = WORLD_SIZE;
 function init() {
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
-    ctx.fillStyle = "white";
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
     
     // Center initially
     const vw = viewport.clientWidth;
@@ -63,9 +62,17 @@ const connection = new signalR.HubConnectionBuilder()
     .build();
 
 connection.on("ReceiveDraw", (data) => drawLine(data));
-connection.on("CanvasCleared", () => clearLocal());
+connection.on("CanvasCleared", () => {
+    clearLocal();
+    bgLayer.src = "";
+    bgLayer.style.display = 'none';
+    bgOptions.style.display = 'none';
+});
+connection.on("ReceiveBackground", (base64) => {
+    console.log("Received background update, length:", base64?.length || 0);
+    updateBackgroundLocal(base64);
+});
 connection.on("LoadHistory", (history) => {
-    // Clear and redraw everything from history
     clearLocal(); 
     history.forEach(stroke => drawLine(stroke));
 });
@@ -275,8 +282,7 @@ function drawLine(data) {
 }
 
 function clearLocal() {
-    ctx.fillStyle = "white";
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
 }
 
 const palette = document.getElementById('palette');
@@ -368,17 +374,83 @@ function toggleUI() {
 
 toggleUiBtn.onclick = toggleUI;
 
+window.onload = init;
+window.onresize = applyTransform;
+
+// --- BACKGROUND LAYER MANAGEMENT ---
+const addBgBtn = document.getElementById('add-bg-btn');
+const bgUpload = document.getElementById('bg-upload');
+const bgLayer = document.getElementById('bg-layer');
+const bgOptions = document.getElementById('bg-options');
+const bgOpacityRange = document.getElementById('bg-opacity');
+
+if (addBgBtn) {
+    addBgBtn.onclick = () => {
+        const hasBg = bgLayer.src && bgLayer.style.display !== 'none';
+        if (hasBg) {
+            // Remove Background
+            if (confirm("Remove background for everyone?")) {
+                bgLayer.src = "";
+                bgLayer.style.display = 'none';
+                bgOptions.style.display = 'none';
+                addBgBtn.querySelector('i').className = 'fa-solid fa-layer-group';
+                if (connection.state === "Connected") {
+                    connection.invoke("UpdateBackground", "");
+                }
+            }
+        } else {
+            bgUpload.click();
+        }
+    };
+}
+
+if (bgUpload) {
+    bgUpload.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                const base64 = event.target.result;
+                updateBackgroundLocal(base64);
+                if (connection.state === "Connected") {
+                    connection.invoke("UpdateBackground", base64);
+                }
+            };
+            reader.readAsDataURL(file);
+        }
+    });
+}
+
+function updateBackgroundLocal(base64) {
+    if (!base64) {
+        bgLayer.src = "";
+        bgLayer.style.display = 'none';
+        bgOptions.style.display = 'none';
+        addBgBtn.querySelector('i').className = 'fa-solid fa-layer-group';
+    } else {
+        bgLayer.src = base64;
+        bgLayer.style.display = 'block';
+        bgOptions.style.display = 'flex';
+        addBgBtn.querySelector('i').className = 'fa-solid fa-trash-can'; // Icon change to trash when active
+    }
+}
+
+if (bgOpacityRange) {
+    bgOpacityRange.oninput = () => {
+        if (bgLayer) bgLayer.style.opacity = bgOpacityRange.value;
+    };
+}
+
+// Update shortcuts
 window.onkeydown = (e) => {
     if (e.code === 'Space') { spacePressed = true; viewport.style.cursor = 'grab'; }
     if (e.code === 'Tab') { e.preventDefault(); toggleUI(); }
     if (e.key.toLowerCase() === 'b') setTool('pencil');
     if (e.key.toLowerCase() === 'e') setTool('eraser');
     if (e.key.toLowerCase() === 'h') setTool('move');
+    if (e.key.toLowerCase() === 'l') bgUpload?.click();
 };
 
 window.onkeyup = (e) => {
     if (e.code === 'Space') { spacePressed = false; setTool(currentTool); }
 };
-
-window.onload = init;
-window.onresize = applyTransform;

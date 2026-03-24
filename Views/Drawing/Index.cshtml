@@ -30,6 +30,7 @@
 
     <main class="canvas-viewport" id="viewport">
         <div class="canvas-wrapper" id="canvas-wrapper">
+            <img id="bg-layer" class="bg-layer" style="display:none; opacity: 0.5;">
             <canvas id="drawing-canvas"></canvas>
         </div>
         
@@ -47,6 +48,19 @@
                 <button id="move-tool" class="tool-btn navigate" title="Move/Zoom (H)">
                     <i class="fa-solid fa-hand"></i>
                 </button>
+                <div class="tool-divider v"></div>
+                <!-- Layer Control -->
+                <button id="add-bg-btn" class="tool-btn bg-trigger" title="Add Background (L)">
+                    <i class="fa-solid fa-layer-group"></i>
+                </button>
+                <input type="file" id="bg-upload" accept="image/*" style="display:none">
+            </div>
+
+            <div id="bg-options" class="setting-group" style="display:none">
+                <div class="vertical-slider-container ghost-slider">
+                    <span id="bg-opacity-label"><i class="fa-solid fa-ghost"></i></span>
+                    <input type="range" id="bg-opacity" min="0" max="1" step="0.05" value="0.5" orient="vertical">
+                </div>
             </div>
 
             <div class="setting-group color-group">
