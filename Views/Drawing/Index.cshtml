@@ -30,8 +30,22 @@
             <canvas id="drawing-canvas"></canvas>
         </div>
         
-        <!-- Side Settings (Color & Size) -->
+        <!-- Side Settings (Tools, Color & Size) -->
         <div class="side-panel">
+            <!-- Tool Switcher -->
+            <div class="tool-switcher">
+                <button id="pencil-tool" class="tool-btn active" title="Pencil (B)">
+                    <i class="fa-solid fa-pencil"></i>
+                </button>
+                <button id="eraser-tool" class="tool-btn" title="Eraser (E)">
+                    <i class="fa-solid fa-eraser"></i>
+                </button>
+                <div class="tool-divider v"></div>
+                <button id="move-tool" class="tool-btn navigate" title="Move/Zoom (H)">
+                    <i class="fa-solid fa-hand"></i>
+                </button>
+            </div>
+
             <div class="setting-group color-group">
                 <div class="color-wrapper">
                     <input type="color" id="color-picker" value="#3a86ff">
@@ -61,7 +75,7 @@
 
         <div class="navigation-hint">
             <span class="desktop-hint"><i class="fa-solid fa-mouse"></i> Space + Drag: Pan | Wheel: Zoom</span>
-            <span class="mobile-hint"><i class="fa-solid fa-hand-pointer"></i> 2 Fingers: Pan & Zoom</span>
+            <span class="mobile-hint"><i class="fa-solid fa-hand-pointer"></i> 2 Fingers: Zoom Only | 1 Finger (Hand): Pan</span>
         </div>
     </main>
 

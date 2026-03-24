@@ -96,45 +96,87 @@ function getCoordinates(e) {
     return [x, y];
 }
 
-// --- INTERACTION HANDLERS ---
-function startDrawing(e) {
-    if (e.button === 1 || spacePressed || (e.touches && e.touches.length > 1)) {
-        isPanning = true;
-        if (e.touches) {
-            if (e.touches.length === 2) {
-                lastMidpoint = {
-                    x: (e.touches[0].clientX + e.touches[1].clientX) / 2,
-                    y: (e.touches[0].clientY + e.touches[1].clientY) / 2
-                };
-            }
-            lastTouchPos = { x: e.touches[0].clientX, y: e.touches[0].clientY };
-        }
-        return;
-    }
+// --- TOOL STATE ---
+let currentTool = 'pencil'; // 'pencil', 'eraser', 'move'
+let lastSelectedColor = '#3a86ff';
+
+const pencilBtn = document.getElementById('pencil-tool');
+const eraserBtn = document.getElementById('eraser-tool');
+const moveBtn = document.getElementById('move-tool');
+
+function setTool(tool) {
+    currentTool = tool;
+    pencilBtn.classList.toggle('active', tool === 'pencil');
+    eraserBtn.classList.toggle('active', tool === 'eraser');
+    moveBtn.classList.toggle('active', tool === 'move');
     
-    drawing = true;
-    const [x, y] = getCoordinates(e);
-    lastX = x;
-    lastY = y;
+    // Set appropriate cursor
+    if (tool === 'move') viewport.style.cursor = 'grab';
+    else if (tool === 'eraser') viewport.style.cursor = 'cell';
+    else viewport.style.cursor = 'crosshair';
 }
 
-function stopDrawing() {
+pencilBtn.onclick = () => setTool('pencil');
+eraserBtn.onclick = () => setTool('eraser');
+moveBtn.onclick = () => setTool('move');
+
+// --- INTERACTION HANDLERS ---
+function startInteraction(e) {
+    const isTouch = e.touches && e.touches.length > 0;
+    const touchCount = isTouch ? e.touches.length : 1;
+
+    // Reset multi-touch state
+    if (touchCount === 2) {
+        isPanning = true;
+        drawing = false; // Never draw with 2 fingers
+        const t1 = e.touches[0];
+        const t2 = e.touches[1];
+        initialPinchDistance = Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY);
+        initialPinchScale = transform.scale;
+        lastMidpoint = { 
+            x: (t1.clientX + t2.clientX) / 2, 
+            y: (t1.clientY + t2.clientY) / 2 
+        };
+        return;
+    }
+
+    // 1-Finger/Mouse logic
+    if (currentTool === 'move' || e.button === 1 || spacePressed) {
+        isPanning = true;
+        drawing = false;
+        if (isTouch) {
+            lastTouchPos = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+        }
+    } else {
+        drawing = true;
+        isPanning = false;
+        const [x, y] = getCoordinates(e);
+        lastX = x;
+        lastY = y;
+    }
+}
+
+function stopInteraction() {
     drawing = false;
     isPanning = false;
     initialPinchDistance = null;
     lastMidpoint = null;
 }
 
-function move(e) {
+function handleMove(e) {
+    const isTouch = e.touches && e.touches.length > 0;
+    const touchCount = isTouch ? e.touches.length : 1;
+
+    // Handle 2-Finger Zoom ONLY
+    if (isTouch && touchCount === 2) {
+        handlePinchOnly(e);
+        return;
+    }
+
+    // Handle Panning (1 finger or mouse)
     if (isPanning) {
-        if (e.touches && e.touches.length === 2) {
-            handlePinchAndPan(e);
-            return;
-        }
-        
-        // Single finger/mouse pan
         let dx, dy;
-        if (e.touches) {
+        if (isTouch) {
             dx = e.touches[0].clientX - lastTouchPos.x;
             dy = e.touches[0].clientY - lastTouchPos.y;
             lastTouchPos = { x: e.touches[0].clientX, y: e.touches[0].clientY };
@@ -148,27 +190,28 @@ function move(e) {
         return;
     }
 
-    if (!drawing) return;
-    
-    const [x, y] = getCoordinates(e);
-    const drawData = {
-        lastX, lastY, x, y,
-        color: colorPicker.value,
-        size: brushSizeRange.value
-    };
+    // Handle Drawing
+    if (drawing) {
+        const [x, y] = getCoordinates(e);
+        const color = (currentTool === 'eraser') ? '#ffffff' : colorPicker.value;
+        const drawData = {
+            lastX, lastY, x, y,
+            color: color,
+            size: brushSizeRange.value
+        };
 
-    drawLine(drawData);
-    if (connection.state === "Connected") {
-        connection.invoke("DrawLine", drawData).catch(err => console.error(err));
+        drawLine(drawData);
+        if (connection.state === "Connected") {
+            connection.invoke("DrawLine", drawData).catch(err => console.error(err));
+        }
+        [lastX, lastY] = [x, y];
     }
-    [lastX, lastY] = [x, y];
 }
 
-// Pinch & Pan Combined (Smooth Midpoint logic)
-function handlePinchAndPan(e) {
+// Pinch & Zoom Only (Translation component removed for 2 fingers)
+function handlePinchOnly(e) {
     const t1 = e.touches[0];
     const t2 = e.touches[1];
-    
     const midX = (t1.clientX + t2.clientX) / 2;
     const midY = (t1.clientY + t2.clientY) / 2;
     const dist = Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY);
@@ -176,24 +219,12 @@ function handlePinchAndPan(e) {
     if (initialPinchDistance === null) {
         initialPinchDistance = dist;
         initialPinchScale = transform.scale;
-        lastMidpoint = { x: midX, y: midY };
     } else {
-        // 1. Handle Zoom
         const factor = dist / initialPinchDistance;
         const newScale = Math.min(Math.max(initialPinchScale * factor, 0.05), 10);
         
-        // 2. Handle Pan (Apply movement of the midpoint)
-        const dx = midX - lastMidpoint.x;
-        const dy = midY - lastMidpoint.y;
-        
-        // Apply zoom at the NEW midpoint
+        // Zoom centered at midpoint, but NO additional translation (dx/dy)
         zoomAt(midX, midY, newScale);
-        
-        // Apply residual translation
-        transform.x += dx;
-        transform.y += dy;
-        
-        lastMidpoint = { x: midX, y: midY };
         applyTransform();
     }
 }
@@ -202,56 +233,37 @@ function zoomAt(clientX, clientY, newScale) {
     const oldScale = transform.scale;
     const mouseX = clientX - transform.x;
     const mouseY = clientY - transform.y;
-    
-    const newX = clientX - (mouseX / oldScale) * newScale;
-    const newY = clientY - (mouseY / oldScale) * newScale;
-    
+    transform.x = clientX - (mouseX / oldScale) * newScale;
+    transform.y = clientY - (mouseY / oldScale) * newScale;
     transform.scale = newScale;
-    transform.x = newX;
-    transform.y = newY;
-    // applyTransform() is called by the caller
 }
 
-// Mouse Wheel Zoom (Smoother Step)
+// Event Listeners
 viewport.addEventListener('wheel', (e) => {
     e.preventDefault();
-    const delta = e.deltaY > 0 ? 0.95 : 1.05; // Smaller steps for comfort
-    const newScale = Math.min(Math.max(transform.scale * delta, 0.05), 10);
-    zoomAt(e.clientX, e.clientY, newScale);
+    const delta = e.deltaY > 0 ? 0.95 : 1.05;
+    zoomAt(e.clientX, e.clientY, transform.scale * delta);
     applyTransform();
 }, { passive: false });
 
-// Key Bindings
-window.addEventListener('keydown', (e) => {
-    if (e.code === 'Space') {
-        spacePressed = true;
-        viewport.style.cursor = 'grab';
-    }
-});
-
-window.addEventListener('keyup', (e) => {
-    if (e.code === 'Space') {
-        spacePressed = false;
-        viewport.style.cursor = 'crosshair';
-    }
-});
-
-// Canvas Events
-canvas.addEventListener('mousedown', startDrawing);
-window.addEventListener('mousemove', move);
-window.addEventListener('mouseup', stopDrawing);
+// Global Events
+canvas.addEventListener('mousedown', startInteraction);
+window.addEventListener('mousemove', handleMove);
+window.addEventListener('mouseup', stopInteraction);
 
 canvas.addEventListener('touchstart', (e) => {
-    if (e.touches.length > 0) startDrawing(e);
+    e.preventDefault();
+    startInteraction(e);
 }, { passive: false });
 
 window.addEventListener('touchmove', (e) => {
-    if (e.touches.length > 0) move(e);
+    e.preventDefault();
+    handleMove(e);
 }, { passive: false });
 
-window.addEventListener('touchend', stopDrawing);
+window.addEventListener('touchend', stopInteraction);
 
-// Draw logic
+// Utilities
 function drawLine(data) {
     ctx.beginPath();
     ctx.moveTo(data.lastX, data.lastY);
@@ -267,27 +279,31 @@ function clearLocal() {
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 }
 
-// Toolbar controls
-colorPicker.addEventListener('input', () => {});
-brushSizeRange.addEventListener('input', () => {
-    sizeValueSpan.textContent = brushSizeRange.value;
-});
+// Tooling & Actions
+colorPicker.oninput = () => { if (currentTool === 'eraser') setTool('pencil'); };
+brushSizeRange.oninput = () => { sizeValueSpan.textContent = brushSizeRange.value; };
 
-clearBtn.addEventListener('click', () => {
-    if (confirm('Bersihkan kanvas untuk semua orang?')) {
-        connection.invoke("ClearCanvas").catch(e => console.error(e));
-    }
-});
+clearBtn.onclick = () => {
+    if (confirm('Clear canvas for everyone?')) connection.invoke("ClearCanvas");
+};
 
-saveBtn.addEventListener('click', () => {
+saveBtn.onclick = () => {
     const link = document.createElement('a');
     link.download = `scribble-${Date.now()}.png`;
     link.href = canvas.toDataURL();
     link.click();
-});
+};
 
-window.addEventListener('load', init);
-window.addEventListener('resize', () => {
-    // Keep transforms relevant after window resize
-    applyTransform();
-});
+window.onkeydown = (e) => {
+    if (e.code === 'Space') { spacePressed = true; viewport.style.cursor = 'grab'; }
+    if (e.key.toLowerCase() === 'b') setTool('pencil');
+    if (e.key.toLowerCase() === 'e') setTool('eraser');
+    if (e.key.toLowerCase() === 'h') setTool('move');
+};
+
+window.onkeyup = (e) => {
+    if (e.code === 'Space') { spacePressed = false; setTool(currentTool); }
+};
+
+window.onload = init;
+window.onresize = applyTransform;

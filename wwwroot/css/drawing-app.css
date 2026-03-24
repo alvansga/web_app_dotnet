@@ -142,19 +142,56 @@ body {
     box-shadow: var(--shadow);
 }
 
+/* Side Panel Elements */
+.tool-switcher {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    margin-bottom: 1rem;
+}
+
+.tool-btn {
+    width: 46px;
+    height: 46px;
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border);
+    color: white;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: all 0.2s ease;
+}
+
+.tool-btn.active {
+    background: var(--primary);
+    border-color: var(--primary);
+    box-shadow: 0 0 15px var(--primary);
+}
+
+.tool-divider.v {
+    height: 1px;
+    width: 60%;
+    margin: 0.4rem auto;
+    background: var(--border);
+}
+
 .setting-group {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 0.5rem;
+    gap: 0.6rem;
+    margin-top: 1rem;
 }
 
 .vertical-slider-container {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 0.5rem;
-    height: 180px;
+    gap: 0.8rem;
+    height: 200px;
+    padding: 0.5rem;
 }
 
 #size-value {
