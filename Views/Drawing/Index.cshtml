@@ -1,0 +1,65 @@
+@{
+    Layout = null;
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ScribbleRoom - Collaborative Drawing</title>
+    <link rel="stylesheet" href="/css/drawing-app.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="dark-theme">
+    <header class="app-header">
+        <div class="logo">
+            <i class="fa-solid fa-paint-brush"></i>
+            <h1>Scribble<span>Room</span></h1>
+        </div>
+        <div class="status">
+            <span id="connection-status" class="status-indicator offline"></span>
+            <span id="connection-text">Connecting...</span>
+        </div>
+    </header>
+
+    <main class="canvas-container">
+        <canvas id="drawing-canvas"></canvas>
+        
+        <div class="toolbar">
+            <div class="tool-group">
+                <label for="color-picker">Color</label>
+                <div class="color-wrapper">
+                    <input type="color" id="color-picker" value="#3a86ff">
+                </div>
+            </div>
+
+            <div class="tool-group">
+                <label for="brush-size">Size</label>
+                <div class="range-wrapper">
+                    <input type="range" id="brush-size" min="1" max="50" value="5">
+                    <span id="size-value">5</span>
+                </div>
+            </div>
+
+            <div class="tool-divider"></div>
+
+            <div class="tool-actions">
+                <button id="clear-btn" title="Clear Canvas">
+                    <i class="fa-solid fa-trash-can"></i>
+                    <span>Clear</span>
+                </button>
+                <button id="save-btn" title="Save Drawing">
+                    <i class="fa-solid fa-download"></i>
+                    <span>Save</span>
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.5/signalr.min.js"></script>
+    <script src="/js/drawing-app.js"></script>
+</body>
+</html>

@@ -1,8 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
 
-namespace MyFirstApp.Controllers
+namespace WebAppSandbox.Controllers
 {
-    public class WaveController : Controller
+    public class DrawingController : Controller
     {
         public IActionResult Index()
         {
