@@ -25,37 +25,43 @@
         </div>
     </header>
 
-    <main class="canvas-container">
-        <canvas id="drawing-canvas"></canvas>
+    <main class="canvas-viewport" id="viewport">
+        <div class="canvas-wrapper" id="canvas-wrapper">
+            <canvas id="drawing-canvas"></canvas>
+        </div>
         
-        <div class="toolbar">
-            <div class="tool-group">
-                <label for="color-picker">Color</label>
+        <!-- Side Settings (Color & Size) -->
+        <div class="side-panel">
+            <div class="setting-group color-group">
                 <div class="color-wrapper">
                     <input type="color" id="color-picker" value="#3a86ff">
                 </div>
             </div>
-
-            <div class="tool-group">
-                <label for="brush-size">Size</label>
-                <div class="range-wrapper">
-                    <input type="range" id="brush-size" min="1" max="50" value="5">
+            
+            <div class="setting-group size-group">
+                <div class="vertical-slider-container">
                     <span id="size-value">5</span>
+                    <input type="range" id="brush-size" min="1" max="100" value="5" orient="vertical">
                 </div>
             </div>
+        </div>
 
-            <div class="tool-divider"></div>
+        <!-- Bottom Actions (Clear & Save) -->
+        <div class="bottom-bar">
+            <button id="clear-btn" class="icon-btn danger" title="Clear All">
+                <i class="fa-solid fa-trash-can"></i>
+                <span>Clear</span>
+            </button>
+            <div class="divider"></div>
+            <button id="save-btn" class="icon-btn primary" title="Save Drawing">
+                <i class="fa-solid fa-download"></i>
+                <span>Save</span>
+            </button>
+        </div>
 
-            <div class="tool-actions">
-                <button id="clear-btn" title="Clear Canvas">
-                    <i class="fa-solid fa-trash-can"></i>
-                    <span>Clear</span>
-                </button>
-                <button id="save-btn" title="Save Drawing">
-                    <i class="fa-solid fa-download"></i>
-                    <span>Save</span>
-                </button>
-            </div>
+        <div class="navigation-hint">
+            <span class="desktop-hint"><i class="fa-solid fa-mouse"></i> Space + Drag: Pan | Wheel: Zoom</span>
+            <span class="mobile-hint"><i class="fa-solid fa-hand-pointer"></i> 2 Fingers: Pan & Zoom</span>
         </div>
     </main>
 

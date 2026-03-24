@@ -1,6 +1,8 @@
 "use strict";
 
 const canvas = document.getElementById('drawing-canvas');
+const wrapper = document.getElementById('canvas-wrapper');
+const viewport = document.getElementById('viewport');
 const ctx = canvas.getContext('2d');
 const colorPicker = document.getElementById('color-picker');
 const brushSizeRange = document.getElementById('brush-size');
@@ -10,13 +12,49 @@ const saveBtn = document.getElementById('save-btn');
 const connectionStatus = document.getElementById('connection-status');
 const connectionText = document.getElementById('connection-text');
 
+// --- APP STATE ---
 let drawing = false;
 let lastX = 0;
 let lastY = 0;
-let currentSettings = {
-    color: '#3a86ff',
-    size: 5
+let isPanning = false;
+let spacePressed = false;
+
+// Viewport Transform
+let transform = {
+    x: 0,
+    y: 0,
+    scale: 0.8 // Start slightly zoomed out
 };
+
+// Multi-touch tracking
+let initialPinchDistance = null;
+let initialPinchScale = 1;
+let lastMidpoint = { x: 0, y: 0 };
+let lastTouchPos = { x: 0, y: 0 };
+
+// World Config
+const WORLD_SIZE = 2500;
+canvas.width = WORLD_SIZE;
+canvas.height = WORLD_SIZE;
+
+// --- INITIALIZE ---
+function init() {
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.fillStyle = "white";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    
+    // Center initially
+    const vw = viewport.clientWidth;
+    const vh = viewport.clientHeight;
+    transform.x = (vw - WORLD_SIZE * transform.scale) / 2;
+    transform.y = (vh - WORLD_SIZE * transform.scale) / 2;
+    applyTransform();
+}
+
+function applyTransform() {
+    wrapper.style.transform = `translate(${transform.x}px, ${transform.y}px) scale(${transform.scale})`;
+}
 
 // --- SIGNALR SETUP ---
 const connection = new signalR.HubConnectionBuilder()
@@ -24,81 +62,86 @@ const connection = new signalR.HubConnectionBuilder()
     .withAutomaticReconnect()
     .build();
 
-connection.on("ReceiveDraw", (data) => {
-    drawRemote(data);
-});
-
-connection.on("CanvasCleared", () => {
-    clearLocal();
-});
-
-connection.onreconnecting(error => {
-    updateStatus('offline', 'Reconnecting...');
-});
-
-connection.onreconnected(connectionId => {
-    updateStatus('online', 'Connected');
-});
-
-connection.onclose(error => {
-    updateStatus('offline', 'Disconnected');
-});
-
-async function startConnection() {
-    try {
-        await connection.start();
-        updateStatus('online', 'Connected');
-        console.log("SignalR Connected.");
-    } catch (err) {
-        console.error("SignalR Connection Error: ", err);
-        updateStatus('offline', 'Connection Failed');
-        setTimeout(startConnection, 5000);
-    }
-}
+connection.on("ReceiveDraw", (data) => drawLine(data));
+connection.on("CanvasCleared", () => clearLocal());
+connection.start().then(() => updateStatus('online', 'Connected')).catch(e => updateStatus('offline', 'Error'));
 
 function updateStatus(status, text) {
+    if (!connectionStatus) return;
     connectionStatus.className = `status-indicator ${status}`;
     connectionText.textContent = text;
 }
 
-startConnection();
-
-// --- CANVAS LOGIC ---
-function resizeCanvas() {
-    // Save current drawing
-    const tempImage = canvas.toDataURL();
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
+// --- COORDINATE MAPPING ---
+function getCoordinates(e) {
+    const rect = canvas.getBoundingClientRect();
+    let clientX, clientY;
     
-    // Fill background with white
-    ctx.fillStyle = "white";
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    if (e.touches && e.touches.length > 0) {
+        clientX = e.touches[0].clientX;
+        clientY = e.touches[0].clientY;
+    } else {
+        clientX = e.clientX;
+        clientY = e.clientY;
+    }
     
-    // Restore drawing
-    const img = new Image();
-    img.src = tempImage;
-    img.onload = () => {
-        ctx.drawImage(img, 0, 0);
-    };
-    
-    // Set drawing properties
-    ctx.lineCap = 'round';
-    ctx.lineJoin = 'round';
+    const x = (clientX - rect.left) * (canvas.width / rect.width);
+    const y = (clientY - rect.top) * (canvas.height / rect.height);
+    return [x, y];
 }
 
-window.addEventListener('resize', resizeCanvas);
-resizeCanvas();
-
+// --- INTERACTION HANDLERS ---
 function startDrawing(e) {
+    if (e.button === 1 || spacePressed || (e.touches && e.touches.length > 1)) {
+        isPanning = true;
+        if (e.touches) {
+            if (e.touches.length === 2) {
+                lastMidpoint = {
+                    x: (e.touches[0].clientX + e.touches[1].clientX) / 2,
+                    y: (e.touches[0].clientY + e.touches[1].clientY) / 2
+                };
+            }
+            lastTouchPos = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+        }
+        return;
+    }
+    
     drawing = true;
-    [lastX, lastY] = getCoordinates(e);
+    const [x, y] = getCoordinates(e);
+    lastX = x;
+    lastY = y;
 }
 
 function stopDrawing() {
     drawing = false;
+    isPanning = false;
+    initialPinchDistance = null;
+    lastMidpoint = null;
 }
 
-function draw(e) {
+function move(e) {
+    if (isPanning) {
+        if (e.touches && e.touches.length === 2) {
+            handlePinchAndPan(e);
+            return;
+        }
+        
+        // Single finger/mouse pan
+        let dx, dy;
+        if (e.touches) {
+            dx = e.touches[0].clientX - lastTouchPos.x;
+            dy = e.touches[0].clientY - lastTouchPos.y;
+            lastTouchPos = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+        } else {
+            dx = e.movementX;
+            dy = e.movementY;
+        }
+        transform.x += dx;
+        transform.y += dy;
+        applyTransform();
+        return;
+    }
+
     if (!drawing) return;
     
     const [x, y] = getCoordinates(e);
@@ -108,29 +151,101 @@ function draw(e) {
         size: brushSizeRange.value
     };
 
-    // Draw locally
     drawLine(drawData);
-
-    // Send to other clients
-    if (connection.state === signalR.HubConnectionState.Connected) {
+    if (connection.state === "Connected") {
         connection.invoke("DrawLine", drawData).catch(err => console.error(err));
     }
-
     [lastX, lastY] = [x, y];
 }
 
-function getCoordinates(e) {
-    let x, y;
-    if (e.touches && e.touches.length > 0) {
-        x = e.touches[0].clientX - canvas.offsetLeft;
-        y = e.touches[0].clientY - canvas.offsetTop;
+// Pinch & Pan Combined (Smooth Midpoint logic)
+function handlePinchAndPan(e) {
+    const t1 = e.touches[0];
+    const t2 = e.touches[1];
+    
+    const midX = (t1.clientX + t2.clientX) / 2;
+    const midY = (t1.clientY + t2.clientY) / 2;
+    const dist = Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY);
+
+    if (initialPinchDistance === null) {
+        initialPinchDistance = dist;
+        initialPinchScale = transform.scale;
+        lastMidpoint = { x: midX, y: midY };
     } else {
-        x = e.clientX - canvas.offsetLeft;
-        y = e.clientY - canvas.offsetTop;
+        // 1. Handle Zoom
+        const factor = dist / initialPinchDistance;
+        const newScale = Math.min(Math.max(initialPinchScale * factor, 0.05), 10);
+        
+        // 2. Handle Pan (Apply movement of the midpoint)
+        const dx = midX - lastMidpoint.x;
+        const dy = midY - lastMidpoint.y;
+        
+        // Apply zoom at the NEW midpoint
+        zoomAt(midX, midY, newScale);
+        
+        // Apply residual translation
+        transform.x += dx;
+        transform.y += dy;
+        
+        lastMidpoint = { x: midX, y: midY };
+        applyTransform();
     }
-    return [x, y];
 }
 
+function zoomAt(clientX, clientY, newScale) {
+    const oldScale = transform.scale;
+    const mouseX = clientX - transform.x;
+    const mouseY = clientY - transform.y;
+    
+    const newX = clientX - (mouseX / oldScale) * newScale;
+    const newY = clientY - (mouseY / oldScale) * newScale;
+    
+    transform.scale = newScale;
+    transform.x = newX;
+    transform.y = newY;
+    // applyTransform() is called by the caller
+}
+
+// Mouse Wheel Zoom (Smoother Step)
+viewport.addEventListener('wheel', (e) => {
+    e.preventDefault();
+    const delta = e.deltaY > 0 ? 0.95 : 1.05; // Smaller steps for comfort
+    const newScale = Math.min(Math.max(transform.scale * delta, 0.05), 10);
+    zoomAt(e.clientX, e.clientY, newScale);
+    applyTransform();
+}, { passive: false });
+
+// Key Bindings
+window.addEventListener('keydown', (e) => {
+    if (e.code === 'Space') {
+        spacePressed = true;
+        viewport.style.cursor = 'grab';
+    }
+});
+
+window.addEventListener('keyup', (e) => {
+    if (e.code === 'Space') {
+        spacePressed = false;
+        viewport.style.cursor = 'crosshair';
+    }
+});
+
+// Canvas Events
+canvas.addEventListener('mousedown', startDrawing);
+window.addEventListener('mousemove', move);
+window.addEventListener('mouseup', stopDrawing);
+
+canvas.addEventListener('touchstart', (e) => {
+    if (e.touches.length > 0) startDrawing(e);
+}, { passive: false });
+
+window.addEventListener('touchmove', (e) => {
+    if (e.touches.length > 0) move(e);
+}, { passive: false });
+
+window.addEventListener('touchend', stopDrawing);
+
+// Draw logic
 function drawLine(data) {
     ctx.beginPath();
     ctx.moveTo(data.lastX, data.lastY);
@@ -141,51 +256,20 @@ function drawLine(data) {
     ctx.closePath();
 }
 
-function drawRemote(data) {
-    drawLine(data);
-}
-
 function clearLocal() {
     ctx.fillStyle = "white";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 }
 
-// Event Listeners
-canvas.addEventListener('mousedown', startDrawing);
-canvas.addEventListener('mousemove', draw);
-canvas.addEventListener('mouseup', stopDrawing);
-canvas.addEventListener('mouseout', stopDrawing);
-
-// Touch Support
-canvas.addEventListener('touchstart', (e) => {
-    e.preventDefault();
-    startDrawing(e);
-}, { passive: false });
-
-canvas.addEventListener('touchmove', (e) => {
-    e.preventDefault();
-    draw(e);
-}, { passive: false });
-
-canvas.addEventListener('touchend', (e) => {
-    e.preventDefault();
-    stopDrawing();
-}, { passive: false });
-
 // Toolbar controls
-colorPicker.addEventListener('input', () => {
-    currentSettings.color = colorPicker.value;
-});
-
+colorPicker.addEventListener('input', () => {});
 brushSizeRange.addEventListener('input', () => {
-    const size = brushSizeRange.value;
-    sizeValueSpan.textContent = size;
-    currentSettings.size = size;
+    sizeValueSpan.textContent = brushSizeRange.value;
 });
 
 clearBtn.addEventListener('click', () => {
-    if (confirm('Clear the entire canvas for everyone?')) {
-        connection.invoke("ClearCanvas").catch(err => console.error(err));
+    if (confirm('Bersihkan kanvas untuk semua orang?')) {
+        connection.invoke("ClearCanvas").catch(e => console.error(e));
     }
 });
 
@@ -194,4 +278,10 @@ saveBtn.addEventListener('click', () => {
     link.download = `scribble-${Date.now()}.png`;
     link.href = canvas.toDataURL();
     link.click();
+});
+
+window.addEventListener('load', init);
+window.addEventListener('resize', () => {
+    // Keep transforms relevant after window resize
+    applyTransform();
 });
