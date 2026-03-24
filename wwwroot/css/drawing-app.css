@@ -177,6 +177,27 @@ body {
     background: var(--border);
 }
 
+.color-palette {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 4px;
+    margin-top: 0.5rem;
+}
+
+.swatch {
+    width: 18px;
+    height: 18px;
+    border-radius: 4px;
+    cursor: pointer;
+    border: 1px solid rgba(0,0,0,0.2);
+    transition: transform 0.1s;
+}
+
+.swatch:hover {
+    transform: scale(1.2);
+    z-index: 10;
+}
+
 .setting-group {
     display: flex;
     flex-direction: column;

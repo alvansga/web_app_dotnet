@@ -279,6 +279,68 @@ function clearLocal() {
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 }
 
+const palette = document.getElementById('palette');
+const paletteEditor = document.getElementById('palette-editor');
+let longPressTimer;
+let currentEditingSwatch = null;
+
+palette.onclick = (e) => {
+    if (e.target.classList.contains('swatch')) {
+        const color = e.target.dataset.color;
+        colorPicker.value = color;
+        setTool('pencil');
+    }
+};
+
+// --- PALETTE EDITING (Right Click & Long Press) ---
+palette.oncontextmenu = (e) => {
+    if (e.target.classList.contains('swatch')) {
+        e.preventDefault();
+        openSwatchEditor(e.target);
+    }
+};
+
+// Long Press for Android/iOS
+palette.addEventListener('touchstart', (e) => {
+    if (e.target.classList.contains('swatch')) {
+        longPressTimer = setTimeout(() => {
+            openSwatchEditor(e.target);
+            longPressTimer = null;
+        }, 600); // 600ms for long press
+    }
+}, { passive: true });
+
+palette.addEventListener('touchend', () => {
+    if (longPressTimer) {
+        clearTimeout(longPressTimer);
+        longPressTimer = null;
+    }
+});
+
+palette.addEventListener('touchmove', () => {
+    if (longPressTimer) {
+        clearTimeout(longPressTimer);
+        longPressTimer = null;
+    }
+});
+
+function openSwatchEditor(swatch) {
+    currentEditingSwatch = swatch;
+    paletteEditor.value = swatch.dataset.color;
+    paletteEditor.click();
+}
+
+paletteEditor.oninput = () => {
+    if (currentEditingSwatch) {
+        const newColor = paletteEditor.value;
+        currentEditingSwatch.style.background = newColor;
+        currentEditingSwatch.dataset.color = newColor;
+        // Optionally select it immediately
+        colorPicker.value = newColor;
+        setTool('pencil');
+    }
+};
+
 // Tooling & Actions
 colorPicker.oninput = () => { if (currentTool === 'eraser') setTool('pencil'); };
 brushSizeRange.oninput = () => { sizeValueSpan.textContent = brushSizeRange.value; };

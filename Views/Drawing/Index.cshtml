@@ -53,6 +53,23 @@
                 <div class="color-wrapper">
                     <input type="color" id="color-picker" value="#3a86ff">
                 </div>
+                <!-- Color Palette (Pastel Template) -->
+                <div class="color-palette" id="palette">
+                    <div class="swatch" style="background:#ffadad" data-color="#ffadad"></div>
+                    <div class="swatch" style="background:#ffd6a5" data-color="#ffd6a5"></div>
+                    <div class="swatch" style="background:#fdffb6" data-color="#fdffb6"></div>
+                    <div class="swatch" style="background:#caffbf" data-color="#caffbf"></div>
+                    <div class="swatch" style="background:#9bf6ff" data-color="#9bf6ff"></div>
+                    <div class="swatch" style="background:#a0c4ff" data-color="#a0c4ff"></div>
+                    <div class="swatch" style="background:#bdb2ff" data-color="#bdb2ff"></div>
+                    <div class="swatch" style="background:#ffc6ff" data-color="#ffc6ff"></div>
+                    <div class="swatch" style="background:#fffffc" data-color="#fffffc"></div>
+                    <div class="swatch" style="background:#8E94F2" data-color="#8E94F2"></div>
+                    <div class="swatch" style="background:#2b2d42" data-color="#2b2d42"></div>
+                    <div class="swatch" style="background:#ffccd5" data-color="#ffccd5"></div>
+                </div>
+                <!-- Hidden Palette Editor -->
+                <input type="color" id="palette-editor" style="display:none">
             </div>
             
             <div class="setting-group size-group">
@@ -77,8 +94,8 @@
         </div>
 
         <div class="navigation-hint">
-            <span class="desktop-hint"><i class="fa-solid fa-mouse"></i> Space + Drag: Pan | Wheel: Zoom</span>
-            <span class="mobile-hint"><i class="fa-solid fa-hand-pointer"></i> 2 Fingers: Zoom Only | 1 Finger (Hand): Pan</span>
+            <span class="desktop-hint"><i class="fa-solid fa-mouse"></i> Space (Hold): Pan | Wheel: Zoom | Right-Click Swatch: Edit</span>
+            <span class="mobile-hint"><i class="fa-solid fa-hand-pointer"></i> 2 Fingers: Zoom | Hold Swatch: Edit | 1 Finger (Hand): Pan</span>
         </div>
     </main>
 
