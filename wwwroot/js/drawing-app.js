@@ -294,8 +294,21 @@ saveBtn.onclick = () => {
     link.click();
 };
 
+const toggleUiBtn = document.getElementById('toggle-ui');
+let uiHidden = false;
+
+function toggleUI() {
+    uiHidden = !uiHidden;
+    document.body.classList.toggle('tools-hidden', uiHidden);
+    toggleUiBtn.querySelector('i').className = uiHidden ? 'fa-solid fa-eye-slash' : 'fa-solid fa-eye';
+    toggleUiBtn.classList.toggle('active', uiHidden);
+}
+
+toggleUiBtn.onclick = toggleUI;
+
 window.onkeydown = (e) => {
     if (e.code === 'Space') { spacePressed = true; viewport.style.cursor = 'grab'; }
+    if (e.code === 'Tab') { e.preventDefault(); toggleUI(); }
     if (e.key.toLowerCase() === 'b') setTool('pencil');
     if (e.key.toLowerCase() === 'e') setTool('eraser');
     if (e.key.toLowerCase() === 'h') setTool('move');

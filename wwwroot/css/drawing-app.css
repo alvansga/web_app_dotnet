@@ -269,10 +269,61 @@ input[type="range"][orient="vertical"] {
     pointer-events: none;
 }
 
+.header-btn {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border);
+    color: var(--text);
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    margin-left: 1rem;
+    transition: all 0.2s;
+}
+
+.header-btn:hover {
+    background: var(--primary);
+    border-color: var(--primary);
+}
+
+.header-btn.active {
+    color: var(--accent);
+}
+
+/* Transitions for Hide/Show */
+.side-panel, .bottom-bar, .navigation-hint {
+    transition: transform 0.4s cubic-bezier(0.19, 1, 0.22, 1), opacity 0.3s ease;
+}
+
+/* Tool Hidden State */
+.tools-hidden .side-panel {
+    transform: translateY(-50%) translateX(calc(-100% - 3rem));
+    opacity: 0;
+    pointer-events: none;
+}
+
+.tools-hidden .bottom-bar {
+    transform: translate(-50%, calc(100% + 5rem));
+    opacity: 0;
+    pointer-events: none;
+}
+
+.tools-hidden .navigation-hint {
+    opacity: 0;
+    pointer-events: none;
+}
+
 @media (max-width: 768px) {
     .side-panel {
         left: 0.75rem;
         padding: 0.75rem 0.4rem;
+    }
+
+    .tools-hidden .side-panel {
+        transform: translateY(-50%) translateX(calc(-100% - 1.5rem));
     }
 
     .vertical-slider-container {
