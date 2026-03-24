@@ -64,6 +64,12 @@ const connection = new signalR.HubConnectionBuilder()
 
 connection.on("ReceiveDraw", (data) => drawLine(data));
 connection.on("CanvasCleared", () => clearLocal());
+connection.on("LoadHistory", (history) => {
+    // Clear and redraw everything from history
+    clearLocal(); 
+    history.forEach(stroke => drawLine(stroke));
+});
+
 connection.start().then(() => updateStatus('online', 'Connected')).catch(e => updateStatus('offline', 'Error'));
 
 function updateStatus(status, text) {
