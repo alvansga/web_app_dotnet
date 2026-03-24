@@ -31,6 +31,8 @@ let initialPinchDistance = null;
 let initialPinchScale = 1;
 let lastMidpoint = { x: 0, y: 0 };
 let lastTouchPos = { x: 0, y: 0 };
+let currentStrokeId = null;
+let strokeHistory = []; // Local history for redraws
 
 // World Config
 const WORLD_SIZE = 2500;
@@ -61,8 +63,12 @@ const connection = new signalR.HubConnectionBuilder()
     .withAutomaticReconnect()
     .build();
 
-connection.on("ReceiveDraw", (data) => drawLine(data));
+connection.on("ReceiveDraw", (data) => {
+    strokeHistory.push(data);
+    drawLine(data);
+});
 connection.on("CanvasCleared", () => {
+    strokeHistory = [];
     clearLocal();
     bgLayer.src = "";
     bgLayer.style.display = 'none';
@@ -73,8 +79,16 @@ connection.on("ReceiveBackground", (base64) => {
     updateBackgroundLocal(base64);
 });
 connection.on("LoadHistory", (history) => {
-    clearLocal(); 
-    history.forEach(stroke => drawLine(stroke));
+    strokeHistory = Array.isArray(history) ? history : [];
+    redrawCanvas();
+});
+connection.on("StrokeUndone", (strokeId) => {
+    console.log("Stroke undone:", strokeId);
+    strokeHistory = strokeHistory.filter(s => {
+        const sid = s.strokeId || s.StrokeId;
+        return sid !== strokeId;
+    });
+    redrawCanvas();
 });
 
 connection.start().then(() => updateStatus('online', 'Connected')).catch(e => updateStatus('offline', 'Error'));
@@ -157,6 +171,7 @@ function startInteraction(e) {
     } else {
         drawing = true;
         isPanning = false;
+        currentStrokeId = Date.now().toString() + Math.random().toString(36).substr(2, 9);
         const [x, y] = getCoordinates(e);
         lastX = x;
         lastY = y;
@@ -168,6 +183,7 @@ function stopInteraction() {
     isPanning = false;
     initialPinchDistance = null;
     lastMidpoint = null;
+    currentStrokeId = null;
 }
 
 function handleMove(e) {
@@ -200,13 +216,16 @@ function handleMove(e) {
     // Handle Drawing
     if (drawing) {
         const [x, y] = getCoordinates(e);
-        const color = (currentTool === 'eraser') ? '#ffffff' : colorPicker.value;
+        const isEraser = (currentTool === 'eraser');
         const drawData = {
             lastX, lastY, x, y,
-            color: color,
-            size: brushSizeRange.value
+            color: isEraser ? '#000000' : colorPicker.value, // Black doesn't matter for eraser
+            size: parseInt(brushSizeRange.value),
+            isEraser: isEraser,
+            strokeId: currentStrokeId
         };
 
+        strokeHistory.push(drawData);
         drawLine(drawData);
         if (connection.state === "Connected") {
             connection.invoke("DrawLine", drawData).catch(err => console.error(err));
@@ -272,13 +291,39 @@ window.addEventListener('touchend', stopInteraction);
 
 // Utilities
 function drawLine(data) {
+    if (!data) return;
+    
+    // Normalize properties for both camelCase and PascalCase
+    const lx = data.lastX !== undefined ? data.lastX : data.LastX;
+    const ly = data.lastY !== undefined ? data.lastY : data.LastY;
+    const x = data.x !== undefined ? data.x : data.X;
+    const y = data.y !== undefined ? data.y : data.Y;
+    const size = data.size !== undefined ? data.size : data.Size;
+    const isEraser = data.isEraser !== undefined ? data.isEraser : data.IsEraser;
+    const color = data.color !== undefined ? data.color : data.Color;
+
     ctx.beginPath();
-    ctx.moveTo(data.lastX, data.lastY);
-    ctx.lineTo(data.x, data.y);
-    ctx.strokeStyle = data.color;
-    ctx.lineWidth = data.size;
+    ctx.moveTo(lx, ly);
+    ctx.lineTo(x, y);
+    
+    if (isEraser) {
+        ctx.globalCompositeOperation = 'destination-out';
+    } else {
+        ctx.globalCompositeOperation = 'source-over';
+    }
+    
+    ctx.strokeStyle = color;
+    ctx.lineWidth = size;
     ctx.stroke();
     ctx.closePath();
+    
+    // Reset composite operation
+    ctx.globalCompositeOperation = 'source-over';
+}
+
+function redrawCanvas() {
+    clearLocal();
+    strokeHistory.forEach(s => drawLine(s));
 }
 
 function clearLocal() {
@@ -351,14 +396,56 @@ paletteEditor.oninput = () => {
 colorPicker.oninput = () => { if (currentTool === 'eraser') setTool('pencil'); };
 brushSizeRange.oninput = () => { sizeValueSpan.textContent = brushSizeRange.value; };
 
+const undoBtn = document.getElementById('undo-btn');
+
+function undo() {
+    console.log("Undo requested");
+    if (connection.state === "Connected") {
+        connection.invoke("UndoStroke").catch(err => console.error("Undo error:", err));
+    } else {
+        console.warn("Cannot undo: Connection state is", connection.state);
+    }
+}
+
+undoBtn.onclick = undo;
+
 clearBtn.onclick = () => {
     if (confirm('Clear canvas for everyone?')) connection.invoke("ClearCanvas");
 };
 
 saveBtn.onclick = () => {
+    // Create temp canvas for merging
+    const tempCanvas = document.createElement('canvas');
+    tempCanvas.width = canvas.width;
+    tempCanvas.height = canvas.height;
+    const tCtx = tempCanvas.getContext('2d');
+
+    // 1. Draw Background Image if active
+    if (bgLayer.src && bgLayer.style.display !== 'none') {
+        tCtx.globalAlpha = parseFloat(bgLayer.style.opacity) || 0.5;
+        
+        // Calculate "object-fit: contain" for the canvas export
+        const canvasW = tempCanvas.width;
+        const canvasH = tempCanvas.height;
+        const imgW = bgLayer.naturalWidth;
+        const imgH = bgLayer.naturalHeight;
+        
+        const ratio = Math.min(canvasW / imgW, canvasH / imgH);
+        const drawW = imgW * ratio;
+        const drawH = imgH * ratio;
+        const drawX = (canvasW - drawW) / 2;
+        const drawY = (canvasH - drawH) / 2;
+
+        tCtx.drawImage(bgLayer, drawX, drawY, drawW, drawH);
+        tCtx.globalAlpha = 1.0;
+    }
+
+    // 2. Draw Drawing Layer
+    tCtx.drawImage(canvas, 0, 0);
+
     const link = document.createElement('a');
     link.download = `scribble-${Date.now()}.png`;
-    link.href = canvas.toDataURL();
+    link.href = tempCanvas.toDataURL();
     link.click();
 };
 
@@ -445,6 +532,7 @@ if (bgOpacityRange) {
 window.onkeydown = (e) => {
     if (e.code === 'Space') { spacePressed = true; viewport.style.cursor = 'grab'; }
     if (e.code === 'Tab') { e.preventDefault(); toggleUI(); }
+    if (e.key.toLowerCase() === 'z' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); undo(); }
     if (e.key.toLowerCase() === 'b') setTool('pencil');
     if (e.key.toLowerCase() === 'e') setTool('eraser');
     if (e.key.toLowerCase() === 'h') setTool('move');

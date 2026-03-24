@@ -98,7 +98,7 @@ body {
 }
 
 #drawing-canvas {
-    background: white;
+    background: transparent;
     box-shadow: 0 0 50px rgba(0, 0, 0, 0.5);
     border-radius: 4px;
     display: block;
@@ -120,7 +120,7 @@ body {
 .canvas-wrapper {
     position: relative;
     transform-origin: center;
-    background: white;
+    background: transparent;
     box-shadow: 0 0 100px rgba(0,0,0,0.5);
 }
 
@@ -132,7 +132,7 @@ body {
     height: 2500px;
     z-index: 0;
     pointer-events: none;
-    object-fit: fill;
+    object-fit: contain;
 }
 
 #drawing-canvas {

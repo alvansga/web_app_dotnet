@@ -96,6 +96,11 @@
 
         <!-- Bottom Actions (Clear & Save) -->
         <div class="bottom-bar">
+            <button id="undo-btn" class="icon-btn" title="Undo Last Stroke (Ctrl+Z)">
+                <i class="fa-solid fa-rotate-left"></i>
+                <span>Undo</span>
+            </button>
+            <div class="divider"></div>
             <button id="clear-btn" class="icon-btn danger" title="Clear All">
                 <i class="fa-solid fa-trash-can"></i>
                 <span>Clear</span>
@@ -108,12 +113,12 @@
         </div>
 
         <div class="navigation-hint">
-            <span class="desktop-hint"><i class="fa-solid fa-mouse"></i> Space (Hold): Pan | Wheel: Zoom | Right-Click Swatch: Edit</span>
+            <span class="desktop-hint"><i class="fa-solid fa-mouse"></i> Space (Hold): Pan | Wheel: Zoom | Ctrl+Z: Undo | Right-Click Swatch: Edit</span>
             <span class="mobile-hint"><i class="fa-solid fa-hand-pointer"></i> 2 Fingers: Zoom | Hold Swatch: Edit | 1 Finger (Hand): Pan</span>
         </div>
     </main>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.5/signalr.min.js"></script>
-    <script src="/js/drawing-app.js"></script>
+    <script src="/js/drawing-app.js?v=@DateTime.Now.Ticks"></script>
 </body>
 </html>
