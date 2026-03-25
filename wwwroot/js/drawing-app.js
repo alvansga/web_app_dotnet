@@ -151,8 +151,7 @@ connection.on("ReceiveMessage", (sender, message, isCorrect) => {
     const msgDiv = document.createElement('div');
     msgDiv.className = isCorrect ? 'msg correct' : 'msg';
     msgDiv.innerHTML = `<span class="sender">${sender}:</span> ${message}`;
-    gameMessages.appendChild(msgDiv);
-    gameMessages.scrollTop = gameMessages.scrollHeight;
+    gameMessages.prepend(msgDiv); // Newest at top
 });
 
 connection.on("GameEnded", (data) => {
@@ -164,12 +163,16 @@ connection.on("GameEnded", (data) => {
     gameOverlay.style.display = 'none';
     playBtn.style.display = 'block';
     
-    let endMsg = data.winnerName 
-        ? `<div class="msg correct"><strong>${data.winnerName}</strong> guessed the word: <strong>${data.word}</strong>!</div>`
-        : `<div class="msg system">Time's up! The word was: <strong>${data.word}</strong></div>`;
+    const endDiv = document.createElement('div');
+    if (data.winnerName) {
+        endDiv.className = 'msg correct';
+        endDiv.innerHTML = `<strong>${data.winnerName}</strong> guessed the word: <strong>${data.word}</strong>!`;
+    } else {
+        endDiv.className = 'msg system';
+        endDiv.innerHTML = `Time's up! The word was: <strong>${data.word}</strong>`;
+    }
     
-    gameMessages.innerHTML += endMsg;
-    gameMessages.scrollTop = gameMessages.scrollHeight;
+    gameMessages.prepend(endDiv); // Newest result at top
     
     setTimeout(() => {
         if (!isGameActive) guessPanel.style.display = 'none';
@@ -386,12 +389,20 @@ function zoomAt(clientX, clientY, newScale) {
     transform.scale = newScale;
 }
 
-// Event Listeners
-viewport.addEventListener('wheel', (e) => {
-    e.preventDefault();
-    const delta = e.deltaY > 0 ? 0.95 : 1.05;
-    zoomAt(e.clientX, e.clientY, transform.scale * delta);
-    applyTransform();
+// Global Event Handling for Scrolling/Zooming
+window.addEventListener('wheel', (e) => {
+    // 1. Allow natural scrolling for UI elements
+    if (e.target.closest('.guess-panel') || e.target.closest('.side-panel') || e.target.closest('.app-header')) {
+        return; // Don't prevent default, allow the browser to scroll the div
+    }
+    
+    // 2. Only zoom if we're interacting with the viewport (canvas area)
+    if (e.target.closest('#viewport')) {
+        e.preventDefault();
+        const delta = e.deltaY > 0 ? 0.95 : 1.05;
+        zoomAt(e.clientX, e.clientY, transform.scale * delta);
+        applyTransform();
+    }
 }, { passive: false });
 
 // Global Events
@@ -405,11 +416,16 @@ canvas.addEventListener('touchstart', (e) => {
 }, { passive: false });
 
 window.addEventListener('touchmove', (e) => {
+    if (e.target.closest('.guess-panel') || e.target.closest('.side-panel')) return; 
     e.preventDefault();
     handleMove(e);
 }, { passive: false });
 
 window.addEventListener('touchend', stopInteraction);
+
+// UI scrolling hints
+document.getElementById('game-messages').style.overscrollBehavior = 'contain';
+document.getElementById('palette').style.overscrollBehavior = 'contain';
 
 // Utilities
 function drawLine(data) {

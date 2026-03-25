@@ -87,7 +87,6 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
-    touch-action: none; /* Disable default browser touch behavior */
 }
 
 .canvas-wrapper {
@@ -114,7 +113,6 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
-    touch-action: none;
 }
 
 .canvas-wrapper {
@@ -122,6 +120,7 @@ body {
     transform-origin: center;
     background: transparent;
     box-shadow: 0 0 100px rgba(0,0,0,0.5);
+    touch-action: none; /* Drawing area is locked for gestures */
 }
 
 .bg-layer {
@@ -371,31 +370,40 @@ input[type="range"][orient="vertical"] {
 
 @media (max-width: 768px) {
     .side-panel {
-        left: 0.75rem;
-        padding: 0.75rem 0.4rem;
+        left: 0.5rem;
+        padding: 0.5rem 0.25rem;
+        top: 50%;
+        transform: translateY(-50%);
+        height: auto;
+        max-height: 80vh;
     }
 
     .tools-hidden .side-panel {
-        transform: translateY(-50%) translateX(calc(-100% - 1.5rem));
+        transform: translateY(-50%) translateX(calc(-100% - 2rem));
     }
 
     .vertical-slider-container {
-        height: 140px;
+        height: 100px;
     }
 
-    #size-value { font-size: 0.65rem; }
+    #size-value { font-size: 0.6rem; }
 
     .bottom-bar {
-        bottom: calc(1.5rem + env(safe-area-inset-bottom));
-        padding: 0.4rem;
+        bottom: 1rem;
+        bottom: calc(1rem + env(safe-area-inset-bottom));
+        padding: 0.3rem;
+        gap: 0.3rem;
+        z-index: 2000;
     }
 
     .icon-btn span { display: none; }
-    .icon-btn { padding: 0.75rem; min-width: 48px; min-height: 48px; justify-content: center; }
+    .icon-btn { padding: 0.6rem; min-width: 44px; min-height: 44px; justify-content: center; font-size: 1.1rem; }
 
     .navigation-hint {
         top: calc(4.5rem + env(safe-area-inset-top));
         bottom: auto;
+        font-size: 0.7rem;
+        padding: 0.4rem 0.8rem;
     }
 }
 
@@ -509,25 +517,33 @@ input[type="range"][orient="vertical"] {
     right: 1.5rem;
     transform: translateY(-50%);
     width: 280px;
-    height: 400px;
+    height: 450px; /* Slightly taller */
     background: var(--panel-bg);
-    backdrop-filter: blur(20px);
+    backdrop-filter: blur(25px);
     border: 1px solid var(--border);
     border-radius: 24px;
-    z-index: 1000;
+    z-index: 3000;
     display: flex;
     flex-direction: column;
     overflow: hidden;
     box-shadow: var(--shadow);
+    touch-action: auto; 
 }
 
 .messages {
+    position: relative;
     flex: 1;
+    min-height: 0; /* Crucial for scrolling inside flexbox */
     overflow-y: auto;
     padding: 1rem;
+    padding-bottom: 75px; /* Room for the static input field */
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
+    scrollbar-width: thin;
+    scrollbar-color: var(--primary) transparent;
+    -webkit-overflow-scrolling: touch; /* Smooth iOS scrolling */
+    touch-action: pan-y; /* Explicitly allow vertical panning/scrolling */
 }
 
 .msg {
@@ -535,6 +551,7 @@ input[type="range"][orient="vertical"] {
     border-radius: 12px;
     background: rgba(255, 255, 255, 0.05);
     font-size: 0.85rem;
+    word-wrap: break-word;
 }
 
 .msg .sender { font-weight: 700; color: var(--primary); margin-right: 0.5rem; }
@@ -542,10 +559,18 @@ input[type="range"][orient="vertical"] {
 .msg.system { text-align: center; background: transparent; color: rgba(255, 255, 255, 0.5); font-style: italic; }
 
 .guess-input-wrapper {
-    padding: 1rem;
-    background: rgba(0, 0, 0, 0.2);
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 70px;
+    padding: 0 1rem;
+    background: #12161f; /* Solid dark background to prevent overlap */
+    border-top: 1px solid var(--border);
     display: flex;
     gap: 0.5rem;
+    align-items: center;
+    z-index: 10;
 }
 
 #guess-input {
@@ -555,7 +580,7 @@ input[type="range"][orient="vertical"] {
     border-radius: 10px;
     padding: 0.6rem 0.8rem;
     color: white;
-    font-size: 0.85rem;
+    font-size: 16px; /* Critical: prevent mobile auto-zoom */
     outline: none;
 }
 
@@ -581,14 +606,20 @@ input[type="range"][orient="vertical"] {
         right: auto;
         left: 50%;
         top: auto;
-        bottom: 8rem;
+        bottom: 6rem; /* Positioned above the bottom bar control */
+        bottom: calc(6rem + env(safe-area-inset-bottom));
         transform: translateX(-50%);
-        width: 90%;
-        height: 200px;
+        width: 95%;
+        height: 180px;
     }
     .tools-hidden .guess-panel {
         transform: translateX(-50%) translateY(calc(100% + 5rem));
     }
-    .game-overlay { top: 6rem; }
+    .game-overlay { top: 6.5rem; }
+}
+
+@media (max-height: 500px) {
+    .guess-panel { height: 120px; bottom: 4.5rem; }
+    .side-panel { top: 60%; }
 }
 

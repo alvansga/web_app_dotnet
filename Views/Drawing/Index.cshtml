@@ -5,7 +5,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>ScribbleRoom - Collaborative Drawing</title>
     <link rel="stylesheet" href="/css/drawing-app.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -56,105 +56,106 @@
             </div>
         </div>
 
-        <!-- Guessing Panel -->
-        <div id="guess-panel" class="guess-panel" style="display: none;">
-            <div class="messages" id="game-messages">
-                <!-- Messages will appear here -->
-            </div>
-            <div class="guess-input-wrapper">
-                <input type="text" id="guess-input" placeholder="Guess..." autocomplete="off">
-                <button id="send-guess-btn"><i class="fa-solid fa-paper-plane"></i></button>
-            </div>
-        </div>
-
         <div class="canvas-wrapper" id="canvas-wrapper">
             <img id="bg-layer" class="bg-layer" style="display:none; opacity: 0.5;">
             <canvas id="drawing-canvas"></canvas>
         </div>
-        
-        <!-- Side Settings (Tools, Color & Size) -->
-        <div class="side-panel">
-            <!-- Tool Switcher -->
-            <div class="tool-switcher">
-                <button id="pencil-tool" class="tool-btn active" title="Pencil (B)">
-                    <i class="fa-solid fa-pencil"></i>
-                </button>
-                <button id="eraser-tool" class="tool-btn" title="Eraser (E)">
-                    <i class="fa-solid fa-eraser"></i>
-                </button>
-                <div class="tool-divider v"></div>
-                <button id="move-tool" class="tool-btn navigate" title="Move/Zoom (H)">
-                    <i class="fa-solid fa-hand"></i>
-                </button>
-                <div class="tool-divider v"></div>
-                <!-- Layer Control -->
-                <button id="add-bg-btn" class="tool-btn bg-trigger" title="Add Background (L)">
-                    <i class="fa-solid fa-layer-group"></i>
-                </button>
-                <input type="file" id="bg-upload" accept="image/*" style="display:none">
-            </div>
-
-            <div id="bg-options" class="setting-group" style="display:none">
-                <div class="vertical-slider-container ghost-slider">
-                    <span id="bg-opacity-label"><i class="fa-solid fa-ghost"></i></span>
-                    <input type="range" id="bg-opacity" min="0" max="1" step="0.05" value="0.5" orient="vertical">
-                </div>
-            </div>
-
-            <div class="setting-group color-group">
-                <div class="color-wrapper">
-                    <input type="color" id="color-picker" value="#3a86ff">
-                </div>
-                <!-- Color Palette (Pastel Template) -->
-                <div class="color-palette" id="palette">
-                    <div class="swatch" style="background:#ffadad" data-color="#ffadad"></div>
-                    <div class="swatch" style="background:#ffd6a5" data-color="#ffd6a5"></div>
-                    <div class="swatch" style="background:#fdffb6" data-color="#fdffb6"></div>
-                    <div class="swatch" style="background:#caffbf" data-color="#caffbf"></div>
-                    <div class="swatch" style="background:#9bf6ff" data-color="#9bf6ff"></div>
-                    <div class="swatch" style="background:#a0c4ff" data-color="#a0c4ff"></div>
-                    <div class="swatch" style="background:#bdb2ff" data-color="#bdb2ff"></div>
-                    <div class="swatch" style="background:#ffc6ff" data-color="#ffc6ff"></div>
-                    <div class="swatch" style="background:#fffffc" data-color="#fffffc"></div>
-                    <div class="swatch" style="background:#8E94F2" data-color="#8E94F2"></div>
-                    <div class="swatch" style="background:#2b2d42" data-color="#2b2d42"></div>
-                    <div class="swatch" style="background:#ffccd5" data-color="#ffccd5"></div>
-                </div>
-                <!-- Hidden Palette Editor -->
-                <input type="color" id="palette-editor" style="display:none">
-            </div>
-            
-            <div class="setting-group size-group">
-                <div class="vertical-slider-container">
-                    <span id="size-value">5</span>
-                    <input type="range" id="brush-size" min="1" max="100" value="5" orient="vertical">
-                </div>
-            </div>
-        </div>
-
-        <!-- Bottom Actions (Clear & Save) -->
-        <div class="bottom-bar">
-            <button id="undo-btn" class="icon-btn" title="Undo Last Stroke (Ctrl+Z)">
-                <i class="fa-solid fa-rotate-left"></i>
-                <span>Undo</span>
-            </button>
-            <div class="divider"></div>
-            <button id="clear-btn" class="icon-btn danger" title="Clear All">
-                <i class="fa-solid fa-trash-can"></i>
-                <span>Clear</span>
-            </button>
-            <div class="divider"></div>
-            <button id="save-btn" class="icon-btn primary" title="Save Drawing">
-                <i class="fa-solid fa-download"></i>
-                <span>Save</span>
-            </button>
-        </div>
-
-        <div class="navigation-hint">
-            <span class="desktop-hint"><i class="fa-solid fa-mouse"></i> Space (Hold): Pan | Wheel: Zoom | Ctrl+Z: Undo | Right-Click Swatch: Edit</span>
-            <span class="mobile-hint"><i class="fa-solid fa-hand-pointer"></i> 2 Fingers: Zoom | Hold Swatch: Edit | 1 Finger (Hand): Pan</span>
-        </div>
     </main>
+
+    <!-- UI PANELS (Moved outside viewport to fix event blocking) -->
+    <!-- Guessing Panel -->
+    <div id="guess-panel" class="guess-panel" style="display: none;">
+        <div class="messages" id="game-messages">
+            <!-- Messages will appear here -->
+        </div>
+        <div class="guess-input-wrapper">
+            <input type="text" id="guess-input" placeholder="Guess..." autocomplete="off">
+            <button id="send-guess-btn"><i class="fa-solid fa-paper-plane"></i></button>
+        </div>
+    </div>
+
+    <!-- Side Settings (Tools, Color & Size) -->
+    <div class="side-panel">
+        <!-- Tool Switcher -->
+        <div class="tool-switcher">
+            <button id="pencil-tool" class="tool-btn active" title="Pencil (B)">
+                <i class="fa-solid fa-pencil"></i>
+            </button>
+            <button id="eraser-tool" class="tool-btn" title="Eraser (E)">
+                <i class="fa-solid fa-eraser"></i>
+            </button>
+            <div class="tool-divider v"></div>
+            <button id="move-tool" class="tool-btn navigate" title="Move/Zoom (H)">
+                <i class="fa-solid fa-hand"></i>
+            </button>
+            <div class="tool-divider v"></div>
+            <!-- Layer Control -->
+            <button id="add-bg-btn" class="tool-btn bg-trigger" title="Add Background (L)">
+                <i class="fa-solid fa-layer-group"></i>
+            </button>
+            <input type="file" id="bg-upload" accept="image/*" style="display:none">
+        </div>
+
+        <div id="bg-options" class="setting-group" style="display:none">
+            <div class="vertical-slider-container ghost-slider">
+                <span id="bg-opacity-label"><i class="fa-solid fa-ghost"></i></span>
+                <input type="range" id="bg-opacity" min="0" max="1" step="0.05" value="0.5" orient="vertical">
+            </div>
+        </div>
+
+        <div class="setting-group color-group">
+            <div class="color-wrapper">
+                <input type="color" id="color-picker" value="#3a86ff">
+            </div>
+            <!-- Color Palette (Pastel Template) -->
+            <div class="color-palette" id="palette">
+                <div class="swatch" style="background:#ffadad" data-color="#ffadad"></div>
+                <div class="swatch" style="background:#ffd6a5" data-color="#ffd6a5"></div>
+                <div class="swatch" style="background:#fdffb6" data-color="#fdffb6"></div>
+                <div class="swatch" style="background:#caffbf" data-color="#caffbf"></div>
+                <div class="swatch" style="background:#9bf6ff" data-color="#9bf6ff"></div>
+                <div class="swatch" style="background:#a0c4ff" data-color="#a0c4ff"></div>
+                <div class="swatch" style="background:#bdb2ff" data-color="#bdb2ff"></div>
+                <div class="swatch" style="background:#ffc6ff" data-color="#ffc6ff"></div>
+                <div class="swatch" style="background:#fffffc" data-color="#fffffc"></div>
+                <div class="swatch" style="background:#8E94F2" data-color="#8E94F2"></div>
+                <div class="swatch" style="background:#2b2d42" data-color="#2b2d42"></div>
+                <div class="swatch" style="background:#ffccd5" data-color="#ffccd5"></div>
+            </div>
+            <!-- Hidden Palette Editor -->
+            <input type="color" id="palette-editor" style="display:none">
+        </div>
+        
+        <div class="setting-group size-group">
+            <div class="vertical-slider-container">
+                <span id="size-value">5</span>
+                <input type="range" id="brush-size" min="1" max="100" value="5" orient="vertical">
+            </div>
+        </div>
+    </div>
+
+    <!-- Bottom Actions (Clear & Save) -->
+    <div class="bottom-bar">
+        <button id="undo-btn" class="icon-btn" title="Undo Last Stroke (Ctrl+Z)">
+            <i class="fa-solid fa-rotate-left"></i>
+            <span>Undo</span>
+        </button>
+        <div class="divider"></div>
+        <button id="clear-btn" class="icon-btn danger" title="Clear All">
+            <i class="fa-solid fa-trash-can"></i>
+            <span>Clear</span>
+        </button>
+        <div class="divider"></div>
+        <button id="save-btn" class="icon-btn primary" title="Save Drawing">
+            <i class="fa-solid fa-download"></i>
+            <span>Save</span>
+        </button>
+    </div>
+
+    <div class="navigation-hint">
+        <span class="desktop-hint"><i class="fa-solid fa-mouse"></i> Space (Hold): Pan | Wheel: Zoom | Ctrl+Z: Undo | Right-Click Swatch: Edit</span>
+        <span class="mobile-hint"><i class="fa-solid fa-hand-pointer"></i> 2 Fingers: Zoom | Hold Swatch: Edit | 1 Finger (Hand): Pan</span>
+    </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.5/signalr.min.js"></script>
     <script src="/js/drawing-app.js?v=@DateTime.Now.Ticks"></script>
