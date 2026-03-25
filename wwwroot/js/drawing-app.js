@@ -19,6 +19,11 @@ let lastY = 0;
 let isPanning = false;
 let spacePressed = false;
 
+// Game State
+let isGameActive = false;
+let isDrawer = false;
+let gameTimerInterval = null;
+
 // Viewport Transform
 let transform = {
     x: 0,
@@ -34,6 +39,19 @@ let lastTouchPos = { x: 0, y: 0 };
 let currentStrokeId = null;
 let strokeHistory = []; // Local history for redraws
 
+// DOM Elements
+const playerNameInput = document.getElementById('player-name');
+const playBtn = document.getElementById('play-btn');
+const gameOverlay = document.getElementById('game-overlay');
+const gameTimerDisplay = document.getElementById('game-timer');
+const wordDisplay = document.getElementById('word-display');
+const targetWordSpan = document.getElementById('target-word');
+const drawerInfo = document.getElementById('current-drawer');
+const guessPanel = document.getElementById('guess-panel');
+const guessInput = document.getElementById('guess-input');
+const gameMessages = document.getElementById('game-messages');
+const sendGuessBtn = document.getElementById('send-guess-btn');
+
 // World Config
 const WORLD_SIZE = 2500;
 canvas.width = WORLD_SIZE;
@@ -45,6 +63,11 @@ function init() {
     ctx.lineJoin = 'round';
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     
+    // Set default name if empty
+    if (!playerNameInput.value) {
+        playerNameInput.value = "Artist" + Math.floor(Math.random() * 1000);
+    }
+
     // Center initially
     const vw = viewport.clientWidth;
     const vh = viewport.clientHeight;
@@ -70,9 +93,11 @@ connection.on("ReceiveDraw", (data) => {
 connection.on("CanvasCleared", () => {
     strokeHistory = [];
     clearLocal();
-    bgLayer.src = "";
-    bgLayer.style.display = 'none';
-    bgOptions.style.display = 'none';
+    if (bgLayer) {
+        bgLayer.src = "";
+        bgLayer.style.display = 'none';
+        bgOptions.style.display = 'none';
+    }
 });
 connection.on("ReceiveBackground", (base64) => {
     console.log("Received background update, length:", base64?.length || 0);
@@ -83,7 +108,6 @@ connection.on("LoadHistory", (history) => {
     redrawCanvas();
 });
 connection.on("StrokeUndone", (strokeId) => {
-    console.log("Stroke undone:", strokeId);
     strokeHistory = strokeHistory.filter(s => {
         const sid = s.strokeId || s.StrokeId;
         return sid !== strokeId;
@@ -91,7 +115,105 @@ connection.on("StrokeUndone", (strokeId) => {
     redrawCanvas();
 });
 
-connection.start().then(() => updateStatus('online', 'Connected')).catch(e => updateStatus('offline', 'Error'));
+// Game Events
+connection.on("GameStarted", (data) => {
+    isGameActive = true;
+    isDrawer = (connection.connectionId === data.drawerId);
+    
+    // Reset local state
+    strokeHistory = [];
+    clearLocal();
+    
+    // Update UI
+    gameOverlay.style.display = 'block';
+    guessPanel.style.display = 'block';
+    playBtn.style.display = 'none';
+    wordDisplay.style.display = isDrawer ? 'block' : 'none';
+    drawerInfo.textContent = isDrawer ? "YOU are drawing!" : `${data.drawerName} is drawing...`;
+    gameMessages.innerHTML = `<div class="msg system">Game started! ${data.drawerName} is drawing.</div>`;
+    
+    // Sync Timer
+    startLocalTimer(new Date(data.endTime));
+    
+    if (isDrawer) {
+        setTool('pencil');
+    } else {
+        setTool('move'); // Default for guessers
+        guessInput.focus();
+    }
+});
+
+connection.on("ReceiveWord", (word) => {
+    targetWordSpan.textContent = word;
+});
+
+connection.on("ReceiveMessage", (sender, message, isCorrect) => {
+    const msgDiv = document.createElement('div');
+    msgDiv.className = isCorrect ? 'msg correct' : 'msg';
+    msgDiv.innerHTML = `<span class="sender">${sender}:</span> ${message}`;
+    gameMessages.appendChild(msgDiv);
+    gameMessages.scrollTop = gameMessages.scrollHeight;
+});
+
+connection.on("GameEnded", (data) => {
+    isGameActive = false;
+    isDrawer = false;
+    
+    // UI Cleanup
+    clearInterval(gameTimerInterval);
+    gameOverlay.style.display = 'none';
+    playBtn.style.display = 'block';
+    
+    let endMsg = data.winnerName 
+        ? `<div class="msg correct"><strong>${data.winnerName}</strong> guessed the word: <strong>${data.word}</strong>!</div>`
+        : `<div class="msg system">Time's up! The word was: <strong>${data.word}</strong></div>`;
+    
+    gameMessages.innerHTML += endMsg;
+    gameMessages.scrollTop = gameMessages.scrollHeight;
+    
+    setTimeout(() => {
+        if (!isGameActive) guessPanel.style.display = 'none';
+    }, 10000); // Hide after 10s
+});
+
+function startLocalTimer(endTime) {
+    if (gameTimerInterval) clearInterval(gameTimerInterval);
+    
+    function update() {
+        const now = new Date();
+        const diff = Math.max(0, Math.floor((endTime - now) / 1000));
+        const mins = Math.floor(diff / 60);
+        const secs = diff % 60;
+        gameTimerDisplay.textContent = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+        
+        if (diff <= 0) clearInterval(gameTimerInterval);
+    }
+    
+    update();
+    gameTimerInterval = setInterval(update, 1000);
+}
+
+// Actions
+playBtn.onclick = () => {
+    const name = playerNameInput.value.trim() || "Artist";
+    connection.invoke("StartGame", name).catch(err => console.error(err));
+};
+
+function sendGuess() {
+    const guess = guessInput.value.trim();
+    if (!guess || !isGameActive || isDrawer) return;
+    
+    const name = playerNameInput.value.trim() || "Artist";
+    connection.invoke("MakeGuess", guess, name).catch(err => console.error(err));
+    guessInput.value = "";
+}
+
+guessInput.onkeydown = (e) => { if (e.key === "Enter") sendGuess(); };
+sendGuessBtn.onclick = sendGuess;
+
+connection.start()
+    .then(() => updateStatus('online', 'Connected'))
+    .catch(e => updateStatus('offline', 'Error'));
 
 function updateStatus(status, text) {
     if (!connectionStatus) return;
@@ -162,7 +284,7 @@ function startInteraction(e) {
     }
 
     // 1-Finger/Mouse logic
-    if (currentTool === 'move' || e.button === 1 || spacePressed) {
+    if (currentTool === 'move' || e.button === 1 || spacePressed || (isGameActive && !isDrawer)) {
         isPanning = true;
         drawing = false;
         if (isTouch) {
@@ -399,6 +521,7 @@ brushSizeRange.oninput = () => { sizeValueSpan.textContent = brushSizeRange.valu
 const undoBtn = document.getElementById('undo-btn');
 
 function undo() {
+    if (isGameActive && !isDrawer) return;
     console.log("Undo requested");
     if (connection.state === "Connected") {
         connection.invoke("UndoStroke").catch(err => console.error("Undo error:", err));
@@ -410,6 +533,7 @@ function undo() {
 undoBtn.onclick = undo;
 
 clearBtn.onclick = () => {
+    if (isGameActive && !isDrawer) return;
     if (confirm('Clear canvas for everyone?')) connection.invoke("ClearCanvas");
 };
 
@@ -473,6 +597,10 @@ const bgOpacityRange = document.getElementById('bg-opacity');
 
 if (addBgBtn) {
     addBgBtn.onclick = () => {
+        if (isGameActive) {
+            alert("Background changes are disabled during a game!");
+            return;
+        }
         const hasBg = bgLayer.src && bgLayer.style.display !== 'none';
         if (hasBg) {
             // Remove Background

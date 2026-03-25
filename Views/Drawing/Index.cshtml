@@ -18,6 +18,16 @@
         <div class="logo">
             <i class="fa-solid fa-paint-brush"></i>
             <h1>Scribble<span>Room</span></h1>
+        </div>
+        <div class="header-actions">
+            <div class="user-info">
+                <i class="fa-solid fa-user"></i>
+                <input type="text" id="player-name" placeholder="Name..." maxlength="15">
+            </div>
+            <button id="play-btn" class="header-btn play-btn" title="Start Drawing Game">
+                <i class="fa-solid fa-play"></i>
+                <span>Play</span>
+            </button>
             <button id="toggle-ui" class="header-btn" title="Hide/Show Tools (Tab)">
                 <i class="fa-solid fa-eye"></i>
             </button>
@@ -29,6 +39,34 @@
     </header>
 
     <main class="canvas-viewport" id="viewport">
+        <!-- Game Overlay -->
+        <div id="game-overlay" class="game-overlay" style="display: none;">
+            <div class="game-info">
+                <div class="timer-box">
+                    <i class="fa-solid fa-clock"></i>
+                    <span id="game-timer">01:00</span>
+                </div>
+                <div id="word-display" class="word-box" style="display: none;">
+                    <span class="label">WORD TO DRAW:</span>
+                    <span id="target-word" class="word">??????</span>
+                </div>
+                <div id="drawer-info" class="drawer-box">
+                    <span id="current-drawer">Someone is drawing...</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Guessing Panel -->
+        <div id="guess-panel" class="guess-panel" style="display: none;">
+            <div class="messages" id="game-messages">
+                <!-- Messages will appear here -->
+            </div>
+            <div class="guess-input-wrapper">
+                <input type="text" id="guess-input" placeholder="Guess..." autocomplete="off">
+                <button id="send-guess-btn"><i class="fa-solid fa-paper-plane"></i></button>
+            </div>
+        </div>
+
         <div class="canvas-wrapper" id="canvas-wrapper">
             <img id="bg-layer" class="bg-layer" style="display:none; opacity: 0.5;">
             <canvas id="drawing-canvas"></canvas>

@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json.Serialization;
 using System;
+using System.Timers;
 
 namespace WebAppSandbox.Hubs
 {
@@ -12,6 +13,27 @@ namespace WebAppSandbox.Hubs
         private static readonly List<DrawData> _strokeHistory = new();
         private static readonly object _lock = new();
         private static string _currentBackground = "";
+
+        private readonly IHubContext<DrawingHub> _hubContext;
+
+        public DrawingHub(IHubContext<DrawingHub> hubContext)
+        {
+            _hubContext = hubContext;
+        }
+
+        // Game State
+        private static bool _isGameRunning = false;
+        private static string _currentDrawerId = "";
+        private static string _currentDrawerName = "";
+        private static string _targetWord = "";
+        private static DateTime _gameEndTime;
+        private static System.Timers.Timer _gameTimer;
+        private static readonly string[] _words = { 
+            "Apple", "Banana", "Cat", "Dog", "Elephant", "Frog", "Guitar", "House", "Ice Cream", "Jungle", 
+            "Kangaroo", "Lion", "Mountain", "Notebook", "Orange", "Pizza", "Queen", "Robot", "Sun", "Tiger", 
+            "Umbrella", "Volcano", "Whale", "Xylophone", "Yacht", "Zebra", "Airplane", "Bicycle", "Coffee", "Dragon"
+        };
+        private static readonly Random _random = new();
 
         public class DrawData
         {
@@ -56,10 +78,103 @@ namespace WebAppSandbox.Hubs
             {
                 await Clients.Caller.SendAsync("ReceiveBackground", _currentBackground);
             }
+
+            // Sync game state for new client
+            if (_isGameRunning)
+            {
+                await Clients.Caller.SendAsync("GameStarted", new { 
+                    drawerId = _currentDrawerId, 
+                    drawerName = _currentDrawerName,
+                    endTime = _gameEndTime,
+                    isReconnect = true
+                });
+            }
+        }
+
+        public async Task StartGame(string playerName)
+        {
+            if (_isGameRunning) return;
+
+            lock (_lock)
+            {
+                _isGameRunning = true;
+                _currentDrawerId = Context.ConnectionId;
+                _currentDrawerName = string.IsNullOrEmpty(playerName) ? "Player" : playerName;
+                _targetWord = _words[_random.Next(_words.Length)];
+                _gameEndTime = DateTime.UtcNow.AddMinutes(1);
+                
+                // Reset canvas
+                _strokeHistory.Clear();
+                _currentBackground = "";
+
+                if (_gameTimer != null)
+                {
+                    _gameTimer.Stop();
+                    _gameTimer.Dispose();
+                }
+
+                _gameTimer = new System.Timers.Timer(1000);
+                _gameTimer.Elapsed += async (sender, e) => 
+                {
+                    if (DateTime.UtcNow >= _gameEndTime)
+                    {
+                        await EndGame(null, _targetWord);
+                    }
+                };
+                _gameTimer.Start();
+            }
+
+            await Clients.All.SendAsync("CanvasCleared");
+            await Clients.All.SendAsync("GameStarted", new { 
+                drawerId = _currentDrawerId, 
+                drawerName = _currentDrawerName,
+                endTime = _gameEndTime
+            });
+            await Clients.Caller.SendAsync("ReceiveWord", _targetWord);
+        }
+
+        public async Task MakeGuess(string guess, string playerName)
+        {
+            if (!_isGameRunning || Context.ConnectionId == _currentDrawerId) return;
+
+            bool isCorrect = string.Equals(guess.Trim(), _targetWord, StringComparison.OrdinalIgnoreCase);
+            
+            if (isCorrect)
+            {
+                await EndGame(playerName, _targetWord);
+            }
+            else
+            {
+                await Clients.All.SendAsync("ReceiveMessage", playerName, guess, false);
+            }
+        }
+
+        private async Task EndGame(string? winnerName, string word)
+        {
+            _isGameRunning = false;
+            if (_gameTimer != null)
+            {
+                _gameTimer.Stop();
+                _gameTimer.Dispose();
+                _gameTimer = null;
+            }
+
+            // Use _hubContext instead of Clients because this may be called from a background timer
+            // after the original Hub instance has been disposed.
+            await _hubContext.Clients.All.SendAsync("GameEnded", new {
+                winnerName = winnerName,
+                word = word
+            });
         }
 
         public async Task DrawLine(DrawData drawData)
         {
+            // If game is running, only the current drawer can draw
+            if (_isGameRunning && Context.ConnectionId != _currentDrawerId)
+            {
+                return;
+            }
+
             lock (_lock)
             {
                 _strokeHistory.Add(drawData);
@@ -74,30 +189,23 @@ namespace WebAppSandbox.Hubs
 
         public async Task UndoStroke()
         {
+            if (_isGameRunning && Context.ConnectionId != _currentDrawerId) return;
+
             string lastStrokeId = null;
             int removedCount = 0;
 
             lock (_lock)
             {
-                if (!_strokeHistory.Any()) 
-                {
-                    Console.WriteLine("Undo requested but history is empty.");
-                    return;
-                }
+                if (!_strokeHistory.Any()) return;
                 
                 lastStrokeId = _strokeHistory.Last().StrokeId;
-
                 if (string.IsNullOrEmpty(lastStrokeId))
                 {
-                    // Fallback: If for some reason we have a segment without an ID, 
-                    // just remove the last segment instead of potentially wiping the clear pool
                     _strokeHistory.RemoveAt(_strokeHistory.Count - 1);
-                    Console.WriteLine("Undo processed: Removed single segment because StrokeId was missing.");
                     return;
                 }
 
                 removedCount = _strokeHistory.RemoveAll(d => d.StrokeId == lastStrokeId);
-                Console.WriteLine($"Undo processed: Removed {removedCount} segment(s) with StrokeId '{lastStrokeId}'.");
             }
 
             if (!string.IsNullOrEmpty(lastStrokeId))
@@ -108,12 +216,16 @@ namespace WebAppSandbox.Hubs
 
         public async Task UpdateBackground(string base64Image)
         {
+            if (_isGameRunning) return; // Background not allowed during game
+
             _currentBackground = base64Image;
             await Clients.Others.SendAsync("ReceiveBackground", base64Image);
         }
 
         public async Task ClearCanvas()
         {
+            if (_isGameRunning && Context.ConnectionId != _currentDrawerId) return;
+
             lock (_lock)
             {
                 _strokeHistory.Clear();
