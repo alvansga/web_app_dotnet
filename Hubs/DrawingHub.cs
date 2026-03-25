@@ -108,7 +108,11 @@ namespace WebAppSandbox.Hubs
             {
                 _isGameRunning = true;
                 _currentDrawerId = Context.ConnectionId;
-                _currentDrawerName = string.IsNullOrEmpty(playerName) ? "Player" : playerName;
+                
+                // Security: Limit name length
+                string name = string.IsNullOrEmpty(playerName) ? "Player" : playerName;
+                _currentDrawerName = name.Length > 15 ? name.Substring(0, 15) : name;
+                
                 _targetWord = _words[_random.Next(_words.Length)];
                 _gameEndTime = DateTime.UtcNow.AddMinutes(1);
                 
@@ -146,15 +150,22 @@ namespace WebAppSandbox.Hubs
         {
             if (!_isGameRunning || Context.ConnectionId == _currentDrawerId) return;
 
-            bool isCorrect = string.Equals(guess.Trim(), _targetWord, StringComparison.OrdinalIgnoreCase);
+            // Security: Sanitize inputs
+            string safeGuess = string.IsNullOrEmpty(guess) ? "" : guess.Trim();
+            if (safeGuess.Length > 50) safeGuess = safeGuess.Substring(0, 50);
+            
+            string safeName = string.IsNullOrEmpty(playerName) ? "Player" : playerName;
+            if (safeName.Length > 15) safeName = safeName.Substring(0, 15);
+
+            bool isCorrect = string.Equals(safeGuess, _targetWord, StringComparison.OrdinalIgnoreCase);
             
             if (isCorrect)
             {
-                await EndGame(playerName, _targetWord);
+                await EndGame(safeName, _targetWord);
             }
             else
             {
-                await Clients.All.SendAsync("ReceiveMessage", playerName, guess, false);
+                await Clients.All.SendAsync("ReceiveMessage", safeName, safeGuess, false);
             }
         }
 
@@ -227,8 +238,17 @@ namespace WebAppSandbox.Hubs
         {
             if (_isGameRunning) return; // Background not allowed during game
 
-            _currentBackground = base64Image;
-            await Clients.Others.SendAsync("ReceiveBackground", base64Image);
+            // Security: Limit image size to ~5MB
+            if (string.IsNullOrEmpty(base64Image) || base64Image.Length > 5 * 1024 * 1024)
+            {
+                _currentBackground = "";
+            }
+            else
+            {
+                _currentBackground = base64Image;
+            }
+
+            await Clients.Others.SendAsync("ReceiveBackground", _currentBackground);
         }
 
         public async Task ClearCanvas()

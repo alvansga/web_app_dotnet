@@ -141,7 +141,15 @@ socket.on("ReceiveWord", (word) => {
 socket.on("ReceiveMessage", (sender, message, isCorrect) => {
     const msgDiv = document.createElement('div');
     msgDiv.className = isCorrect ? 'msg correct' : 'msg';
-    msgDiv.innerHTML = `<span class="sender">${sender}:</span> ${message}`;
+    
+    const senderSpan = document.createElement('span');
+    senderSpan.className = 'sender';
+    senderSpan.textContent = `${sender}:`; // Safe
+    
+    const msgText = document.createTextNode(` ${message}`); // Safe
+    
+    msgDiv.appendChild(senderSpan);
+    msgDiv.appendChild(msgText);
     gameMessages.prepend(msgDiv);
 });
 
@@ -156,10 +164,27 @@ socket.on("GameEnded", (data) => {
     const endDiv = document.createElement('div');
     if (data.winnerName) {
         endDiv.className = 'msg correct';
-        endDiv.innerHTML = `<strong>${data.winnerName}</strong> guessed the word: <strong>${data.word}</strong>!`;
+        const winMsg = document.createElement('span');
+        winMsg.innerHTML = `<strong>${data.winnerName}</strong> guessed the word: <strong>${data.word}</strong>!`; // Internal strings only
+        // Re-safe check: winnerName is user-provided.
+        winMsg.textContent = ""; 
+        const strongWinner = document.createElement('strong');
+        strongWinner.textContent = data.winnerName;
+        winMsg.appendChild(strongWinner);
+        winMsg.append(` guessed the word: `);
+        const strongWord = document.createElement('strong');
+        strongWord.textContent = data.word;
+        winMsg.appendChild(strongWord);
+        winMsg.append(`!`);
+        endDiv.appendChild(winMsg);
     } else {
         endDiv.className = 'msg system';
-        endDiv.innerHTML = `Time's up! The word was: <strong>${data.word}</strong>`;
+        const loseMsg = document.createElement('span');
+        loseMsg.textContent = `Time's up! The word was: `;
+        const strongWord = document.createElement('strong');
+        strongWord.textContent = data.word;
+        loseMsg.appendChild(strongWord);
+        endDiv.appendChild(loseMsg);
     }
     
     gameMessages.prepend(endDiv);

@@ -52,10 +52,13 @@ io.on('connection', (socket) => {
 
     socket.on('StartGame', (playerName) => {
         if (isGameRunning) return;
+        
+        // Validation: Limit name length
+        const name = (playerName || "Artist").substring(0, 15);
 
         isGameRunning = true;
         currentDrawerId = socket.id;
-        currentDrawerName = playerName;
+        currentDrawerName = name;
         currentWord = WORDS[Math.floor(Math.random() * WORDS.length)];
         strokeHistory = [];
         backgroundBase64 = "";
@@ -78,26 +81,34 @@ io.on('connection', (socket) => {
 
     socket.on('MakeGuess', (guess, playerName) => {
         if (!isGameRunning || socket.id === currentDrawerId) return;
-
-        const correct = guess.toUpperCase().trim() === currentWord.toUpperCase();
-        io.emit("ReceiveMessage", playerName, guess, correct);
+        
+        // Security: Limit guess length
+        const safeGuess = (guess || "").substring(0, 50).trim();
+        const safeName = (playerName || "Artist").substring(0, 15);
+        
+        const correct = safeGuess.toUpperCase() === currentWord.toUpperCase();
+        io.emit("ReceiveMessage", safeName, safeGuess, correct);
 
         if (correct) {
-            endGame(playerName, currentWord);
+            endGame(safeName, currentWord);
         }
     });
 
     socket.on('DrawLine', (data) => {
-        if (isGameRunning && socket.id !== currentDrawerId) return;
+        // Validation: Only drawer can draw
+        if (!isGameRunning || socket.id !== currentDrawerId) return;
+        
+        // Sanitize data: Ensure it's not a massive object
+        if (strokeHistory.length > 50000) return; // Prevent memory leak DoS
+        
         strokeHistory.push(data);
         socket.broadcast.emit("ReceiveDraw", data);
     });
 
     socket.on('UndoStroke', () => {
-        if (isGameRunning && socket.id !== currentDrawerId) return;
+        // Validation: Only drawer can undo
+        if (!isGameRunning || socket.id !== currentDrawerId) return;
         
-        // Find last stroke from this user or just global last stroke
-        // To mirror the C# logic, we'll find the last stroke ID
         if (strokeHistory.length === 0) return;
         const lastStrokeId = strokeHistory[strokeHistory.length - 1].strokeId;
         strokeHistory = strokeHistory.filter(s => s.strokeId !== lastStrokeId);
@@ -105,14 +116,21 @@ io.on('connection', (socket) => {
     });
 
     socket.on('ClearCanvas', () => {
+        // Validation: Only drawer can clear
         if (isGameRunning && socket.id !== currentDrawerId) return;
+        
         strokeHistory = [];
         backgroundBase64 = "";
         io.emit("CanvasCleared");
     });
 
     socket.on('UpdateBackground', (base64) => {
+        // Validation: No background change during game
         if (isGameRunning) return;
+        
+        // Security: Limit background size (5MB max for base64)
+        if (base64 && base64.length > 5 * 1024 * 1024) return;
+        
         backgroundBase64 = base64;
         socket.broadcast.emit("ReceiveBackground", base64);
     });
