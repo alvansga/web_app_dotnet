@@ -29,9 +29,18 @@ namespace WebAppSandbox.Hubs
         private static DateTime _gameEndTime;
         private static System.Timers.Timer _gameTimer;
         private static readonly string[] _words = { 
-            "Apple", "Banana", "Cat", "Dog", "Elephant", "Frog", "Guitar", "House", "Ice Cream", "Jungle", 
-            "Kangaroo", "Lion", "Mountain", "Notebook", "Orange", "Pizza", "Queen", "Robot", "Sun", "Tiger", 
-            "Umbrella", "Volcano", "Whale", "Xylophone", "Yacht", "Zebra", "Airplane", "Bicycle", "Coffee", "Dragon"
+            "DOG", "CAT", "LION", "ELEPHANT", "SHARK", "OWL", "BEE", "TURTLE", "DRAGON", "PENGUIN", 
+            "GIRAFFE", "KANGAROO", "MONKEY", "PIG", "RABBIT", "SNAKE", "WHALE", "SPIDER", "HORSE", "ZEBRA",
+            "PIZZA", "BURGER", "APPLE", "BANANA", "ICE CREAM", "CAKE", "SUSHI", "TACO", "DONUT", "COOKIE",
+            "CARROT", "CORN", "BROCCOLI", "WATERMELON", "PINEAPPLE", "CUPCAKE", "CHEESE", "EGG", "LEMON", "STRAWBERRY",
+            "CHAIR", "TABLE", "LAMP", "BED", "FAN", "CLOCK", "PHONE", "COMPUTER", "CAMERA", "GUITAR",
+            "UMBRELLA", "KEYS", "BOOKS", "SCISSORS", "MIRROR", "WALLET", "BOTTLE", "SPOON", "FORK", "KNIFE",
+            "CAR", "BUS", "TRAIN", "AIRPLANE", "HELICOPTER", "BICYCLE", "BOAT", "ROCKET", "TRUCK", "SUBMARINE",
+            "TREE", "FLOWER", "SUN", "MOON", "CLOUD", "STAR", "RAIN", "MOUNTAIN", "VOLCANO", "ISLAND",
+            "FIRE", "SNOWMAN", "RAINBOW", "LEAF", "MUSHROOM", "HOUSE", "SCHOOL", "BRIDGE", "FENCE", "HAMMER",
+            "SCREWDRIVER", "PENCIL", "BALLOON", "HEART", "DIAMOND", "CROWN", "SWORD", "SHIELD", "MAP", "FLAG",
+            "HAT", "SHIRT", "PANTS", "SHOES", "SOCKS", "GLASSES", "DRESS", "JACKET", "SCARF", "TIE",
+            "BREAD", "BACON", "SOUP", "COFFEE", "MILK", "JUICE", "COOKIE", "POPCORN", "GRAPES", "CHERRY"
         };
         private static readonly Random _random = new();
 
