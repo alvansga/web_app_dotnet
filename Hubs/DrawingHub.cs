@@ -28,19 +28,39 @@ namespace WebAppSandbox.Hubs
         private static string _targetWord = "";
         private static DateTime _gameEndTime;
         private static System.Timers.Timer _gameTimer;
-        private static readonly string[] _words = { 
-            "DOG", "CAT", "LION", "ELEPHANT", "SHARK", "OWL", "BEE", "TURTLE", "DRAGON", "PENGUIN", 
-            "GIRAFFE", "KANGAROO", "MONKEY", "PIG", "RABBIT", "SNAKE", "WHALE", "SPIDER", "HORSE", "ZEBRA",
-            "PIZZA", "BURGER", "APPLE", "BANANA", "ICE CREAM", "CAKE", "SUSHI", "TACO", "DONUT", "COOKIE",
-            "CARROT", "CORN", "BROCCOLI", "WATERMELON", "PINEAPPLE", "CUPCAKE", "CHEESE", "EGG", "LEMON", "STRAWBERRY",
-            "CHAIR", "TABLE", "LAMP", "BED", "FAN", "CLOCK", "PHONE", "COMPUTER", "CAMERA", "GUITAR",
-            "UMBRELLA", "KEYS", "BOOKS", "SCISSORS", "MIRROR", "WALLET", "BOTTLE", "SPOON", "FORK", "KNIFE",
-            "CAR", "BUS", "TRAIN", "AIRPLANE", "HELICOPTER", "BICYCLE", "BOAT", "ROCKET", "TRUCK", "SUBMARINE",
-            "TREE", "FLOWER", "SUN", "MOON", "CLOUD", "STAR", "RAIN", "MOUNTAIN", "VOLCANO", "ISLAND",
-            "FIRE", "SNOWMAN", "RAINBOW", "LEAF", "MUSHROOM", "HOUSE", "SCHOOL", "BRIDGE", "FENCE", "HAMMER",
-            "SCREWDRIVER", "PENCIL", "BALLOON", "HEART", "DIAMOND", "CROWN", "SWORD", "SHIELD", "MAP", "FLAG",
-            "HAT", "SHIRT", "PANTS", "SHOES", "SOCKS", "GLASSES", "DRESS", "JACKET", "SCARF", "TIE",
-            "BREAD", "BACON", "SOUP", "COFFEE", "MILK", "JUICE", "COOKIE", "POPCORN", "GRAPES", "CHERRY"
+        private static readonly string[] _words = {
+            // MARVEL & DC
+            "IRON MAN", "SPIDER-MAN", "THOR", "HULK", "BLACK WIDOW", "CAPTAIN AMERICA", "GROOT", "THANOS", "LOKI", "WOLVERINE",
+            "BATMAN", "SUPERMAN", "WONDER WOMAN", "THE FLASH", "AQUAMAN", "JOKER", "HARLEY QUINN", "BLACK PANTHER", "DOCTOR STRANGE", "VENOM",
+
+            // DISNEY & PIXAR
+            "MICKEY MOUSE", "DONALD DUCK", "GOOFY", "ELSA", "ANNA", "OLAF", "SIMBA", "ALADDIN", "GENIE", "ARIEL",
+            "MULAN", "STITCH", "BAYMAX", "WINNIE THE POOH", "MALEFICENT", "PETER PAN", "HERCULES", "MOANA", "MAUI", "RAPUNZEL",
+            "WOODY", "BUZZ LIGHTYEAR", "NEMO", "DORY", "WALL-E", "REMY", "SULLY", "MIKE WAZOWSKI", "LIGHTNING MCQUEEN", "MATER",
+            "MR. INCREDIBLE", "ELASTIGIRL", "JOY", "SADNESS", "BING BONG", "RUSSELL", "CARL FREDRICKSEN",
+
+            // ANIME & MANGA
+            "NARUTO", "SASUKE", "KAKASHI", "ITACHI", "GAARA", "KURAMA", "HINATA", "MADARA", "TSUNADE", "JIRAIYA",
+            "LUFFY", "ZORO", "NAMI", "SANJI", "CHOPPER", "ROBIN", "BROOK", "SHANKS", "ACE", "KAIDO",
+            "GOKU", "VEGETA", "FRIEZA", "CELL", "MAJIN BUU", "PIKACHU", "CHARIZARD", "DORAEMON", "TOTORO", "SAITAMA",
+            "TANJIRO", "NEZUKO", "ZENITSU", "INOSUKE", "MUZAN", "RENGOKU", "LIGHT YAGAMI", "RYUK", "EDWARD ELRIC", "ALPHONSE ELRIC",
+
+            // MY HERO ACADEMIA
+            "DEKU", "ALL MIGHT", "BAKUGO", "TODOROKI", "URARAKA", "IIDA", "FROPPY", "KIRISHIMA", "ENDEAVOR", "ERASERHEAD",
+            "SHIGARAKI", "TOGA", "DABI", "ALL FOR ONE", "MIRIO",
+
+            // ATTACK ON TITAN
+            "EREN YEAGER", "MIKASA ACKERMAN", "LEVI ACKERMAN", "ARMIN ARLERT", "ERWIN SMITH", "REINER BRAUN", "BERTHOLDT", "ZEKE YEAGER",
+            "COLOSSAL TITAN", "ARMORED TITAN", "BEAST TITAN", "FEMALE TITAN", "JAW TITAN",
+
+            // NICKELODEON
+            "SPONGEBOB", "PATRICK STAR", "SQUIDWARD", "MR. KRABS", "SANDY CHEEKS", "PLANKTON", "GARY THE SNAIL",
+            "AANG", "KATARA", "SOKKA", "ZUKO", "TOPH", "APPA", "MOMO", "KORRA",
+            "DANNY PHANTOM", "TIMMY TURNER", "COSMO", "WANDA", "JIMMY NEUTRON", "ARNOLD SHORTMAN", "CATDOG",
+
+            // CARTOON NETWORK
+            "FINN THE HUMAN", "JAKE THE DOG",
+            "BEN 10", "GWEN TENNYSON", "KEVIN LEVIN", "BLOSSOM", "BUBBLES", "BUTTERCUP",
         };
         private static readonly Random _random = new();
 
@@ -66,7 +86,7 @@ namespace WebAppSandbox.Hubs
 
             [JsonPropertyName("isEraser")]
             public bool IsEraser { get; set; }
-            
+
             [JsonPropertyName("strokeId")]
             public string StrokeId { get; set; }
         }
@@ -91,8 +111,9 @@ namespace WebAppSandbox.Hubs
             // Sync game state for new client
             if (_isGameRunning)
             {
-                await Clients.Caller.SendAsync("GameStarted", new { 
-                    drawerId = _currentDrawerId, 
+                await Clients.Caller.SendAsync("GameStarted", new
+                {
+                    drawerId = _currentDrawerId,
                     drawerName = _currentDrawerName,
                     endTime = _gameEndTime,
                     isReconnect = true
@@ -108,14 +129,14 @@ namespace WebAppSandbox.Hubs
             {
                 _isGameRunning = true;
                 _currentDrawerId = Context.ConnectionId;
-                
+
                 // Security: Limit name length
                 string name = string.IsNullOrEmpty(playerName) ? "Player" : playerName;
                 _currentDrawerName = name.Length > 15 ? name.Substring(0, 15) : name;
-                
+
                 _targetWord = _words[_random.Next(_words.Length)];
                 _gameEndTime = DateTime.UtcNow.AddMinutes(1);
-                
+
                 // Reset canvas
                 _strokeHistory.Clear();
                 _currentBackground = "";
@@ -127,7 +148,7 @@ namespace WebAppSandbox.Hubs
                 }
 
                 _gameTimer = new System.Timers.Timer(1000);
-                _gameTimer.Elapsed += async (sender, e) => 
+                _gameTimer.Elapsed += async (sender, e) =>
                 {
                     if (DateTime.UtcNow >= _gameEndTime)
                     {
@@ -138,8 +159,9 @@ namespace WebAppSandbox.Hubs
             }
 
             await Clients.All.SendAsync("CanvasCleared");
-            await Clients.All.SendAsync("GameStarted", new { 
-                drawerId = _currentDrawerId, 
+            await Clients.All.SendAsync("GameStarted", new
+            {
+                drawerId = _currentDrawerId,
                 drawerName = _currentDrawerName,
                 endTime = _gameEndTime
             });
@@ -153,12 +175,12 @@ namespace WebAppSandbox.Hubs
             // Security: Sanitize inputs
             string safeGuess = string.IsNullOrEmpty(guess) ? "" : guess.Trim();
             if (safeGuess.Length > 50) safeGuess = safeGuess.Substring(0, 50);
-            
+
             string safeName = string.IsNullOrEmpty(playerName) ? "Player" : playerName;
             if (safeName.Length > 15) safeName = safeName.Substring(0, 15);
 
             bool isCorrect = string.Equals(safeGuess, _targetWord, StringComparison.OrdinalIgnoreCase);
-            
+
             if (isCorrect)
             {
                 await EndGame(safeName, _targetWord);
@@ -181,7 +203,8 @@ namespace WebAppSandbox.Hubs
 
             // Use _hubContext instead of Clients because this may be called from a background timer
             // after the original Hub instance has been disposed.
-            await _hubContext.Clients.All.SendAsync("GameEnded", new {
+            await _hubContext.Clients.All.SendAsync("GameEnded", new
+            {
                 winnerName = winnerName,
                 word = word
             });
@@ -217,7 +240,7 @@ namespace WebAppSandbox.Hubs
             lock (_lock)
             {
                 if (!_strokeHistory.Any()) return;
-                
+
                 lastStrokeId = _strokeHistory.Last().StrokeId;
                 if (string.IsNullOrEmpty(lastStrokeId))
                 {

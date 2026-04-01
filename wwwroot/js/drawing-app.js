@@ -674,6 +674,10 @@ if (bgOpacityRange) {
 
 // Update shortcuts
 window.onkeydown = (e) => {
+    // DO NOT trigger shortcuts while typing in input fields
+    const isTyping = e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA';
+    if (isTyping) return;
+
     if (e.code === 'Space') { spacePressed = true; viewport.style.cursor = 'grab'; }
     if (e.code === 'Tab') { e.preventDefault(); toggleUI(); }
     if (e.key.toLowerCase() === 'z' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); undo(); }
