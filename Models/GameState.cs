@@ -7,6 +7,7 @@ namespace WebAppSandbox.Models
     {
         public string RoomCode { get; set; } = "";
         public bool IsGameRunning { get; set; } = false;
+        public int PlayerCount { get; set; } = 0;
         public string CurrentDrawerId { get; set; } = "";
         public string CurrentDrawerName { get; set; } = "";
         public string TargetWord { get; set; } = "";

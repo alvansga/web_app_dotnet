@@ -3,7 +3,7 @@
 const canvas = document.getElementById('drawing-canvas');
 const wrapper = document.getElementById('canvas-wrapper');
 const viewport = document.getElementById('viewport');
-const ctx = canvas.getContext('2d', { willReadFrequently: true });
+const ctx = canvas.getContext('2d');
 const colorPicker = document.getElementById('color-picker');
 const brushSizeRange = document.getElementById('brush-size');
 const sizeValueSpan = document.getElementById('size-value');
@@ -354,11 +354,27 @@ function stopInteraction() {
     currentStrokeId = null;
 }
 
+function getCoordinates(e) {
+    const rect = canvas.getBoundingClientRect();
+    let clientX, clientY;
+    if (e.touches && e.touches.length > 0) {
+        clientX = e.touches[0].clientX;
+        clientY = e.touches[0].clientY;
+    } else {
+        clientX = e.clientX;
+        clientY = e.clientY;
+    }
+    const x = (clientX - rect.left) * (canvas.width / rect.width);
+    const y = (clientY - rect.top) * (canvas.height / rect.height);
+    return [x, y];
+}
+
 function handleMove(e) {
     const isTouch = e.touches && e.touches.length > 0;
     if (isTouch && e.touches.length === 2) {
         handlePinchOnly(e); return;
     }
+    
     if (isPanning) {
         let dx, dy;
         if (isTouch) {
@@ -372,20 +388,29 @@ function handleMove(e) {
         applyTransform();
         return;
     }
+
     if (drawing) {
         const [x, y] = getCoordinates(e);
+        
+        // Removed distance threshold to restore high-resolution stroke articulation
         const isEraser = (currentTool === 'eraser');
         const drawData = {
             lastX, lastY, x, y,
             color: isEraser ? '#000000' : colorPicker.value,
             size: parseInt(brushSizeRange.value),
             isEraser: isEraser,
-            strokeId: currentStrokeId
+            strokeId: currentStrokeId,
+            roomCode: currentRoomCode
         };
+        
         strokeHistory.push(drawData);
         drawLine(drawData);
-        if (connection.state === "Connected") connection.invoke("DrawLine", drawData);
         [lastX, lastY] = [x, y];
+
+        // Direct send for maximum smoothness
+        if (connection.state === "Connected") {
+            connection.invoke("DrawLine", drawData).catch(() => {});
+        }
     }
 }
 
@@ -485,16 +510,28 @@ function resetZoom() {
     applyTransform();
 }
 
+let currentCompMode = 'source-over';
+
 function drawLine(data) {
     if (!data) return;
     const lx = data.lastX ?? data.LastX, ly = data.lastY ?? data.LastY;
     const x = data.x ?? data.X, y = data.y ?? data.Y;
     const size = data.size ?? data.Size, isEraser = data.isEraser ?? data.IsEraser, color = data.color ?? data.Color;
-    ctx.beginPath(); ctx.moveTo(lx, ly); ctx.lineTo(x, y);
-    ctx.globalCompositeOperation = isEraser ? 'destination-out' : 'source-over';
-    ctx.strokeStyle = color; ctx.lineWidth = size;
-    ctx.stroke(); ctx.closePath();
-    ctx.globalCompositeOperation = 'source-over';
+    
+    // Minimize state switching for performance
+    const targetMode = isEraser ? 'destination-out' : 'source-over';
+    if (currentCompMode !== targetMode) {
+        ctx.globalCompositeOperation = targetMode;
+        currentCompMode = targetMode;
+    }
+    
+    ctx.beginPath(); 
+    ctx.moveTo(lx, ly); 
+    ctx.lineTo(x, y);
+    ctx.strokeStyle = color; 
+    ctx.lineWidth = size;
+    ctx.stroke(); 
+    ctx.closePath();
 }
 
 function redrawCanvas() { ctx.clearRect(0, 0, canvas.width, canvas.height); strokeHistory.forEach(s => drawLine(s)); }
@@ -591,16 +628,14 @@ function updateBackgroundLocal(b64) {
 }
 
 function pickColor(x, y) {
-    const pixel = ctx.getImageData(x, y, 1, 1).data;
+    const pixel = ctx.getImageData(Math.floor(x), Math.floor(y), 1, 1).data;
     if (pixel[3] === 0) return; // Ignore transparent
 
     const hex = "#" + ("000000" + ((pixel[0] << 16) | (pixel[1] << 8) | pixel[2]).toString(16)).slice(-6);
     colorPicker.value = hex;
     setTool('pencil');
-
-    // Pulse effect on color picker
-    colorPicker.parentElement.style.transform = 'scale(1.3)';
-    setTimeout(() => { colorPicker.parentElement.style.transform = 'scale(1)'; }, 200);
+    
+    // Pulse effect removed for performance
 }
 
 window.onkeydown = (e) => {
