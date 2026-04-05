@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text.Json.Serialization;
 using System;
 using System.Timers;
+using WebAppSandbox.Models;
 
 namespace WebAppSandbox.Hubs
 {
@@ -12,7 +13,7 @@ namespace WebAppSandbox.Hubs
     {
         private static readonly List<DrawData> _strokeHistory = new();
         private static readonly object _lock = new();
-        private static string _currentBackground = "";
+        private static readonly GameState _gameState = new();
 
         private readonly IHubContext<DrawingHub> _hubContext;
 
@@ -20,14 +21,6 @@ namespace WebAppSandbox.Hubs
         {
             _hubContext = hubContext;
         }
-
-        // Game State
-        private static bool _isGameRunning = false;
-        private static string _currentDrawerId = "";
-        private static string _currentDrawerName = "";
-        private static string _targetWord = "";
-        private static DateTime _gameEndTime;
-        private static System.Timers.Timer _gameTimer;
         private static readonly string[] _words = {
             // MARVEL & DC
             "IRON MAN", "SPIDER-MAN", "THOR", "HULK", "BLACK WIDOW", "CAPTAIN AMERICA", "GROOT", "THANOS", "LOKI", "WOLVERINE",
@@ -36,7 +29,7 @@ namespace WebAppSandbox.Hubs
             // DISNEY & PIXAR
             "MICKEY MOUSE", "DONALD DUCK", "GOOFY", "ELSA", "ANNA", "OLAF", "SIMBA", "ALADDIN", "GENIE", "ARIEL",
             "MULAN", "STITCH", "BAYMAX", "WINNIE THE POOH", "MALEFICENT", "PETER PAN", "HERCULES", "MOANA", "MAUI", "RAPUNZEL",
-            "WOODY", "BUZZ LIGHTYEAR", "NEMO", "DORY", "WALL-E", "REMY", "SULLY", "MIKE WAZOWSKI", "LIGHTNING MCQUEEN", "MATER",
+            "WOODY", "BUZZ LIGHTYEAR", "NEMO", "DORY", "WALL-E", "EVE", "REMY", "SULLY", "MIKE WAZOWSKI", "LIGHTNING MCQUEEN", "TOW MATER",
             "MR. INCREDIBLE", "ELASTIGIRL", "JOY", "SADNESS", "BING BONG", "RUSSELL", "CARL FREDRICKSEN",
 
             // ANIME & MANGA
@@ -51,7 +44,7 @@ namespace WebAppSandbox.Hubs
 
             // ATTACK ON TITAN
             "EREN YEAGER", "MIKASA ACKERMAN", "LEVI ACKERMAN", "ARMIN ARLERT", "ERWIN SMITH", "REINER BRAUN", "BERTHOLDT", "ZEKE YEAGER",
-            "COLOSSAL TITAN", "ARMORED TITAN", "BEAST TITAN", "FEMALE TITAN", "JAW TITAN",
+            "COLOSSAL TITAN", "ARMORED TITAN",
 
             // NICKELODEON
             "SPONGEBOB", "PATRICK STAR", "SQUIDWARD", "MR. KRABS", "SANDY CHEEKS", "PLANKTON", "GARY THE SNAIL",
@@ -59,37 +52,9 @@ namespace WebAppSandbox.Hubs
             "DANNY PHANTOM", "TIMMY TURNER", "COSMO", "WANDA", "JIMMY NEUTRON", "ARNOLD SHORTMAN", "CATDOG",
 
             // CARTOON NETWORK
-            "FINN THE HUMAN", "JAKE THE DOG",
             "BEN 10", "GWEN TENNYSON", "KEVIN LEVIN", "BLOSSOM", "BUBBLES", "BUTTERCUP",
         };
         private static readonly Random _random = new();
-
-        public class DrawData
-        {
-            [JsonPropertyName("lastX")]
-            public double LastX { get; set; }
-
-            [JsonPropertyName("lastY")]
-            public double LastY { get; set; }
-
-            [JsonPropertyName("x")]
-            public double X { get; set; }
-
-            [JsonPropertyName("y")]
-            public double Y { get; set; }
-
-            [JsonPropertyName("color")]
-            public string Color { get; set; }
-
-            [JsonPropertyName("size")]
-            public int Size { get; set; }
-
-            [JsonPropertyName("isEraser")]
-            public bool IsEraser { get; set; }
-
-            [JsonPropertyName("strokeId")]
-            public string StrokeId { get; set; }
-        }
 
         public override async Task OnConnectedAsync()
         {
@@ -103,19 +68,19 @@ namespace WebAppSandbox.Hubs
                 }
             }
 
-            if (!string.IsNullOrEmpty(_currentBackground))
+            if (!string.IsNullOrEmpty(_gameState.CurrentBackground))
             {
-                await Clients.Caller.SendAsync("ReceiveBackground", _currentBackground);
+                await Clients.Caller.SendAsync("ReceiveBackground", _gameState.CurrentBackground);
             }
 
             // Sync game state for new client
-            if (_isGameRunning)
+            if (_gameState.IsGameRunning)
             {
                 await Clients.Caller.SendAsync("GameStarted", new
                 {
-                    drawerId = _currentDrawerId,
-                    drawerName = _currentDrawerName,
-                    endTime = _gameEndTime,
+                    drawerId = _gameState.CurrentDrawerId,
+                    drawerName = _gameState.CurrentDrawerName,
+                    endTime = _gameState.GameEndTime,
                     isReconnect = true
                 });
             }
@@ -123,54 +88,54 @@ namespace WebAppSandbox.Hubs
 
         public async Task StartGame(string playerName)
         {
-            if (_isGameRunning) return;
+            if (_gameState.IsGameRunning) return;
 
             lock (_lock)
             {
-                _isGameRunning = true;
-                _currentDrawerId = Context.ConnectionId;
+                _gameState.IsGameRunning = true;
+                _gameState.CurrentDrawerId = Context.ConnectionId;
 
                 // Security: Limit name length
                 string name = string.IsNullOrEmpty(playerName) ? "Player" : playerName;
-                _currentDrawerName = name.Length > 15 ? name.Substring(0, 15) : name;
+                _gameState.CurrentDrawerName = name.Length > 15 ? name.Substring(0, 15) : name;
 
-                _targetWord = _words[_random.Next(_words.Length)];
-                _gameEndTime = DateTime.UtcNow.AddMinutes(1);
+                _gameState.TargetWord = _words[_random.Next(_words.Length)];
+                _gameState.GameEndTime = DateTime.UtcNow.AddMinutes(1);
 
                 // Reset canvas
                 _strokeHistory.Clear();
-                _currentBackground = "";
+                _gameState.CurrentBackground = "";
 
-                if (_gameTimer != null)
+                if (_gameState.GameTimer != null)
                 {
-                    _gameTimer.Stop();
-                    _gameTimer.Dispose();
+                    _gameState.GameTimer.Stop();
+                    _gameState.GameTimer.Dispose();
                 }
 
-                _gameTimer = new System.Timers.Timer(1000);
-                _gameTimer.Elapsed += async (sender, e) =>
+                _gameState.GameTimer = new System.Timers.Timer(1000);
+                _gameState.GameTimer.Elapsed += async (sender, e) =>
                 {
-                    if (DateTime.UtcNow >= _gameEndTime)
+                    if (DateTime.UtcNow >= _gameState.GameEndTime)
                     {
-                        await EndGame(null, _targetWord);
+                        await EndGame(null, _gameState.TargetWord);
                     }
                 };
-                _gameTimer.Start();
+                _gameState.GameTimer.Start();
             }
 
             await Clients.All.SendAsync("CanvasCleared");
             await Clients.All.SendAsync("GameStarted", new
             {
-                drawerId = _currentDrawerId,
-                drawerName = _currentDrawerName,
-                endTime = _gameEndTime
+                drawerId = _gameState.CurrentDrawerId,
+                drawerName = _gameState.CurrentDrawerName,
+                endTime = _gameState.GameEndTime
             });
-            await Clients.Caller.SendAsync("ReceiveWord", _targetWord);
+            await Clients.Caller.SendAsync("ReceiveWord", _gameState.TargetWord);
         }
 
         public async Task MakeGuess(string guess, string playerName)
         {
-            if (!_isGameRunning || Context.ConnectionId == _currentDrawerId) return;
+            if (!_gameState.IsGameRunning || Context.ConnectionId == _gameState.CurrentDrawerId) return;
 
             // Security: Sanitize inputs
             string safeGuess = string.IsNullOrEmpty(guess) ? "" : guess.Trim();
@@ -179,11 +144,11 @@ namespace WebAppSandbox.Hubs
             string safeName = string.IsNullOrEmpty(playerName) ? "Player" : playerName;
             if (safeName.Length > 15) safeName = safeName.Substring(0, 15);
 
-            bool isCorrect = string.Equals(safeGuess, _targetWord, StringComparison.OrdinalIgnoreCase);
+            bool isCorrect = string.Equals(safeGuess, _gameState.TargetWord, StringComparison.OrdinalIgnoreCase);
 
             if (isCorrect)
             {
-                await EndGame(safeName, _targetWord);
+                await EndGame(safeName, _gameState.TargetWord);
             }
             else
             {
@@ -193,12 +158,12 @@ namespace WebAppSandbox.Hubs
 
         private async Task EndGame(string? winnerName, string word)
         {
-            _isGameRunning = false;
-            if (_gameTimer != null)
+            _gameState.IsGameRunning = false;
+            if (_gameState.GameTimer != null)
             {
-                _gameTimer.Stop();
-                _gameTimer.Dispose();
-                _gameTimer = null;
+                _gameState.GameTimer.Stop();
+                _gameState.GameTimer.Dispose();
+                _gameState.GameTimer = null;
             }
 
             // Use _hubContext instead of Clients because this may be called from a background timer
@@ -213,7 +178,7 @@ namespace WebAppSandbox.Hubs
         public async Task DrawLine(DrawData drawData)
         {
             // If game is running, only the current drawer can draw
-            if (_isGameRunning && Context.ConnectionId != _currentDrawerId)
+            if (_gameState.IsGameRunning && Context.ConnectionId != _gameState.CurrentDrawerId)
             {
                 return;
             }
@@ -232,7 +197,7 @@ namespace WebAppSandbox.Hubs
 
         public async Task UndoStroke()
         {
-            if (_isGameRunning && Context.ConnectionId != _currentDrawerId) return;
+            if (_gameState.IsGameRunning && Context.ConnectionId != _gameState.CurrentDrawerId) return;
 
             string lastStrokeId = null;
             int removedCount = 0;
@@ -259,29 +224,29 @@ namespace WebAppSandbox.Hubs
 
         public async Task UpdateBackground(string base64Image)
         {
-            if (_isGameRunning) return; // Background not allowed during game
+            if (_gameState.IsGameRunning) return; // Background not allowed during game
 
             // Security: Limit image size to ~5MB
             if (string.IsNullOrEmpty(base64Image) || base64Image.Length > 5 * 1024 * 1024)
             {
-                _currentBackground = "";
+                _gameState.CurrentBackground = "";
             }
             else
             {
-                _currentBackground = base64Image;
+                _gameState.CurrentBackground = base64Image;
             }
 
-            await Clients.Others.SendAsync("ReceiveBackground", _currentBackground);
+            await Clients.Others.SendAsync("ReceiveBackground", _gameState.CurrentBackground);
         }
 
         public async Task ClearCanvas()
         {
-            if (_isGameRunning && Context.ConnectionId != _currentDrawerId) return;
+            if (_gameState.IsGameRunning && Context.ConnectionId != _gameState.CurrentDrawerId) return;
 
             lock (_lock)
             {
                 _strokeHistory.Clear();
-                _currentBackground = "";
+                _gameState.CurrentBackground = "";
             }
             await Clients.All.SendAsync("CanvasCleared");
         }
