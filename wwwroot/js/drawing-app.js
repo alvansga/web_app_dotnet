@@ -12,12 +12,22 @@ const saveBtn = document.getElementById('save-btn');
 const connectionStatus = document.getElementById('connection-status');
 const connectionText = document.getElementById('connection-text');
 
+// --- LOBBY ELEMENTS ---
+const lobbyScreen = document.getElementById('lobby-screen');
+const playerNameLobby = document.getElementById('player-name-lobby');
+const roomCodeInput = document.getElementById('room-code-input');
+const joinRoomBtn = document.getElementById('join-room-btn');
+const createRoomBtn = document.getElementById('create-room-btn');
+const currentRoomCodeSpan = document.getElementById('current-room-code');
+const roomInfoBadge = document.querySelector('.room-info-badge');
+
 // --- APP STATE ---
 let drawing = false;
 let lastX = 0;
 let lastY = 0;
 let isPanning = false;
 let spacePressed = false;
+let currentRoomCode = null;
 
 // Game State
 let isGameActive = false;
@@ -28,7 +38,7 @@ let gameTimerInterval = null;
 let transform = {
     x: 0,
     y: 0,
-    scale: 0.8 // Start slightly zoomed out
+    scale: 0.8 
 };
 
 // Multi-touch tracking
@@ -37,10 +47,9 @@ let initialPinchScale = 1;
 let lastMidpoint = { x: 0, y: 0 };
 let lastTouchPos = { x: 0, y: 0 };
 let currentStrokeId = null;
-let strokeHistory = []; // Local history for redraws
+let strokeHistory = []; 
 
 // DOM Elements
-const playerNameInput = document.getElementById('player-name');
 const playBtn = document.getElementById('play-btn');
 const gameOverlay = document.getElementById('game-overlay');
 const gameTimerDisplay = document.getElementById('game-timer');
@@ -63,10 +72,8 @@ function init() {
     ctx.lineJoin = 'round';
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     
-    // Set default name if empty
-    if (!playerNameInput.value) {
-        playerNameInput.value = "Artist" + Math.floor(Math.random() * 1000);
-    }
+    // Set default name
+    playerNameLobby.value = localStorage.getItem('scribble_name') || "Artist" + Math.floor(Math.random() * 1000);
 
     // Center initially
     const vw = viewport.clientWidth;
@@ -90,6 +97,7 @@ connection.on("ReceiveDraw", (data) => {
     strokeHistory.push(data);
     drawLine(data);
 });
+
 connection.on("CanvasCleared", () => {
     strokeHistory = [];
     clearLocal();
@@ -99,14 +107,16 @@ connection.on("CanvasCleared", () => {
         bgOptions.style.display = 'none';
     }
 });
+
 connection.on("ReceiveBackground", (base64) => {
-    console.log("Received background update, length:", base64?.length || 0);
     updateBackgroundLocal(base64);
 });
+
 connection.on("LoadHistory", (history) => {
     strokeHistory = Array.isArray(history) ? history : [];
     redrawCanvas();
 });
+
 connection.on("StrokeUndone", (strokeId) => {
     strokeHistory = strokeHistory.filter(s => {
         const sid = s.strokeId || s.StrokeId;
@@ -115,30 +125,28 @@ connection.on("StrokeUndone", (strokeId) => {
     redrawCanvas();
 });
 
-// Game Events
 connection.on("GameStarted", (data) => {
     isGameActive = true;
     isDrawer = (connection.connectionId === data.drawerId);
-    
-    // Reset local state
     strokeHistory = [];
     clearLocal();
     
-    // Update UI
     gameOverlay.style.display = 'block';
     guessPanel.style.display = 'block';
     playBtn.style.display = 'none';
     wordDisplay.style.display = isDrawer ? 'block' : 'none';
     drawerInfo.textContent = isDrawer ? "YOU are drawing!" : `${data.drawerName} is drawing...`;
-    gameMessages.innerHTML = `<div class="msg system">Game started! ${data.drawerName} is drawing.</div>`;
     
-    // Sync Timer
+    const startMsg = document.createElement('div');
+    startMsg.className = 'msg system';
+    startMsg.textContent = `Game started! ${data.drawerName} is drawing.`;
+    gameMessages.prepend(startMsg);
+    
     startLocalTimer(new Date(data.endTime));
     
-    if (isDrawer) {
-        setTool('pencil');
-    } else {
-        setTool('move'); // Default for guessers
+    if (isDrawer) setTool('pencil');
+    else {
+        setTool('move');
         guessInput.focus();
     }
 });
@@ -151,14 +159,12 @@ connection.on("ReceiveMessage", (sender, message, isCorrect) => {
     const msgDiv = document.createElement('div');
     msgDiv.className = isCorrect ? 'msg correct' : 'msg';
     msgDiv.innerHTML = `<span class="sender">${sender}:</span> ${message}`;
-    gameMessages.prepend(msgDiv); // Newest at top
+    gameMessages.prepend(msgDiv);
 });
 
 connection.on("GameEnded", (data) => {
     isGameActive = false;
     isDrawer = false;
-    
-    // UI Cleanup
     clearInterval(gameTimerInterval);
     gameOverlay.style.display = 'none';
     playBtn.style.display = 'block';
@@ -171,42 +177,83 @@ connection.on("GameEnded", (data) => {
         endDiv.className = 'msg system';
         endDiv.innerHTML = `Time's up! The word was: <strong>${data.word}</strong>`;
     }
-    
-    gameMessages.prepend(endDiv); // Newest result at top
+    gameMessages.prepend(endDiv);
     
     setTimeout(() => {
         if (!isGameActive) guessPanel.style.display = 'none';
-    }, 10000); // Hide after 10s
+    }, 10000);
 });
 
 function startLocalTimer(endTime) {
     if (gameTimerInterval) clearInterval(gameTimerInterval);
-    
     function update() {
         const now = new Date();
         const diff = Math.max(0, Math.floor((endTime - now) / 1000));
         const mins = Math.floor(diff / 60);
         const secs = diff % 60;
         gameTimerDisplay.textContent = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-        
         if (diff <= 0) clearInterval(gameTimerInterval);
     }
-    
     update();
     gameTimerInterval = setInterval(update, 1000);
 }
 
-// Actions
+// --- LOBBY ACTIONS ---
+createRoomBtn.onclick = async () => {
+    const name = playerNameLobby.value.trim() || "Artist";
+    localStorage.setItem('scribble_name', name);
+    
+    try {
+        const code = await connection.invoke("CreateRoom");
+        joinRoom(code, name);
+    } catch (err) {
+        console.error("Create Room failed:", err);
+        alert("Failed to create room. Please try again.");
+    }
+};
+
+joinRoomBtn.onclick = () => {
+    const code = roomCodeInput.value.trim().toUpperCase();
+    const name = playerNameLobby.value.trim() || "Artist";
+    if (!code) { alert("Please enter a room code."); return; }
+    localStorage.setItem('scribble_name', name);
+    joinRoom(code, name);
+};
+
+async function joinRoom(code, name) {
+    try {
+        const success = await connection.invoke("JoinRoom", code, name);
+        if (success) {
+            currentRoomCode = code;
+            currentRoomCodeSpan.textContent = code;
+            enterGameUI();
+        } else {
+            alert("Room not found or invalid!");
+        }
+    } catch (err) {
+        console.error("Join Room failed:", err);
+    }
+}
+
+function enterGameUI() {
+    lobbyScreen.style.display = 'none';
+    roomInfoBadge.style.display = 'flex';
+    playBtn.style.display = 'block';
+    
+    // Trigger resize to fix canvas centering
+    window.dispatchEvent(new Event('resize'));
+}
+
+// --- GAME ACTIONS ---
 playBtn.onclick = () => {
-    const name = playerNameInput.value.trim() || "Artist";
+    const name = playerNameLobby.value.trim() || "Artist";
     connection.invoke("StartGame", name).catch(err => console.error(err));
 };
 
 function sendGuess() {
     const guess = guessInput.value.trim();
     if (!guess || !isGameActive || isDrawer) return;
-    
-    const name = playerNameInput.value.trim() || "Artist";
+    const name = playerNameLobby.value.trim() || "Artist";
     connection.invoke("MakeGuess", guess, name).catch(err => console.error(err));
     guessInput.value = "";
 }
@@ -215,7 +262,13 @@ guessInput.onkeydown = (e) => { if (e.key === "Enter") sendGuess(); };
 sendGuessBtn.onclick = sendGuess;
 
 connection.start()
-    .then(() => updateStatus('online', 'Connected'))
+    .then(() => {
+        updateStatus('online', 'Connected');
+        // If room code in URL, auto-fill it?
+        const urlParams = new URLSearchParams(window.location.search);
+        const urlRoom = urlParams.get('room');
+        if (urlRoom) roomCodeInput.value = urlRoom;
+    })
     .catch(e => updateStatus('offline', 'Error'));
 
 function updateStatus(status, text) {
@@ -224,11 +277,10 @@ function updateStatus(status, text) {
     connectionText.textContent = text;
 }
 
-// --- COORDINATE MAPPING ---
+// --- INTERACTION & DRAWING (Keep logic same as before) ---
 function getCoordinates(e) {
     const rect = canvas.getBoundingClientRect();
     let clientX, clientY;
-    
     if (e.touches && e.touches.length > 0) {
         clientX = e.touches[0].clientX;
         clientY = e.touches[0].clientY;
@@ -236,16 +288,12 @@ function getCoordinates(e) {
         clientX = e.clientX;
         clientY = e.clientY;
     }
-    
     const x = (clientX - rect.left) * (canvas.width / rect.width);
     const y = (clientY - rect.top) * (canvas.height / rect.height);
     return [x, y];
 }
 
-// --- TOOL STATE ---
-let currentTool = 'pencil'; // 'pencil', 'eraser', 'move'
-let lastSelectedColor = '#3a86ff';
-
+let currentTool = 'pencil';
 const pencilBtn = document.getElementById('pencil-tool');
 const eraserBtn = document.getElementById('eraser-tool');
 const moveBtn = document.getElementById('move-tool');
@@ -255,8 +303,6 @@ function setTool(tool) {
     pencilBtn.classList.toggle('active', tool === 'pencil');
     eraserBtn.classList.toggle('active', tool === 'eraser');
     moveBtn.classList.toggle('active', tool === 'move');
-    
-    // Set appropriate cursor
     if (tool === 'move') viewport.style.cursor = 'grab';
     else if (tool === 'eraser') viewport.style.cursor = 'cell';
     else viewport.style.cursor = 'crosshair';
@@ -266,62 +312,31 @@ pencilBtn.onclick = () => setTool('pencil');
 eraserBtn.onclick = () => setTool('eraser');
 moveBtn.onclick = () => setTool('move');
 
-// --- INTERACTION HANDLERS ---
 function startInteraction(e) {
     const isTouch = e.touches && e.touches.length > 0;
     const touchCount = isTouch ? e.touches.length : 1;
-
-    // Reset multi-touch state
     if (touchCount === 2) {
-        isPanning = true;
-        drawing = false; // Never draw with 2 fingers
-        const t1 = e.touches[0];
-        const t2 = e.touches[1];
-        initialPinchDistance = Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY);
+        isPanning = true; drawing = false;
+        initialPinchDistance = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
         initialPinchScale = transform.scale;
-        lastMidpoint = { 
-            x: (t1.clientX + t2.clientX) / 2, 
-            y: (t1.clientY + t2.clientY) / 2 
-        };
         return;
     }
-
-    // 1-Finger/Mouse logic
     if (currentTool === 'move' || e.button === 1 || spacePressed || (isGameActive && !isDrawer)) {
-        isPanning = true;
-        drawing = false;
-        if (isTouch) {
-            lastTouchPos = { x: e.touches[0].clientX, y: e.touches[0].clientY };
-        }
+        isPanning = true; drawing = false;
+        if (isTouch) lastTouchPos = { x: e.touches[0].clientX, y: e.touches[0].clientY };
     } else {
-        drawing = true;
-        isPanning = false;
+        drawing = true; isPanning = false;
         currentStrokeId = Date.now().toString() + Math.random().toString(36).substr(2, 9);
         const [x, y] = getCoordinates(e);
-        lastX = x;
-        lastY = y;
+        lastX = x; lastY = y;
     }
-}
-
-function stopInteraction() {
-    drawing = false;
-    isPanning = false;
-    initialPinchDistance = null;
-    lastMidpoint = null;
-    currentStrokeId = null;
 }
 
 function handleMove(e) {
     const isTouch = e.touches && e.touches.length > 0;
-    const touchCount = isTouch ? e.touches.length : 1;
-
-    // Handle 2-Finger Zoom ONLY
-    if (isTouch && touchCount === 2) {
-        handlePinchOnly(e);
-        return;
+    if (isTouch && e.touches.length === 2) {
+        handlePinchOnly(e); return;
     }
-
-    // Handle Panning (1 finger or mouse)
     if (isPanning) {
         let dx, dy;
         if (isTouch) {
@@ -329,54 +344,26 @@ function handleMove(e) {
             dy = e.touches[0].clientY - lastTouchPos.y;
             lastTouchPos = { x: e.touches[0].clientX, y: e.touches[0].clientY };
         } else {
-            dx = e.movementX;
-            dy = e.movementY;
+            dx = e.movementX; dy = e.movementY;
         }
-        transform.x += dx;
-        transform.y += dy;
+        transform.x += dx; transform.y += dy;
         applyTransform();
         return;
     }
-
-    // Handle Drawing
     if (drawing) {
         const [x, y] = getCoordinates(e);
         const isEraser = (currentTool === 'eraser');
         const drawData = {
             lastX, lastY, x, y,
-            color: isEraser ? '#000000' : colorPicker.value, // Black doesn't matter for eraser
+            color: isEraser ? '#000000' : colorPicker.value,
             size: parseInt(brushSizeRange.value),
             isEraser: isEraser,
             strokeId: currentStrokeId
         };
-
         strokeHistory.push(drawData);
         drawLine(drawData);
-        if (connection.state === "Connected") {
-            connection.invoke("DrawLine", drawData).catch(err => console.error(err));
-        }
+        if (connection.state === "Connected") connection.invoke("DrawLine", drawData);
         [lastX, lastY] = [x, y];
-    }
-}
-
-// Pinch & Zoom Only (Translation component removed for 2 fingers)
-function handlePinchOnly(e) {
-    const t1 = e.touches[0];
-    const t2 = e.touches[1];
-    const midX = (t1.clientX + t2.clientX) / 2;
-    const midY = (t1.clientY + t2.clientY) / 2;
-    const dist = Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY);
-
-    if (initialPinchDistance === null) {
-        initialPinchDistance = dist;
-        initialPinchScale = transform.scale;
-    } else {
-        const factor = dist / initialPinchDistance;
-        const newScale = Math.min(Math.max(initialPinchScale * factor, 0.05), 10);
-        
-        // Zoom centered at midpoint, but NO additional translation (dx/dy)
-        zoomAt(midX, midY, newScale);
-        applyTransform();
     }
 }
 
@@ -389,14 +376,22 @@ function zoomAt(clientX, clientY, newScale) {
     transform.scale = newScale;
 }
 
-// Global Event Handling for Scrolling/Zooming
-window.addEventListener('wheel', (e) => {
-    // 1. Allow natural scrolling for UI elements
-    if (e.target.closest('.guess-panel') || e.target.closest('.side-panel') || e.target.closest('.app-header')) {
-        return; // Don't prevent default, allow the browser to scroll the div
+function handlePinchOnly(e) {
+    const t1 = e.touches[0], t2 = e.touches[1];
+    const midX = (t1.clientX + t2.clientX) / 2, midY = (t1.clientY + t2.clientY) / 2;
+    const dist = Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY);
+    if (initialPinchDistance === null) {
+        initialPinchDistance = dist; initialPinchScale = transform.scale;
+    } else {
+        const factor = dist / initialPinchDistance;
+        const newScale = Math.min(Math.max(initialPinchScale * factor, 0.05), 10);
+        zoomAt(midX, midY, newScale);
+        applyTransform();
     }
-    
-    // 2. Only zoom if we're interacting with the viewport (canvas area)
+}
+
+window.addEventListener('wheel', (e) => {
+    if (e.target.closest('.guess-panel') || e.target.closest('.side-panel') || e.target.closest('.app-header')) return;
     if (e.target.closest('#viewport')) {
         e.preventDefault();
         const delta = e.deltaY > 0 ? 0.95 : 1.05;
@@ -405,288 +400,80 @@ window.addEventListener('wheel', (e) => {
     }
 }, { passive: false });
 
-// Global Events
 canvas.addEventListener('mousedown', startInteraction);
 window.addEventListener('mousemove', handleMove);
-window.addEventListener('mouseup', stopInteraction);
+window.addEventListener('mouseup', () => { drawing = false; isPanning = false; initialPinchDistance = null; });
 
-canvas.addEventListener('touchstart', (e) => {
-    e.preventDefault();
-    startInteraction(e);
-}, { passive: false });
+canvas.addEventListener('touchstart', (e) => { e.preventDefault(); startInteraction(e); }, { passive: false });
+window.addEventListener('touchmove', (e) => { if (!e.target.closest('.lobby-overlay')) { e.preventDefault(); handleMove(e); } }, { passive: false });
+window.addEventListener('touchend', () => { drawing = false; isPanning = false; initialPinchDistance = null; });
 
-window.addEventListener('touchmove', (e) => {
-    if (e.target.closest('.guess-panel') || e.target.closest('.side-panel')) return; 
-    e.preventDefault();
-    handleMove(e);
-}, { passive: false });
-
-window.addEventListener('touchend', stopInteraction);
-
-// UI scrolling hints
-document.getElementById('game-messages').style.overscrollBehavior = 'contain';
-document.getElementById('palette').style.overscrollBehavior = 'contain';
-
-// Utilities
 function drawLine(data) {
     if (!data) return;
-    
-    // Normalize properties for both camelCase and PascalCase
-    const lx = data.lastX !== undefined ? data.lastX : data.LastX;
-    const ly = data.lastY !== undefined ? data.lastY : data.LastY;
-    const x = data.x !== undefined ? data.x : data.X;
-    const y = data.y !== undefined ? data.y : data.Y;
-    const size = data.size !== undefined ? data.size : data.Size;
-    const isEraser = data.isEraser !== undefined ? data.isEraser : data.IsEraser;
-    const color = data.color !== undefined ? data.color : data.Color;
-
-    ctx.beginPath();
-    ctx.moveTo(lx, ly);
-    ctx.lineTo(x, y);
-    
-    if (isEraser) {
-        ctx.globalCompositeOperation = 'destination-out';
-    } else {
-        ctx.globalCompositeOperation = 'source-over';
-    }
-    
-    ctx.strokeStyle = color;
-    ctx.lineWidth = size;
-    ctx.stroke();
-    ctx.closePath();
-    
-    // Reset composite operation
+    const lx = data.lastX ?? data.LastX, ly = data.lastY ?? data.LastY;
+    const x = data.x ?? data.X, y = data.y ?? data.Y;
+    const size = data.size ?? data.Size, isEraser = data.isEraser ?? data.IsEraser, color = data.color ?? data.Color;
+    ctx.beginPath(); ctx.moveTo(lx, ly); ctx.lineTo(x, y);
+    ctx.globalCompositeOperation = isEraser ? 'destination-out' : 'source-over';
+    ctx.strokeStyle = color; ctx.lineWidth = size;
+    ctx.stroke(); ctx.closePath();
     ctx.globalCompositeOperation = 'source-over';
 }
 
-function redrawCanvas() {
-    clearLocal();
-    strokeHistory.forEach(s => drawLine(s));
-}
+function redrawCanvas() { ctx.clearRect(0, 0, canvas.width, canvas.height); strokeHistory.forEach(s => drawLine(s)); }
+function clearLocal() { ctx.clearRect(0, 0, canvas.width, canvas.height); }
 
-function clearLocal() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-}
-
+// Palette etc
 const palette = document.getElementById('palette');
 const paletteEditor = document.getElementById('palette-editor');
-let longPressTimer;
-let currentEditingSwatch = null;
+palette.onclick = (e) => { if (e.target.classList.contains('swatch')) { colorPicker.value = e.target.dataset.color; setTool('pencil'); } };
 
-palette.onclick = (e) => {
-    if (e.target.classList.contains('swatch')) {
-        const color = e.target.dataset.color;
-        colorPicker.value = color;
-        setTool('pencil');
-    }
-};
-
-// --- PALETTE EDITING (Right Click & Long Press) ---
-palette.oncontextmenu = (e) => {
-    if (e.target.classList.contains('swatch')) {
-        e.preventDefault();
-        openSwatchEditor(e.target);
-    }
-};
-
-// Long Press for Android/iOS
-palette.addEventListener('touchstart', (e) => {
-    if (e.target.classList.contains('swatch')) {
-        longPressTimer = setTimeout(() => {
-            openSwatchEditor(e.target);
-            longPressTimer = null;
-        }, 600); // 600ms for long press
-    }
-}, { passive: true });
-
-palette.addEventListener('touchend', () => {
-    if (longPressTimer) {
-        clearTimeout(longPressTimer);
-        longPressTimer = null;
-    }
-});
-
-palette.addEventListener('touchmove', () => {
-    if (longPressTimer) {
-        clearTimeout(longPressTimer);
-        longPressTimer = null;
-    }
-});
-
-function openSwatchEditor(swatch) {
-    currentEditingSwatch = swatch;
-    paletteEditor.value = swatch.dataset.color;
-    paletteEditor.click();
-}
-
-paletteEditor.oninput = () => {
-    if (currentEditingSwatch) {
-        const newColor = paletteEditor.value;
-        currentEditingSwatch.style.background = newColor;
-        currentEditingSwatch.dataset.color = newColor;
-        // Optionally select it immediately
-        colorPicker.value = newColor;
-        setTool('pencil');
-    }
-};
-
-// Tooling & Actions
-colorPicker.oninput = () => { if (currentTool === 'eraser') setTool('pencil'); };
-brushSizeRange.oninput = () => { sizeValueSpan.textContent = brushSizeRange.value; };
-
-const undoBtn = document.getElementById('undo-btn');
-
-function undo() {
-    if (isGameActive && !isDrawer) return;
-    console.log("Undo requested");
-    if (connection.state === "Connected") {
-        connection.invoke("UndoStroke").catch(err => console.error("Undo error:", err));
-    } else {
-        console.warn("Cannot undo: Connection state is", connection.state);
-    }
-}
-
-undoBtn.onclick = undo;
-
-clearBtn.onclick = () => {
-    if (isGameActive && !isDrawer) return;
-    if (confirm('Clear canvas for everyone?')) connection.invoke("ClearCanvas");
-};
+function undo() { if (isGameActive && !isDrawer) return; connection.invoke("UndoStroke"); }
+document.getElementById('undo-btn').onclick = undo;
+clearBtn.onclick = () => { if (isGameActive && !isDrawer) return; if (confirm('Clear?')) connection.invoke("ClearCanvas"); };
 
 saveBtn.onclick = () => {
-    // Create temp canvas for merging
     const tempCanvas = document.createElement('canvas');
-    tempCanvas.width = canvas.width;
-    tempCanvas.height = canvas.height;
+    tempCanvas.width = canvas.width; tempCanvas.height = canvas.height;
     const tCtx = tempCanvas.getContext('2d');
-
-    // 1. Draw Background Image if active
-    if (bgLayer.src && bgLayer.style.display !== 'none') {
-        tCtx.globalAlpha = parseFloat(bgLayer.style.opacity) || 0.5;
-        
-        // Calculate "object-fit: contain" for the canvas export
-        const canvasW = tempCanvas.width;
-        const canvasH = tempCanvas.height;
-        const imgW = bgLayer.naturalWidth;
-        const imgH = bgLayer.naturalHeight;
-        
-        const ratio = Math.min(canvasW / imgW, canvasH / imgH);
-        const drawW = imgW * ratio;
-        const drawH = imgH * ratio;
-        const drawX = (canvasW - drawW) / 2;
-        const drawY = (canvasH - drawH) / 2;
-
-        tCtx.drawImage(bgLayer, drawX, drawY, drawW, drawH);
+    const bg = document.getElementById('bg-layer');
+    if (bg.src && bg.style.display !== 'none') {
+        tCtx.globalAlpha = parseFloat(bg.style.opacity) || 0.5;
+        tCtx.drawImage(bg, 0, 0, canvas.width, canvas.height);
         tCtx.globalAlpha = 1.0;
     }
-
-    // 2. Draw Drawing Layer
     tCtx.drawImage(canvas, 0, 0);
-
     const link = document.createElement('a');
-    link.download = `scribble-${Date.now()}.png`;
-    link.href = tempCanvas.toDataURL();
-    link.click();
+    link.download = `scribble-${Date.now()}.png`; link.href = tempCanvas.toDataURL(); link.click();
 };
 
 const toggleUiBtn = document.getElementById('toggle-ui');
-let uiHidden = false;
+toggleUiBtn.onclick = () => { document.body.classList.toggle('tools-hidden'); };
 
-function toggleUI() {
-    uiHidden = !uiHidden;
-    document.body.classList.toggle('tools-hidden', uiHidden);
-    toggleUiBtn.querySelector('i').className = uiHidden ? 'fa-solid fa-eye-slash' : 'fa-solid fa-eye';
-    toggleUiBtn.classList.toggle('active', uiHidden);
-}
-
-toggleUiBtn.onclick = toggleUI;
-
-window.onload = init;
-window.onresize = applyTransform;
-
-// --- BACKGROUND LAYER MANAGEMENT ---
-const addBgBtn = document.getElementById('add-bg-btn');
+// BG
 const bgUpload = document.getElementById('bg-upload');
 const bgLayer = document.getElementById('bg-layer');
 const bgOptions = document.getElementById('bg-options');
-const bgOpacityRange = document.getElementById('bg-opacity');
-
-if (addBgBtn) {
-    addBgBtn.onclick = () => {
-        if (isGameActive) {
-            alert("Background changes are disabled during a game!");
-            return;
-        }
-        const hasBg = bgLayer.src && bgLayer.style.display !== 'none';
-        if (hasBg) {
-            // Remove Background
-            if (confirm("Remove background for everyone?")) {
-                bgLayer.src = "";
-                bgLayer.style.display = 'none';
-                bgOptions.style.display = 'none';
-                addBgBtn.querySelector('i').className = 'fa-solid fa-layer-group';
-                if (connection.state === "Connected") {
-                    connection.invoke("UpdateBackground", "");
-                }
-            }
-        } else {
-            bgUpload.click();
-        }
+document.getElementById('add-bg-btn').onclick = () => { if (isGameActive) return; bgUpload.click(); };
+bgUpload.onchange = (e) => {
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+        const b64 = ev.target.result;
+        updateBackgroundLocal(b64);
+        connection.invoke("UpdateBackground", b64);
     };
+    reader.readAsDataURL(e.target.files[0]);
+};
+function updateBackgroundLocal(b64) {
+    if (!b64) { bgLayer.src = ""; bgLayer.style.display = 'none'; bgOptions.style.display = 'none'; }
+    else { bgLayer.src = b64; bgLayer.style.display = 'block'; bgOptions.style.display = 'flex'; }
 }
 
-if (bgUpload) {
-    bgUpload.addEventListener('change', (e) => {
-        const file = e.target.files[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onload = (event) => {
-                const base64 = event.target.result;
-                updateBackgroundLocal(base64);
-                if (connection.state === "Connected") {
-                    connection.invoke("UpdateBackground", base64);
-                }
-            };
-            reader.readAsDataURL(file);
-        }
-    });
-}
-
-function updateBackgroundLocal(base64) {
-    if (!base64) {
-        bgLayer.src = "";
-        bgLayer.style.display = 'none';
-        bgOptions.style.display = 'none';
-        addBgBtn.querySelector('i').className = 'fa-solid fa-layer-group';
-    } else {
-        bgLayer.src = base64;
-        bgLayer.style.display = 'block';
-        bgOptions.style.display = 'flex';
-        addBgBtn.querySelector('i').className = 'fa-solid fa-trash-can'; // Icon change to trash when active
-    }
-}
-
-if (bgOpacityRange) {
-    bgOpacityRange.oninput = () => {
-        if (bgLayer) bgLayer.style.opacity = bgOpacityRange.value;
-    };
-}
-
-// Update shortcuts
 window.onkeydown = (e) => {
-    // DO NOT trigger shortcuts while typing in input fields
-    const isTyping = e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA';
-    if (isTyping) return;
-
+    if (e.target.tagName === 'INPUT') return;
     if (e.code === 'Space') { spacePressed = true; viewport.style.cursor = 'grab'; }
-    if (e.code === 'Tab') { e.preventDefault(); toggleUI(); }
     if (e.key.toLowerCase() === 'z' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); undo(); }
-    if (e.key.toLowerCase() === 'b') setTool('pencil');
-    if (e.key.toLowerCase() === 'e') setTool('eraser');
-    if (e.key.toLowerCase() === 'h') setTool('move');
-    if (e.key.toLowerCase() === 'l') bgUpload?.click();
 };
-
-window.onkeyup = (e) => {
-    if (e.code === 'Space') { spacePressed = false; setTool(currentTool); }
-};
+window.onkeyup = (e) => { if (e.code === 'Space') { spacePressed = false; setTool(currentTool); } };
+window.onload = init;
+window.onresize = applyTransform;
