@@ -694,4 +694,162 @@ input[type="range"][orient="vertical"] {
     .side-panel {
         top: 60%;
     }
+
+/* Lobby Screen Styles */
+.lobby-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: radial-gradient(circle at center, #1a1a2e 0%, #0c0c14 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+    backdrop-filter: blur(8px);
+}
+
+.lobby-card {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 24px;
+    padding: 2.5rem;
+    width: 90%;
+    max-width: 450px;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    animation: fadeIn 0.5s ease-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.logo-large {
+    text-align: center;
+    margin-bottom: 2.5rem;
+}
+
+.logo-large i {
+    font-size: 3rem;
+    color: #3b82f6;
+    margin-bottom: 1rem;
+    display: block;
+}
+
+.logo-large h1 {
+    font-size: 2.2rem;
+    font-weight: 700;
+    letter-spacing: -1px;
+}
+
+.lobby-inputs {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.input-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.input-group label {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #94a3b8;
+    margin-left: 0.25rem;
+}
+
+.input-group input {
+    background: rgba(255, 255, 255, 0.1);
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 1rem;
+    color: #fff;
+    font-size: 16px; /* CRITICAL: Prevent Android/iOS auto-zoom */
+    outline: none;
+    transition: all 0.2s;
+}
+
+.input-group input:focus {
+    border-color: #3b82f6;
+    background: rgba(255, 255, 255, 0.15);
+}
+
+.lobby-divider {
+    position: relative;
+    text-align: center;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    line-height: 0.1em;
+    margin: 0.5rem 0;
+}
+
+.lobby-divider span {
+    background: #0e111a; /* Match gradient bg area roughly */
+    padding: 0 1rem;
+    color: #475569;
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.primary-btn, .secondary-btn {
+    padding: 1rem;
+    border-radius: 12px;
+    font-weight: 700;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: none;
+}
+
+.primary-btn {
+    background: linear-gradient(135deg, #3b82f6, #2563eb);
+    color: white;
+}
+
+.primary-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+}
+
+.secondary-btn {
+    background: rgba(255, 255, 255, 0.05);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.secondary-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+/* Room Info Badge */
+.room-info-badge {
+    background: rgba(255, 255, 255, 0.1);
+    padding: 0.5rem 1rem;
+    border-radius: 50px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-right: 1rem;
+}
+
+.room-info-badge .label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: #94a3b8;
+    text-transform: uppercase;
+}
+
+.room-info-badge .code {
+    font-family: 'Outfit', sans-serif;
+    font-weight: 700;
+    color: #3b82f6;
+    letter-spacing: 1px;
+}
 }

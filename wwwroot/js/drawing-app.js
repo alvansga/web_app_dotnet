@@ -297,20 +297,25 @@ let currentTool = 'pencil';
 const pencilBtn = document.getElementById('pencil-tool');
 const eraserBtn = document.getElementById('eraser-tool');
 const moveBtn = document.getElementById('move-tool');
+const eyedropperBtn = document.getElementById('eyedropper-tool');
 
 function setTool(tool) {
     currentTool = tool;
     pencilBtn.classList.toggle('active', tool === 'pencil');
     eraserBtn.classList.toggle('active', tool === 'eraser');
     moveBtn.classList.toggle('active', tool === 'move');
+    eyedropperBtn.classList.toggle('active', tool === 'eyedropper');
+    
     if (tool === 'move') viewport.style.cursor = 'grab';
     else if (tool === 'eraser') viewport.style.cursor = 'cell';
+    else if (tool === 'eyedropper') viewport.style.cursor = 'crosshair';
     else viewport.style.cursor = 'crosshair';
 }
 
 pencilBtn.onclick = () => setTool('pencil');
 eraserBtn.onclick = () => setTool('eraser');
 moveBtn.onclick = () => setTool('move');
+eyedropperBtn.onclick = () => setTool('eyedropper');
 
 function startInteraction(e) {
     const isTouch = e.touches && e.touches.length > 0;
@@ -321,6 +326,13 @@ function startInteraction(e) {
         initialPinchScale = transform.scale;
         return;
     }
+
+    if (currentTool === 'eyedropper') {
+        const [x, y] = getCoordinates(e);
+        pickColor(x, y);
+        return;
+    }
+
     if (currentTool === 'move' || e.button === 1 || spacePressed || (isGameActive && !isDrawer)) {
         isPanning = true; drawing = false;
         if (isTouch) lastTouchPos = { x: e.touches[0].clientX, y: e.touches[0].clientY };
@@ -469,10 +481,27 @@ function updateBackgroundLocal(b64) {
     else { bgLayer.src = b64; bgLayer.style.display = 'block'; bgOptions.style.display = 'flex'; }
 }
 
+function pickColor(x, y) {
+    const pixel = ctx.getImageData(x, y, 1, 1).data;
+    if (pixel[3] === 0) return; // Ignore transparent
+    
+    const hex = "#" + ("000000" + ((pixel[0] << 16) | (pixel[1] << 8) | pixel[2]).toString(16)).slice(-6);
+    colorPicker.value = hex;
+    setTool('pencil');
+    
+    // Pulse effect on color picker
+    colorPicker.parentElement.style.transform = 'scale(1.3)';
+    setTimeout(() => { colorPicker.parentElement.style.transform = 'scale(1)'; }, 200);
+}
+
 window.onkeydown = (e) => {
     if (e.target.tagName === 'INPUT') return;
     if (e.code === 'Space') { spacePressed = true; viewport.style.cursor = 'grab'; }
     if (e.key.toLowerCase() === 'z' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); undo(); }
+    if (e.key.toLowerCase() === 'b') setTool('pencil');
+    if (e.key.toLowerCase() === 'e') setTool('eraser');
+    if (e.key.toLowerCase() === 'h') setTool('move');
+    if (e.key.toLowerCase() === 'i') setTool('eyedropper');
 };
 window.onkeyup = (e) => { if (e.code === 'Space') { spacePressed = false; setTool(currentTool); } };
 window.onload = init;
