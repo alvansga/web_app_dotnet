@@ -3,7 +3,7 @@
 const canvas = document.getElementById('drawing-canvas');
 const wrapper = document.getElementById('canvas-wrapper');
 const viewport = document.getElementById('viewport');
-const ctx = canvas.getContext('2d');
+const ctx = canvas.getContext('2d', { willReadFrequently: true });
 const colorPicker = document.getElementById('color-picker');
 const brushSizeRange = document.getElementById('brush-size');
 const sizeValueSpan = document.getElementById('size-value');
@@ -38,7 +38,7 @@ let gameTimerInterval = null;
 let transform = {
     x: 0,
     y: 0,
-    scale: 0.8 
+    scale: 0.8
 };
 
 // Multi-touch tracking
@@ -47,7 +47,7 @@ let initialPinchScale = 1;
 let lastMidpoint = { x: 0, y: 0 };
 let lastTouchPos = { x: 0, y: 0 };
 let currentStrokeId = null;
-let strokeHistory = []; 
+let strokeHistory = [];
 
 // DOM Elements
 const playBtn = document.getElementById('play-btn');
@@ -71,7 +71,7 @@ function init() {
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    
+
     // Set default name
     playerNameLobby.value = localStorage.getItem('scribble_name') || "Artist" + Math.floor(Math.random() * 1000);
 
@@ -130,20 +130,20 @@ connection.on("GameStarted", (data) => {
     isDrawer = (connection.connectionId === data.drawerId);
     strokeHistory = [];
     clearLocal();
-    
+
     gameOverlay.style.display = 'block';
     guessPanel.style.display = 'block';
     playBtn.style.display = 'none';
     wordDisplay.style.display = isDrawer ? 'block' : 'none';
     drawerInfo.textContent = isDrawer ? "YOU are drawing!" : `${data.drawerName} is drawing...`;
-    
+
     const startMsg = document.createElement('div');
     startMsg.className = 'msg system';
     startMsg.textContent = `Game started! ${data.drawerName} is drawing.`;
     gameMessages.prepend(startMsg);
-    
+
     startLocalTimer(new Date(data.endTime));
-    
+
     if (isDrawer) setTool('pencil');
     else {
         setTool('move');
@@ -168,7 +168,7 @@ connection.on("GameEnded", (data) => {
     clearInterval(gameTimerInterval);
     gameOverlay.style.display = 'none';
     playBtn.style.display = 'block';
-    
+
     const endDiv = document.createElement('div');
     if (data.winnerName) {
         endDiv.className = 'msg correct';
@@ -178,7 +178,7 @@ connection.on("GameEnded", (data) => {
         endDiv.innerHTML = `Time's up! The word was: <strong>${data.word}</strong>`;
     }
     gameMessages.prepend(endDiv);
-    
+
     setTimeout(() => {
         if (!isGameActive) guessPanel.style.display = 'none';
     }, 10000);
@@ -202,7 +202,7 @@ function startLocalTimer(endTime) {
 createRoomBtn.onclick = async () => {
     const name = playerNameLobby.value.trim() || "Artist";
     localStorage.setItem('scribble_name', name);
-    
+
     try {
         const code = await connection.invoke("CreateRoom");
         joinRoom(code, name);
@@ -239,7 +239,7 @@ function enterGameUI() {
     lobbyScreen.style.display = 'none';
     roomInfoBadge.style.display = 'flex';
     playBtn.style.display = 'block';
-    
+
     // Trigger resize to fix canvas centering
     window.dispatchEvent(new Event('resize'));
 }
@@ -278,8 +278,10 @@ function updateStatus(status, text) {
 }
 
 // --- INTERACTION & DRAWING (Keep logic same as before) ---
+let cachedRect = null;
+
 function getCoordinates(e) {
-    const rect = canvas.getBoundingClientRect();
+    const rect = cachedRect || canvas.getBoundingClientRect();
     let clientX, clientY;
     if (e.touches && e.touches.length > 0) {
         clientX = e.touches[0].clientX;
@@ -305,7 +307,7 @@ function setTool(tool) {
     eraserBtn.classList.toggle('active', tool === 'eraser');
     moveBtn.classList.toggle('active', tool === 'move');
     eyedropperBtn.classList.toggle('active', tool === 'eyedropper');
-    
+
     if (tool === 'move') viewport.style.cursor = 'grab';
     else if (tool === 'eraser') viewport.style.cursor = 'cell';
     else if (tool === 'eyedropper') viewport.style.cursor = 'crosshair';
@@ -318,6 +320,7 @@ moveBtn.onclick = () => setTool('move');
 eyedropperBtn.onclick = () => setTool('eyedropper');
 
 function startInteraction(e) {
+    cachedRect = canvas.getBoundingClientRect();
     const isTouch = e.touches && e.touches.length > 0;
     const touchCount = isTouch ? e.touches.length : 1;
     if (touchCount === 2) {
@@ -423,9 +426,9 @@ canvas.addEventListener('mousedown', startInteraction);
 window.addEventListener('mousemove', handleMove);
 window.addEventListener('mouseup', () => { drawing = false; isPanning = false; initialPinchDistance = null; });
 
-window.addEventListener('touchstart', (e) => { 
+window.addEventListener('touchstart', (e) => {
     if (e.target.closest('.lobby-overlay')) return;
-    
+
     // Only prevent default if we're in a drawing or canvas-manipulation tool
     // If not, let the browser handle potential native zoom/scrolling
     const isDrawingOrPanning = (currentTool !== 'move' || e.touches.length === 1);
@@ -439,9 +442,9 @@ window.addEventListener('touchstart', (e) => {
     }
 }, { passive: false });
 
-window.addEventListener('touchmove', (e) => { 
+window.addEventListener('touchmove', (e) => {
     if (e.target.closest('.lobby-overlay')) return;
-    
+
     // IF HAND TOOL is selected, we control EVERYTHING (Pan & Zoom)
     if (currentTool === 'move') {
         e.preventDefault();
@@ -590,11 +593,11 @@ function updateBackgroundLocal(b64) {
 function pickColor(x, y) {
     const pixel = ctx.getImageData(x, y, 1, 1).data;
     if (pixel[3] === 0) return; // Ignore transparent
-    
+
     const hex = "#" + ("000000" + ((pixel[0] << 16) | (pixel[1] << 8) | pixel[2]).toString(16)).slice(-6);
     colorPicker.value = hex;
     setTool('pencil');
-    
+
     // Pulse effect on color picker
     colorPicker.parentElement.style.transform = 'scale(1.3)';
     setTimeout(() => { colorPicker.parentElement.style.transform = 'scale(1)'; }, 200);
