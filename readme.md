@@ -55,3 +55,4 @@ ngrok start webapp
 ```
 
 ** make sure routing "webapp" in ngrok.yml file has been added!
+** make sure region is nearest your area: "us", "eu", or "ap"

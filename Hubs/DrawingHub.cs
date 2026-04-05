@@ -48,6 +48,18 @@ namespace WebAppSandbox.Hubs
         {
             if (_userRooms.TryRemove(Context.ConnectionId, out string? roomCode))
             {
+                if (_rooms.TryGetValue(roomCode, out var room))
+                {
+                    lock (room.Lock)
+                    {
+                        room.PlayerCount--;
+                        if (room.PlayerCount <= 0)
+                        {
+                            // Self-destruct empty room to save memory
+                            _rooms.TryRemove(roomCode, out _);
+                        }
+                    }
+                }
                 await Groups.RemoveFromGroupAsync(Context.ConnectionId, roomCode);
             }
             await base.OnDisconnectedAsync(exception);
@@ -71,13 +83,22 @@ namespace WebAppSandbox.Hubs
             roomCode = roomCode?.ToUpper().Trim() ?? "";
             if (!_rooms.TryGetValue(roomCode, out var room)) return false;
 
-            // Leave old room if any
-            if (_userRooms.TryGetValue(Context.ConnectionId, out var oldRoom))
+            // Leave old room if any and update player count
+            if (_userRooms.TryGetValue(Context.ConnectionId, out var oldRoomCode) && _rooms.TryGetValue(oldRoomCode, out var oldRoom))
             {
-                await Groups.RemoveFromGroupAsync(Context.ConnectionId, oldRoom);
+                lock (oldRoom.Lock)
+                {
+                    oldRoom.PlayerCount--;
+                    if (oldRoom.PlayerCount <= 0) _rooms.TryRemove(oldRoomCode, out _);
+                }
+                await Groups.RemoveFromGroupAsync(Context.ConnectionId, oldRoomCode);
             }
 
             _userRooms[Context.ConnectionId] = roomCode;
+            lock (room.Lock)
+            {
+                room.PlayerCount++;
+            }
             await Groups.AddToGroupAsync(Context.ConnectionId, roomCode);
 
             // Send current state of the room to the new user
