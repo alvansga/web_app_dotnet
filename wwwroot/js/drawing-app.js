@@ -344,6 +344,13 @@ function startInteraction(e) {
     }
 }
 
+function stopInteraction() {
+    drawing = false;
+    isPanning = false;
+    initialPinchDistance = null;
+    currentStrokeId = null;
+}
+
 function handleMove(e) {
     const isTouch = e.touches && e.touches.length > 0;
     if (isTouch && e.touches.length === 2) {
@@ -416,9 +423,64 @@ canvas.addEventListener('mousedown', startInteraction);
 window.addEventListener('mousemove', handleMove);
 window.addEventListener('mouseup', () => { drawing = false; isPanning = false; initialPinchDistance = null; });
 
-canvas.addEventListener('touchstart', (e) => { e.preventDefault(); startInteraction(e); }, { passive: false });
-window.addEventListener('touchmove', (e) => { if (!e.target.closest('.lobby-overlay')) { e.preventDefault(); handleMove(e); } }, { passive: false });
-window.addEventListener('touchend', () => { drawing = false; isPanning = false; initialPinchDistance = null; });
+window.addEventListener('touchstart', (e) => { 
+    if (e.target.closest('.lobby-overlay')) return;
+    
+    // Only prevent default if we're in a drawing or canvas-manipulation tool
+    // If not, let the browser handle potential native zoom/scrolling
+    const isDrawingOrPanning = (currentTool !== 'move' || e.touches.length === 1);
+    if (!isDrawingOrPanning) {
+        // Hand tool with 2 fingers = Canvas Zoom (OUR CODE)
+        e.preventDefault();
+        startInteraction(e);
+    } else {
+        // Draw tool or 1 finger = Handle normally (BUT DON'T PREVENT DEFAULT YET to allow some browser behavior)
+        startInteraction(e);
+    }
+}, { passive: false });
+
+window.addEventListener('touchmove', (e) => { 
+    if (e.target.closest('.lobby-overlay')) return;
+    
+    // IF HAND TOOL is selected, we control EVERYTHING (Pan & Zoom)
+    if (currentTool === 'move') {
+        e.preventDefault();
+        handleMove(e);
+    } else if (drawing) {
+        // We are drawing (1 finger)
+        e.preventDefault();
+        handleMove(e);
+    }
+    // Else: let the browser handle it (Native pinch zoom!)
+}, { passive: false });
+
+window.addEventListener('touchend', stopInteraction);
+
+// --- MANUAL ZOOM BUTTONS (with safety checks) ---
+const zoomInBtn = document.getElementById('zoom-in-btn');
+const zoomOutBtn = document.getElementById('zoom-out-btn');
+const resetZoomBtn = document.getElementById('reset-zoom-btn');
+
+if (zoomInBtn) zoomInBtn.onclick = () => manualZoom(1.2);
+if (zoomOutBtn) zoomOutBtn.onclick = () => manualZoom(0.8);
+if (resetZoomBtn) resetZoomBtn.onclick = resetZoom;
+
+function manualZoom(factor) {
+    const centerX = viewport.clientWidth / 2;
+    const centerY = viewport.clientHeight / 2;
+    const newScale = Math.min(Math.max(transform.scale * factor, 0.05), 10);
+    zoomAt(centerX, centerY, newScale);
+    applyTransform();
+}
+
+function resetZoom() {
+    const vw = viewport.clientWidth;
+    const vh = viewport.clientHeight;
+    transform.scale = 0.8;
+    transform.x = (vw - WORLD_SIZE * transform.scale) / 2;
+    transform.y = (vh - WORLD_SIZE * transform.scale) / 2;
+    applyTransform();
+}
 
 function drawLine(data) {
     if (!data) return;
@@ -435,10 +497,54 @@ function drawLine(data) {
 function redrawCanvas() { ctx.clearRect(0, 0, canvas.width, canvas.height); strokeHistory.forEach(s => drawLine(s)); }
 function clearLocal() { ctx.clearRect(0, 0, canvas.width, canvas.height); }
 
-// Palette etc
+// Palette Editor logic
 const palette = document.getElementById('palette');
 const paletteEditor = document.getElementById('palette-editor');
-palette.onclick = (e) => { if (e.target.classList.contains('swatch')) { colorPicker.value = e.target.dataset.color; setTool('pencil'); } };
+let longPressTimer;
+let currentEditingSwatch = null;
+
+palette.onclick = (e) => {
+    if (e.target.classList.contains('swatch')) {
+        colorPicker.value = e.target.dataset.color;
+        setTool('pencil');
+    }
+};
+
+palette.oncontextmenu = (e) => {
+    if (e.target.classList.contains('swatch')) {
+        e.preventDefault();
+        openSwatchEditor(e.target);
+    }
+};
+
+// Long Press for Android
+palette.addEventListener('touchstart', (e) => {
+    if (e.target.classList.contains('swatch')) {
+        longPressTimer = setTimeout(() => {
+            openSwatchEditor(e.target);
+            longPressTimer = null;
+        }, 600);
+    }
+}, { passive: true });
+
+palette.addEventListener('touchend', () => { if (longPressTimer) { clearTimeout(longPressTimer); longPressTimer = null; } });
+palette.addEventListener('touchmove', () => { if (longPressTimer) { clearTimeout(longPressTimer); longPressTimer = null; } });
+
+function openSwatchEditor(swatch) {
+    currentEditingSwatch = swatch;
+    paletteEditor.value = swatch.dataset.color;
+    paletteEditor.click();
+}
+
+paletteEditor.oninput = () => {
+    if (currentEditingSwatch) {
+        const newColor = paletteEditor.value;
+        currentEditingSwatch.style.background = newColor;
+        currentEditingSwatch.dataset.color = newColor;
+        colorPicker.value = newColor;
+        setTool('pencil');
+    }
+};
 
 function undo() { if (isGameActive && !isDrawer) return; connection.invoke("UndoStroke"); }
 document.getElementById('undo-btn').onclick = undo;
@@ -506,3 +612,6 @@ window.onkeydown = (e) => {
 window.onkeyup = (e) => { if (e.code === 'Space') { spacePressed = false; setTool(currentTool); } };
 window.onload = init;
 window.onresize = applyTransform;
+
+// Slider Update Fix
+brushSizeRange.oninput = () => { sizeValueSpan.textContent = brushSizeRange.value; };
