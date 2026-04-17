@@ -17,6 +17,8 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 builder.Services.AddScoped<ICodenameRepository, CodenameRepository>();
 builder.Services.AddScoped<CreateCodenameService>();
 builder.Services.AddScoped<GetCodenameService>();
+builder.Services.AddScoped<IPlayerRepository, PlayerRepository>();
+builder.Services.AddScoped<CreatePlayerService>();
 
 var app = builder.Build();
 

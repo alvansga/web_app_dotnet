@@ -32,3 +32,10 @@ dotnet build
 ```
 dotnet run
 ```
+
+## add api players
+
+```
+dotnet ef migrations add AddPlayerTable
+dotnet ef database update
+```

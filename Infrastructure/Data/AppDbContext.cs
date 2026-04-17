@@ -9,4 +9,5 @@ public class AppDbContext : DbContext
         : base(options) {}
 
     public DbSet<Codename> Codenames { get; set; }
+    public DbSet<Player> Players { get; set; }
 }
