@@ -1,3 +1,23 @@
-/obj
-/bin
+# /obj
+# /bin
 /converted_nodejs
+
+# build
+bin/
+obj/
+
+# user settings
+*.user
+*.suo
+
+# database
+*.db
+*.sqlite
+*.sqlite3
+
+# logs
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
