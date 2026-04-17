@@ -19,6 +19,10 @@ builder.Services.AddScoped<CreateCodenameService>();
 builder.Services.AddScoped<GetCodenameService>();
 builder.Services.AddScoped<IPlayerRepository, PlayerRepository>();
 builder.Services.AddScoped<CreatePlayerService>();
+builder.Services.AddScoped<CreateRoomService>();
+builder.Services.AddScoped<JoinRoomService>();
+builder.Services.AddScoped<IGameRoomRepository, GameRoomRepository>();
+
 
 var app = builder.Build();
 
