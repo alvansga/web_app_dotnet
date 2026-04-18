@@ -6,13 +6,16 @@ public class GameRoomController : ControllerBase
 {
     private readonly CreateRoomService _createService;
     private readonly JoinRoomService _joinService;
+    private readonly GetRoomDetailService _getRoomDetailService;
 
     public GameRoomController(
         CreateRoomService createService,
-        JoinRoomService joinService)
+        JoinRoomService joinService,
+        GetRoomDetailService getRoomDetailService)
     {
         _createService = createService;
         _joinService = joinService;
+        _getRoomDetailService = getRoomDetailService;
     }
 
     [HttpPost]
@@ -20,6 +23,17 @@ public class GameRoomController : ControllerBase
     {
         var code = await _createService.Execute();
         return Ok(new { code });
+    }
+
+    [HttpGet("{code}")]
+    public async Task<IActionResult> GetByCode(string code)
+    {
+        var result = await _getRoomDetailService.Execute(code);
+
+        if (result == null)
+            return NotFound("Room not found");
+
+        return Ok(result);
     }
 
     [HttpPost("join")]

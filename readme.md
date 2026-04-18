@@ -39,3 +39,28 @@ dotnet run
 dotnet ef migrations add AddPlayerTable
 dotnet ef database update
 ```
+
+## add api rooms
+
+```
+dotnet ef migrations add AddGameRoom
+dotnet ef database update
+```
+
+reset db
+```
+# 1. Hapus database
+del codename.db
+
+# 2. Hapus migration terakhir (optional tapi disarankan)
+dotnet ef migrations remove
+
+# 3. Buat ulang migration
+dotnet ef migrations add InitAll
+
+# 4. Apply
+dotnet ef database update
+```
+
+
+## add api get room details GET /api/rooms/{code}

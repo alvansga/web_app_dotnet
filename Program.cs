@@ -10,9 +10,15 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+
+var dbPath = Path.Combine(Directory.GetCurrentDirectory(), "codename.db");
+
 builder.Services.AddDbContext<AppDbContext>(options =>
-    // options.UseSqlServer("your_connection_string"));
-    options.UseSqlite("Data Source=codename.db"));
+    options.UseSqlite($"Data Source={dbPath}"));
+
+// builder.Services.AddDbContext<AppDbContext>(options =>
+//     // options.UseSqlServer("your_connection_string"));
+//     options.UseSqlite("Data Source=codename.db"));
 
 builder.Services.AddScoped<ICodenameRepository, CodenameRepository>();
 builder.Services.AddScoped<CreateCodenameService>();
@@ -22,7 +28,7 @@ builder.Services.AddScoped<CreatePlayerService>();
 builder.Services.AddScoped<CreateRoomService>();
 builder.Services.AddScoped<JoinRoomService>();
 builder.Services.AddScoped<IGameRoomRepository, GameRoomRepository>();
-
+builder.Services.AddScoped<GetRoomDetailService>();
 
 var app = builder.Build();
 

@@ -1,6 +1,7 @@
 using CodenameApp.Application.Interfaces;
 using CodenameApp.Domain;
 using CodenameApp.Infrastructure.Data;
+using Microsoft.EntityFrameworkCore;
 
 public class PlayerRepository : IPlayerRepository
 {
@@ -15,6 +16,8 @@ public class PlayerRepository : IPlayerRepository
     {
         await _context.Players.AddAsync(player);
         await _context.SaveChangesAsync();
+        Console.WriteLine("SAVED TO DB");
+        Console.WriteLine(Path.GetFullPath(_context.Database.GetDbConnection().DataSource));    
     }
 
     public async Task<Player?> GetByIdAsync(Guid id)
