@@ -29,6 +29,7 @@ builder.Services.AddScoped<CreateRoomService>();
 builder.Services.AddScoped<JoinRoomService>();
 builder.Services.AddScoped<IGameRoomRepository, GameRoomRepository>();
 builder.Services.AddScoped<GetRoomDetailService>();
+builder.Services.AddScoped<GetAllPlayersService>();
 
 var app = builder.Build();
 

@@ -10,10 +10,13 @@ using CodenameApp.Domain;
 public class PlayerController : ControllerBase
 {
     private readonly CreatePlayerService _service;
+    private readonly GetAllPlayersService _getAllPlayersService;
 
-    public PlayerController(CreatePlayerService service)
+
+    public PlayerController(CreatePlayerService service, GetAllPlayersService getAllPlayersService)
     {
         _service = service;
+        _getAllPlayersService = getAllPlayersService;
     }
 
     [HttpPost]
@@ -21,5 +24,12 @@ public class PlayerController : ControllerBase
     {
         var id = await _service.Execute(req.Name);
         return Ok(new { id });
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> GetAll()
+    {
+        var players = await _getAllPlayersService.Execute();
+        return Ok(players);
     }
 }
