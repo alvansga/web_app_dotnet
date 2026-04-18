@@ -9,7 +9,9 @@ public class GameRoom
     public string Code { get; private set; }
 
     public List<Player> Players { get; private set; } = new();
-    public string Status { get; set; } = "waiting"; // waiting, playing, finished
+
+    public RoomStatus Status { get; private set; } = RoomStatus.Waiting;
+    public GameState State { get; set; } = new();
 
 
     public GameRoom(string code)
@@ -20,7 +22,7 @@ public class GameRoom
 
     public void AddPlayer(Player player)
     {
-        if (Status != "waiting")
+        if (Status != RoomStatus.Waiting)
             throw new Exception("Game already started");
 
         if (Players.Any(p => p.Id == player.Id))
@@ -34,6 +36,31 @@ public class GameRoom
         if (Players.Count < 2)
             throw new Exception("Need at least 2 players to start");
 
-        Status = "playing";
+        Status = RoomStatus.Playing;
     }
+}
+
+
+public enum RoomStatus
+{
+    Empty,
+    Waiting,
+    Playing,
+    Finished
+}
+
+public class GameState
+{
+
+    public GamePhase Phase { get; set; } = GamePhase.Empty; // lobby, playing, ended
+    public int Round { get; set; } = 0;
+    public bool IsStarted { get; set; } = false;
+}
+
+public enum GamePhase
+{
+    Empty,
+    Lobby,
+    Playing,
+    Ended
 }

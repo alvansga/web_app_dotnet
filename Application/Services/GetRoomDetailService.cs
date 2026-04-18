@@ -23,6 +23,12 @@ public class GetRoomDetailService
             Id = room.Id,
             Code = room.Code,
             Status = room.Status,
+            State = new GameStateDto
+            {
+                Phase = room.State.Phase,
+                Round = room.State.Round,
+                IsStarted = room.State.IsStarted
+            },
             Players = room.Players.Select(p => new PlayerDto
             {
                 Id = p.Id,

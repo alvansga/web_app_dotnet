@@ -18,5 +18,15 @@ public class AppDbContext : DbContext
             .HasMany(r => r.Players)
             .WithOne(p => p.GameRoom)
             .HasForeignKey(p => p.GameRoomId);
+
+        modelBuilder.Entity<GameRoom>()
+            .Property(r => r.Status)
+            .HasConversion<string>();
+
+        modelBuilder.Entity<GameRoom>()
+            .OwnsOne(r => r.State, state =>
+            {
+                state.Property(s => s.Phase).HasConversion<string>();
+            });
     }
 }
