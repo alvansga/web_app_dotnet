@@ -24,4 +24,9 @@ public class CodenameRepository : ICodenameRepository
     {
         return await _context.Codenames.FirstOrDefaultAsync(x => x.Id == id);
     }
+
+    public async Task<List<Codename>> GetAllAsync()
+    {
+        return await _context.Codenames.ToListAsync();
+    }
 }

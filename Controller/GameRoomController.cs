@@ -7,15 +7,18 @@ public class GameRoomController : ControllerBase
     private readonly CreateRoomService _createService;
     private readonly JoinRoomService _joinService;
     private readonly GetRoomDetailService _getRoomDetailService;
+    private readonly StartGameService _startGameService;
 
     public GameRoomController(
         CreateRoomService createService,
         JoinRoomService joinService,
-        GetRoomDetailService getRoomDetailService)
+        GetRoomDetailService getRoomDetailService,
+        StartGameService startGameService)
     {
         _createService = createService;
         _joinService = joinService;
         _getRoomDetailService = getRoomDetailService;
+        _startGameService = startGameService;
     }
 
     [HttpPost]
@@ -23,6 +26,13 @@ public class GameRoomController : ControllerBase
     {
         var code = await _createService.Execute();
         return Ok(new { code });
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> GetAll()
+    {
+        var rooms = await _getRoomDetailService.GetAllRooms();
+        return Ok(rooms);
     }
 
     [HttpGet("{code}")]
@@ -45,5 +55,19 @@ public class GameRoomController : ControllerBase
             return BadRequest("Room or player not found");
 
         return Ok();
+    }
+
+    [HttpPost("{code}/start")]
+    public async Task<IActionResult> Start(string code)
+    {
+        try
+        {
+            await _startGameService.Execute(code);
+            return Ok(new { message = "Game started successfully." });
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(ex.Message);
+        }
     }
 }

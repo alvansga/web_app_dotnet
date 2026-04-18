@@ -22,7 +22,17 @@ public class GameRoomRepository : IGameRoomRepository
     {
         return await _context.GameRooms
             .Include(r => r.Players)
+            .Include(r => r.Cards)
             .FirstOrDefaultAsync(r => r.Code == code);
+    }
+
+    public async Task<List<GameRoom>> GetAllAsync()
+    {
+        return await _context.GameRooms
+            .Include(r => r.Players)
+            .Include(r => r.Cards)
+            .AsSplitQuery()
+            .ToListAsync();
     }
 
     public async Task SaveChangesAsync()

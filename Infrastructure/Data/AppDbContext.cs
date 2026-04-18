@@ -11,6 +11,7 @@ public class AppDbContext : DbContext
     public DbSet<Codename> Codenames { get; set; } = null!;
     public DbSet<Player> Players { get; set; } = null!;
     public DbSet<GameRoom> GameRooms { get; set; } = null!;
+    public DbSet<GameCard> GameCards { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
 {
@@ -18,6 +19,19 @@ public class AppDbContext : DbContext
             .HasMany(r => r.Players)
             .WithOne(p => p.GameRoom)
             .HasForeignKey(p => p.GameRoomId);
+
+        modelBuilder.Entity<GameRoom>()
+            .HasMany(r => r.Cards)
+            .WithOne()
+            .HasForeignKey(c => c.GameRoomId);
+
+        modelBuilder.Entity<GameCard>()
+            .Property(c => c.Id)
+            .ValueGeneratedNever();
+
+        modelBuilder.Entity<GameCard>()
+            .Property(c => c.Role)
+            .HasConversion<string>();
 
         modelBuilder.Entity<GameRoom>()
             .Property(r => r.Status)
