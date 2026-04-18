@@ -24,7 +24,6 @@ public class JoinRoomService
         if (player == null) return false;
 
         room.AddPlayer(player);
-        player.GameRoomId = room.Id;
 
         await _roomRepo.SaveChangesAsync();
 

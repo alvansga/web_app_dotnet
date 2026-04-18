@@ -20,7 +20,9 @@ public class GetRoomDetailService
 
         return new RoomDetailResponse
         {
+            Id = room.Id,
             Code = room.Code,
+            Status = room.Status,
             Players = room.Players.Select(p => new PlayerDto
             {
                 Id = p.Id,
