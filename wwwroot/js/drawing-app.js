@@ -653,3 +653,10 @@ window.onresize = applyTransform;
 
 // Slider Update Fix
 brushSizeRange.oninput = () => { sizeValueSpan.textContent = brushSizeRange.value; };
+
+const bgOpacity = document.getElementById('bg-opacity');
+if (bgOpacity) {
+    bgOpacity.oninput = () => {
+        if (bgLayer) bgLayer.style.opacity = bgOpacity.value;
+    };
+}
