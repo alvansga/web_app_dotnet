@@ -1,3 +1,5 @@
+using System.IO;
+using System.Linq;
 using CodenameApp.Application.Interfaces;
 
 public class StartGameService
@@ -16,17 +18,30 @@ public class StartGameService
         var room = await _roomRepo.GetByCodeAsync(code);
         if (room == null) throw new Exception("Room not found");
 
-        var codenames = await _codenameRepo.GetAllAsync();
-        var words = codenames.Select(c => c.Name).ToList();
-
-        if (words.Count < 25) 
+        // Load words from words.txt
+        var filePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "words.txt");
+        // Fallback to project root if BaseDirectory is bin/Debug/...
+        if (!File.Exists(filePath)) 
         {
-            var fallback = new List<string> {
+            filePath = "words.txt"; 
+        }
+
+        List<string> words;
+        if (File.Exists(filePath))
+        {
+            words = File.ReadAllLines(filePath)
+                        .Where(line => !string.IsNullOrWhiteSpace(line))
+                        .Select(line => line.Trim().ToUpper())
+                        .ToList();
+        }
+        else
+        {
+            // Emergency fallback if file is totally missing
+            words = new List<string> {
                 "APPLE", "BANANA", "CHERRY", "DOG", "ELEPHANT", "FOX", "GRAPE", "HORSE", "IGLOO", "JUMP",
                 "KITE", "LION", "MOUSE", "NIGHT", "OWL", "PIG", "QUEEN", "RABBIT", "SNAKE", "TIGER",
-                "UMBRELLA", "VAN", "WHALE", "XYLOPHONE", "YACHT", "ZEBRA", "GUITAR", "PIANO", "MOON", "SUN"
+                "UMBRELLA", "VAN", "WHALE", "XYLOPHONE", "YACHT", "ZEBRA"
             };
-            words.AddRange(fallback.Where(f => !words.Contains(f)));
         }
 
         var random = new Random();
