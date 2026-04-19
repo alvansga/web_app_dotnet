@@ -598,7 +598,7 @@ async function handleRevealCard(card, el) {
     el.disabled = true;
     el.classList.add('loading');
     try {
-        const res = await fetch(`${API_BASE_URL}/rooms/${gameState.room.code}/cards/${card.id}/reveal`, {
+        const res = await fetch(`${API_BASE_URL}/rooms/${gameState.room.code}/reveal/${card.id}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ playerId: gameState.player.id })

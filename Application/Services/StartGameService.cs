@@ -19,11 +19,11 @@ public class StartGameService
         if (room == null) throw new Exception("Room not found");
 
         // Load words from words.txt
-        var filePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "words-id.txt");
+        var filePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "words.txt");
         // Fallback to project root if BaseDirectory is bin/Debug/...
         if (!File.Exists(filePath))
         {
-            filePath = "words-id.txt";
+            filePath = "words.txt";
         }
 
         List<string> words;
