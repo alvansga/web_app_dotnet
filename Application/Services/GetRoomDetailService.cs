@@ -38,18 +38,26 @@ public class GetRoomDetailService
         {
             Id = room.Id,
             Code = room.Code,
-            Status = room.Status,
+            Status = room.Status.ToString(),
             State = new GameStateDto
             {
-                Phase = room.State.Phase,
+                Phase = room.State.Phase.ToString(),
                 Round = room.State.Round,
-                IsStarted = room.State.IsStarted
+                IsStarted = room.State.IsStarted,
+                Winner = room.State.Winner
             },
-            Players = room.Players.Select(p => new PlayerDto
-            {
-                Id = p.Id,
-                Name = p.Name,
-                GameRole = p.GameRole.ToString()
+            Players = room.Players.Select(p => {
+                var displayRole = p.GameRole.ToString();
+                // Jika game sudah di phase Playing, siapapun yang 'None' otomatis dianggap FieldOperative
+                if (room.State.Phase != GamePhase.SpymasterSelection && room.State.Phase != GamePhase.Empty && displayRole == "None") {
+                    displayRole = "FieldOperative";
+                }
+                return new PlayerDto
+                {
+                    Id = p.Id,
+                    Name = p.Name,
+                    GameRole = displayRole
+                };
             }).ToList(),
             Cards = room.Cards.Select(c => new GameCardDto
             {

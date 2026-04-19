@@ -65,12 +65,12 @@ public class GameRoomController : ControllerBase
     }
 
     [HttpPost("{code}/start")]
-    public async Task<IActionResult> Start(string code)
+    public async Task<IActionResult> Start(string code, [FromBody] StartGameRequest req)
     {
         try
         {
-            await _startGameService.Execute(code);
-            return Ok(new { message = "Game started. Please choose your role (Spymaster or Field Operative)." });
+            await _startGameService.Execute(code, req.PlayerId);
+            return Ok(new { message = "Game started! Roles assigned automatically." });
         }
         catch (Exception ex)
         {

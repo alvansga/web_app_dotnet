@@ -11,7 +11,7 @@ public class StartGameService
         _codenameRepo = codenameRepo;
     }
 
-    public async Task Execute(string code)
+    public async Task Execute(string code, Guid starterId)
     {
         var room = await _roomRepo.GetByCodeAsync(code);
         if (room == null) throw new Exception("Room not found");
@@ -32,7 +32,7 @@ public class StartGameService
         var random = new Random();
         var selectedWords = words.OrderBy(x => random.Next()).Take(25).ToList();
 
-        room.StartGame(selectedWords);
+        room.StartGame(selectedWords, starterId);
 
         await _roomRepo.SaveChangesAsync();
     }

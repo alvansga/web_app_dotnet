@@ -763,3 +763,35 @@ body {
         grid-template-columns: 1fr;
     }
 }
+
+/* ===== 13. GAME OVER OVERLAY ===== */
+.game-over-box {
+    text-align: center;
+    padding: 50px 40px;
+}
+
+.game-over-icon {
+    font-size: 5em;
+    margin-bottom: 12px;
+    animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.game-over-title {
+    font-size: 2em;
+    margin-bottom: 12px;
+}
+
+.game-over-desc {
+    color: #666;
+    font-size: 1.05em;
+    line-height: 1.5;
+}
+
+.game-over-box.winner-red   .game-over-title { color: #e74c3c; }
+.game-over-box.winner-blue  .game-over-title { color: #3498db; }
+.game-over-box.winner-assassin .game-over-title { color: #2c3e50; }
+
+@keyframes popIn {
+    from { transform: scale(0.3); opacity: 0; }
+    to   { transform: scale(1);   opacity: 1; }
+}

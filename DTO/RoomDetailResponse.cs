@@ -1,9 +1,7 @@
-using CodenameApp.Domain;
-
 public class RoomDetailResponse
 {
     public string Code { get; set; } = string.Empty;
-    public RoomStatus Status { get; set; } = RoomStatus.Empty;
+    public string Status { get; set; } = "Empty";
 
     public GameStateDto State { get; set; } = new();
     public Guid Id { get; set; }
@@ -20,9 +18,10 @@ public class PlayerDto
 
 public class GameStateDto
 {
-    public GamePhase Phase { get; set; }
+    public string Phase { get; set; } = "Empty";
     public int Round { get; set; } = 0;
     public bool IsStarted { get; set; } = false;
+    public string? Winner { get; set; }
 }
 
 /// <summary>Field operative: hanya tahu apakah kartu sudah direveal, tidak tahu role-nya (kecuali sudah reveal)</summary>
@@ -45,3 +44,8 @@ public class RevealCardRequest
 {
     public Guid PlayerId { get; set; }
 }
+
+public class StartGameRequest
+{
+    public Guid PlayerId { get; set; }
+}

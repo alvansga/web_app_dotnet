@@ -33,7 +33,7 @@ public class GameRoom
         Players.Add(player);
     }
 
-    public void StartGame(IEnumerable<string> words)
+    public void StartGame(IEnumerable<string> words, Guid starterId)
     {
         if (Players.Count < 2)
             throw new Exception("Need at least 2 players to start");
@@ -42,8 +42,17 @@ public class GameRoom
         if (wordList.Count < 25)
             throw new Exception("Need exactly 25 words to start the game");
 
+        // Assign roles immediately
+        foreach (var p in Players)
+        {
+            if (p.Id == starterId)
+                p.SetGameRole(PlayerGameRole.Spymaster);
+            else
+                p.SetGameRole(PlayerGameRole.FieldOperative);
+        }
+
         Status = RoomStatus.Playing;
-        State.Phase = GamePhase.SpymasterSelection;
+        State.Phase = GamePhase.Playing; // Langsung Phase Playing
         State.IsStarted = true;
         State.Round = 1;
 
@@ -77,14 +86,17 @@ public class GameRoom
         if (Status != RoomStatus.Playing)
             throw new Exception("Game has not started");
 
+        // Limit to 1 Spymaster (as per user's focused request)
+        if (Players.Any(p => p.GameRole == PlayerGameRole.Spymaster))
+            throw new Exception("Spymaster role is already taken.");
+
         var player = Players.FirstOrDefault(p => p.Id == playerId)
             ?? throw new Exception("Player not found in this room");
 
         player.SetGameRole(PlayerGameRole.Spymaster);
         
-        // Check if all players have chosen a role -> move to Playing phase
-        if (Players.All(p => p.GameRole != PlayerGameRole.None))
-            State.Phase = GamePhase.Playing;
+        // AUTO-START: Once we have a spymaster, the game is ready for field ops
+        State.Phase = GamePhase.Playing;
     }
 
     public void AssignFieldOperative(Guid playerId)
@@ -97,12 +109,20 @@ public class GameRoom
 
         player.SetGameRole(PlayerGameRole.FieldOperative);
 
-        if (Players.All(p => p.GameRole != PlayerGameRole.None))
+        // If at least one spymaster exists, we can be in Playing phase
+        if (Players.Any(p => p.GameRole == PlayerGameRole.Spymaster))
             State.Phase = GamePhase.Playing;
     }
 
     public void RevealCard(Guid cardId, Guid requestingPlayerId)
     {
+        // Force transition to Playing if someone starts guessing
+        if (State.Phase == GamePhase.SpymasterSelection)
+            State.Phase = GamePhase.Playing;
+
+        if (State.Phase != GamePhase.Playing)
+            throw new Exception("Cannot reveal cards in this phase.");
+
         var player = Players.FirstOrDefault(p => p.Id == requestingPlayerId)
             ?? throw new Exception("Player not found in this room");
 
@@ -116,6 +136,36 @@ public class GameRoom
             throw new Exception("Card already revealed");
 
         card.Reveal();
+
+        // === Win/Lose condition checks ===
+        if (card.Role == CardRole.Assassin)
+        {
+            Status = RoomStatus.Finished;
+            State.Phase = GamePhase.Ended;
+            State.Winner = "Assassin";
+            return;
+        }
+
+        bool allRedRevealed = Cards
+            .Where(c => c.Role == CardRole.RedAgent)
+            .All(c => c.IsRevealed);
+
+        bool allBlueRevealed = Cards
+            .Where(c => c.Role == CardRole.BlueAgent)
+            .All(c => c.IsRevealed);
+
+        if (allRedRevealed)
+        {
+            Status = RoomStatus.Finished;
+            State.Phase = GamePhase.Ended;
+            State.Winner = "RedTeam";
+        }
+        else if (allBlueRevealed)
+        {
+            Status = RoomStatus.Finished;
+            State.Phase = GamePhase.Ended;
+            State.Winner = "BlueTeam";
+        }
     }
 }
 
@@ -130,10 +180,11 @@ public enum RoomStatus
 
 public class GameState
 {
-
-    public GamePhase Phase { get; set; } = GamePhase.Empty; // lobby, playing, ended
+    public GamePhase Phase { get; set; } = GamePhase.Empty;
     public int Round { get; set; } = 0;
     public bool IsStarted { get; set; } = false;
+    /// <summary>"RedTeam" | "BlueTeam" | "Assassin" | null (game not finished)</summary>
+    public string? Winner { get; set; }
 }
 
 public enum GamePhase

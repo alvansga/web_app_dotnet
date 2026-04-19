@@ -1,44 +1,42 @@
 /**
  * CODENAME GAME - JavaScript Controller
  * ======================================
- * Manages: Game logic, API calls, UI updates
- * 
- * Organized Sections:
- * 1. Config & State      - Constants and global variables
- * 2. DOM Elements        - UI element references
- * 3. Event Listeners     - User interaction handlers
- * 4. Initialization      - App startup
- * 5. Page Navigation     - Switch between pages
- * 6. Player Management   - Create player, logout
- * 7. Room Management     - Create/join rooms
- * 8. Gameplay            - Start game, role selection, board
- * 9. Utilities           - Helper functions
+ * Sections:
+ * 1. Config & State
+ * 2. DOM Elements
+ * 3. Event Listeners
+ * 4. Initialization
+ * 5. Page Navigation
+ * 6. Player Management
+ * 7. Room Management
+ * 8. Gameplay
+ * 9. Utilities
  */
 
 /* ============================================
-   1. CONFIG & STATE - Constants and variables
+   1. CONFIG & STATE
    ============================================ */
-const API_BASE_URL = '/api';
-const POLLING_INTERVAL = 2000;
+const API_BASE_URL      = '/api';
+const WAITING_POLL_MS   = 2000;   // polling di waiting room
+const GAME_POLL_MS      = 2500;   // polling di game page
 
-// Global game state object
 let gameState = {
     player: { id: null, name: null },
-    room: { code: null, status: null, players: [], cards: [], state: null },
-    myRole: null  // 'Spymaster' | 'FieldOperative' | null
+    room:   { code: null, status: null, players: [], cards: [], state: null },
+    myRole: null   // 'Spymaster' | 'FieldOperative' | null
 };
 
-let pollingInterval = null;
+let waitingPoller = null;   // polling waiting room
+let gamePoller    = null;   // polling game board
 
 /* ============================================
-   2. DOM ELEMENTS - UI element references
+   2. DOM ELEMENTS
    ============================================ */
 const welcomePage        = document.getElementById('welcomePage');
 const playerNameInput    = document.getElementById('playerNameInput');
 const startBtn           = document.getElementById('startBtn');
 const welcomeMessage     = document.getElementById('welcomeMessage');
 
-// Lobby
 const lobbyPage          = document.getElementById('lobbyPage');
 const playerNameDisplay  = document.getElementById('playerNameDisplay');
 const logoutBtn          = document.getElementById('logoutBtn');
@@ -49,7 +47,6 @@ const joinRoomBtn        = document.getElementById('joinRoomBtn');
 const joinRoomMessage    = document.getElementById('joinRoomMessage');
 const availableRoomsList = document.getElementById('availableRoomsList');
 
-// Waiting Room
 const waitingRoomPage    = document.getElementById('waitingRoomPage');
 const roomCodeDisplay    = document.getElementById('roomCodeDisplay');
 const backToLobbyBtn     = document.getElementById('backToLobbyBtn');
@@ -59,7 +56,6 @@ const startGameBtn       = document.getElementById('startGameBtn');
 const startGameInfo      = document.getElementById('startGameInfo');
 const copyRoomCodeBtn    = document.getElementById('copyRoomCodeBtn');
 
-// Game
 const gamePage           = document.getElementById('gamePage');
 const gameRoomCode       = document.getElementById('gameRoomCode');
 const gameRound          = document.getElementById('gameRound');
@@ -69,20 +65,24 @@ const cardsGrid          = document.getElementById('cardsGrid');
 const gamePlayers        = document.getElementById('gamePlayers');
 const myRoleBadge        = document.getElementById('myRoleBadge');
 
-// Role Selection Modal
 const roleModal          = document.getElementById('roleModal');
 const chooseSpymasterBtn = document.getElementById('chooseSpymasterBtn');
 const chooseFieldBtn     = document.getElementById('chooseFieldBtn');
 const roleModalMessage   = document.getElementById('roleModalMessage');
 
+const gameOverOverlay    = document.getElementById('gameOverOverlay');
+const gameOverIcon       = document.getElementById('gameOverIcon');
+const gameOverTitle      = document.getElementById('gameOverTitle');
+const gameOverDesc       = document.getElementById('gameOverDesc');
+const gameOverBackBtn    = document.getElementById('gameOverBackBtn');
+
 /* ============================================
-   3. EVENT LISTENERS - User interactions
+   3. EVENT LISTENERS
    ============================================ */
 startBtn.addEventListener('click', handleCreatePlayer);
 playerNameInput.addEventListener('keypress', (e) => {
     if (e.key === 'Enter') handleCreatePlayer();
 });
-
 logoutBtn.addEventListener('click', handleLogout);
 createRoomBtn.addEventListener('click', handleCreateRoom);
 joinRoomBtn.addEventListener('click', handleJoinRoom);
@@ -92,13 +92,18 @@ roomCodeInput.addEventListener('keypress', (e) => {
 backToLobbyBtn.addEventListener('click', handleBackToLobby);
 startGameBtn.addEventListener('click', handleStartGame);
 copyRoomCodeBtn.addEventListener('click', handleCopyRoomCode);
-
-// Role Modal buttons
 chooseSpymasterBtn.addEventListener('click', () => handleChooseRole('spymaster'));
 chooseFieldBtn.addEventListener('click', () => handleChooseRole('field-operative'));
+gameOverBackBtn.addEventListener('click', () => {
+    gameOverOverlay.style.display = 'none';
+    stopGamePoller();
+    gameState.room   = { code: null, status: null, players: [], cards: [], state: null };
+    gameState.myRole = null;
+    goToLobby();
+});
 
 /* ============================================
-   4. INITIALIZATION - App startup
+   4. INITIALIZATION
    ============================================ */
 document.addEventListener('DOMContentLoaded', () => {
     const savedPlayer = localStorage.getItem('player');
@@ -109,7 +114,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 /* ============================================
-   5. PAGE NAVIGATION - Switch between pages
+   5. PAGE NAVIGATION
    ============================================ */
 function showPage(pageElement) {
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
@@ -117,71 +122,61 @@ function showPage(pageElement) {
 }
 
 function goToWelcome() {
-    stopPolling();
+    stopWaitingPoller();
+    stopGamePoller();
     showPage(welcomePage);
 }
 
 function goToLobby() {
-    stopPolling();
+    stopWaitingPoller();
+    stopGamePoller();
     playerNameDisplay.textContent = gameState.player.name;
     loadAvailableRooms();
     showPage(lobbyPage);
 }
 
 function goToWaitingRoom() {
+    stopGamePoller();
     roomCodeDisplay.textContent = gameState.room.code;
-    loadRoomDetails();
-    startPolling();
+    loadWaitingRoomDetails();
+    startWaitingPoller();
     showPage(waitingRoomPage);
 }
 
 function goToGame() {
-    stopPolling();
+    stopWaitingPoller();
     gameRoomCode.textContent = gameState.room.code;
-    loadGameBoard();
+    loadAndRenderBoard();
+    startGamePoller();
     showPage(gamePage);
 }
 
 /* ============================================
-   6. PLAYER MANAGEMENT - Create & manage players
+   6. PLAYER MANAGEMENT
    ============================================ */
 async function handleCreatePlayer() {
     const name = playerNameInput.value.trim();
-
-    if (!name) {
-        showMessage(welcomeMessage, 'Please enter your name', 'error');
-        return;
-    }
-
-    if (name.length < 2) {
+    if (!name || name.length < 2) {
         showMessage(welcomeMessage, 'Name must be at least 2 characters', 'error');
         return;
     }
 
     startBtn.disabled = true;
     startBtn.classList.add('loading');
-
     try {
-        const response = await fetch(`${API_BASE_URL}/players`, {
+        const res = await fetch(`${API_BASE_URL}/players`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ name })
         });
-
-        if (!response.ok) throw new Error('Failed to create player');
-
-        const data = await response.json();
-        
-        gameState.player.id = data.id;
-        gameState.player.name = name;
+        if (!res.ok) throw new Error('Failed to create player');
+        const data = await res.json();
+        gameState.player = { id: data.id, name };
         localStorage.setItem('player', JSON.stringify(gameState.player));
-
         showMessage(welcomeMessage, '✅ Welcome! Redirecting...', 'success');
         setTimeout(() => goToLobby(), 1000);
-
-    } catch (error) {
-        console.error('Error creating player:', error);
-        showMessage(welcomeMessage, `❌ ${error.message}`, 'error');
+    } catch (err) {
+        showMessage(welcomeMessage, `❌ ${err.message}`, 'error');
     } finally {
         startBtn.disabled = false;
         startBtn.classList.remove('loading');
@@ -198,30 +193,23 @@ function handleLogout() {
 }
 
 /* ============================================
-   7. ROOM MANAGEMENT - Create & join rooms
+   7. ROOM MANAGEMENT
    ============================================ */
 async function handleCreateRoom() {
     createRoomBtn.disabled = true;
     createRoomBtn.classList.add('loading');
-
     try {
-        const response = await fetch(`${API_BASE_URL}/rooms`, {
+        const res = await fetch(`${API_BASE_URL}/rooms`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' }
         });
-
-        if (!response.ok) throw new Error('Failed to create room');
-
-        const data = await response.json();
+        if (!res.ok) throw new Error('Failed to create room');
+        const data = await res.json();
         gameState.room.code = data.code;
-
         showMessage(createRoomMessage, `✅ Room created! Code: ${data.code}`, 'success');
-        await loadRoomDetails();
         setTimeout(() => goToWaitingRoom(), 500);
-
-    } catch (error) {
-        console.error('Error creating room:', error);
-        showMessage(createRoomMessage, `❌ ${error.message}`, 'error');
+    } catch (err) {
+        showMessage(createRoomMessage, `❌ ${err.message}`, 'error');
     } finally {
         createRoomBtn.disabled = false;
         createRoomBtn.classList.remove('loading');
@@ -230,37 +218,22 @@ async function handleCreateRoom() {
 
 async function handleJoinRoom() {
     const code = roomCodeInput.value.trim().toUpperCase();
-
-    if (!code) {
-        showMessage(joinRoomMessage, 'Please enter room code', 'error');
-        return;
-    }
+    if (!code) { showMessage(joinRoomMessage, 'Please enter room code', 'error'); return; }
 
     joinRoomBtn.disabled = true;
     joinRoomBtn.classList.add('loading');
-
     try {
-        const response = await fetch(`${API_BASE_URL}/rooms/join`, {
+        const res = await fetch(`${API_BASE_URL}/rooms/join`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                code: code,
-                playerId: gameState.player.id
-            })
+            body: JSON.stringify({ code, playerId: gameState.player.id })
         });
-
-        if (!response.ok) {
-            if (response.status === 400) throw new Error('Room not found or already started');
-            throw new Error('Failed to join room');
-        }
-
+        if (!res.ok) throw new Error('Room not found or already started');
         gameState.room.code = code;
         showMessage(joinRoomMessage, '✅ Joined room!', 'success');
         setTimeout(() => goToWaitingRoom(), 500);
-
-    } catch (error) {
-        console.error('Error joining room:', error);
-        showMessage(joinRoomMessage, `❌ ${error.message}`, 'error');
+    } catch (err) {
+        showMessage(joinRoomMessage, `❌ ${err.message}`, 'error');
     } finally {
         joinRoomBtn.disabled = false;
         joinRoomBtn.classList.remove('loading');
@@ -269,71 +242,77 @@ async function handleJoinRoom() {
 
 async function loadAvailableRooms() {
     try {
-        const response = await fetch(`${API_BASE_URL}/rooms`);
-        if (!response.ok) throw new Error('Failed to load rooms');
-
-        const rooms = await response.json();
+        const res = await fetch(`${API_BASE_URL}/rooms`);
+        const rooms = await res.json();
         const waitingRooms = rooms.filter(r => r.status === 'Waiting');
-
         if (waitingRooms.length === 0) {
-            availableRoomsList.innerHTML = '<p class="empty-message">No available rooms. Create one to get started!</p>';
+            availableRoomsList.innerHTML = '<p class="empty-message">No available rooms. Create one!</p>';
             return;
         }
-
         availableRoomsList.innerHTML = waitingRooms.map(room => `
-            <div class="room-item" onclick="quickJoinRoom('${room.code}')">
-                <div class="room-details">
-                    <h3>Room ${room.code}</h3>
-                    <p>Status: ${room.status}</p>
-                </div>
-                <div class="room-players">${room.players.length} players</div>
+            <div class="room-item" onclick="quickJoin('${room.code}')">
+                <div class="room-details"><h3>Room ${room.code}</h3><p>${room.players.length} players</p></div>
+                <div class="room-players">Join →</div>
             </div>
         `).join('');
-
-    } catch (error) {
-        console.error('Error loading rooms:', error);
+    } catch {
         availableRoomsList.innerHTML = '<p class="empty-message">Error loading rooms</p>';
     }
 }
 
-function quickJoinRoom(code) {
+function quickJoin(code) {
     roomCodeInput.value = code;
     handleJoinRoom();
 }
 
-async function loadRoomDetails() {
+function handleCopyRoomCode() {
+    navigator.clipboard.writeText(gameState.room.code).then(() => {
+        const orig = copyRoomCodeBtn.textContent;
+        copyRoomCodeBtn.textContent = '✓ Copied!';
+        setTimeout(() => { copyRoomCodeBtn.textContent = orig; }, 2000);
+    });
+}
+
+function handleBackToLobby() {
+    if (confirm('Are you sure? You will leave the room.')) {
+        gameState.room   = { code: null, status: null, players: [], cards: [], state: null };
+        gameState.myRole = null;
+        goToLobby();
+    }
+}
+
+/* ============================================
+   8. GAMEPLAY
+   ============================================ */
+
+// ── Waiting Room ──────────────────────────────────
+async function loadWaitingRoomDetails() {
     try {
-        const response = await fetch(`${API_BASE_URL}/rooms/${gameState.room.code}`);
-        if (!response.ok) throw new Error('Room not found');
+        const res = await fetch(`${API_BASE_URL}/rooms/${gameState.room.code}`);
+        if (!res.ok) return;
+        const room = await res.json();
 
-        const room = await response.json();
         gameState.room = {
-            code: room.code,
-            status: room.status,
-            players: room.players || [],
-            cards: room.cards || [],
-            state: room.state || {}
+            code: room.code, status: room.status,
+            players: room.players || [], cards: room.cards || [], state: room.state || {}
         };
-
         updateWaitingRoomUI();
 
-        // Jika game sudah dimulai (status Playing)
-        if (room.status === 'Playing') {
-            // Cek apakah player ini sudah punya role
-            const myPlayer = room.players.find(p => p.id === gameState.player.id);
-            if (myPlayer && myPlayer.gameRole !== 'None') {
-                // Sudah punya role, langsung ke game
-                gameState.myRole = myPlayer.gameRole;
-                goToGame();
-            } else {
-                // Belum punya role, tampilkan modal
-                stopPolling();
-                showRoleModal();
+        // ← SYNC FIX: Deteksi transisi status dan sinkronisasi peran
+        if (room.status === 'Playing' || room.status === 'Finished') {
+            const me = room.players.find(p => p.id === gameState.player.id);
+            const serverRole = me?.gameRole;
+            const phase = room.state?.phase;
+
+            // Jika game sudah berjalan, pastikan kita sinkron role dan masuk ke board
+            if (serverRole && serverRole !== 'None') {
+                gameState.myRole = serverRole;
+                hideRoleModal(); // Tutup jika sempat terbuka (safety)
+                if (!gamePoller) goToGame();
             }
         }
-
-    } catch (error) {
-        console.error('Error loading room details:', error);
+    } catch (err) {
+        console.error('loadWaitingRoomDetails error:', err);
     }
 }
 
@@ -344,288 +323,309 @@ function updateWaitingRoomUI() {
 
     const canStart = gameState.room.players.length >= 2;
     startGameBtn.disabled = !canStart;
-    
     if (canStart) {
         minPlayersMsg.style.display = 'none';
-        startGameInfo.textContent = '✅ Ready to start!';
-        startGameInfo.style.color = 'var(--success)';
+        startGameInfo.textContent  = '✅ Ready to start!';
+        startGameInfo.style.color  = 'var(--success)';
     } else {
         minPlayersMsg.style.display = 'block';
-        startGameInfo.textContent = `${gameState.room.players.length}/2 players`;
+        startGameInfo.textContent   = `${gameState.room.players.length}/2 players`;
     }
 }
 
-/* ============================================
-   8. GAMEPLAY - Start game, role selection, board
-   ============================================ */
-
-// ===== Start Game =====
 async function handleStartGame() {
     startGameBtn.disabled = true;
     startGameBtn.classList.add('loading');
-
     try {
-        const response = await fetch(`${API_BASE_URL}/rooms/${gameState.room.code}/start`, {
+        const res = await fetch(`${API_BASE_URL}/rooms/${gameState.room.code}/start`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' }
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ playerId: gameState.player.id }) // Kirim ID penekan tombol
         });
-
-        if (!response.ok) throw new Error('Failed to start game');
-
-        showMessage(startGameInfo, '✅ Game started!', 'success');
-        // Tampilkan modal pemilihan peran
-        setTimeout(() => showRoleModal(), 800);
-
-    } catch (error) {
-        console.error('Error starting game:', error);
-        showMessage(startGameInfo, `❌ ${error.message}`, 'error');
+        if (!res.ok) throw new Error(await res.text());
+        
+        showMessage(startGameInfo, '✅ Game started! You are the Spymaster.', 'success');
+        // Role akan disinkronkan oleh poller otomatis
+    } catch (err) {
+        showMessage(startGameInfo, `❌ ${err.message}`, 'error');
         startGameBtn.disabled = false;
         startGameBtn.classList.remove('loading');
     }
 }
 
-// ===== Show Role Modal =====
-function showRoleModal() {
-    roleModalMessage.className = 'message';
-    roleModalMessage.textContent = '';
-    chooseSpymasterBtn.disabled = false;
-    chooseFieldBtn.disabled = false;
-    roleModal.style.display = 'flex';
+// ── Role Modal ────────────────────────────────────
+function showRoleModal(room) {
+    if (roleModal.style.display !== 'flex') {
+        roleModalMessage.className = 'message';
+        roleModalMessage.textContent = '';
+        roleModal.style.display = 'flex';
+    }
+
+    // Hitung spymaster yang sudah ada
+    const spymasters = room.players.filter(p => p.gameRole === 'Spymaster');
+    const fieldOps   = room.players.filter(p => p.gameRole === 'FieldOperative');
+    
+    // Update tombol Spymaster (Limit 1 sesuai permintaan eksplisit)
+    if (spymasters.length >= 1) {
+        chooseSpymasterBtn.disabled = true;
+        chooseSpymasterBtn.innerHTML = `
+            <span class="role-icon">🕵️</span>
+            <span class="role-name">Spymaster (TAKEN)</span>
+            <span class="role-desc">Taken by: ${spymasters[0].name}</span>
+        `;
+    } else {
+        chooseSpymasterBtn.disabled = false;
+        chooseSpymasterBtn.innerHTML = `
+            <span class="role-icon">🕵️</span>
+            <span class="role-name">Spymaster</span>
+            <span class="role-desc">See all card colors, give clues. (0/1)</span>
+        `;
+    }
+
+    // Info Field Operative
+    chooseFieldBtn.innerHTML = `
+        <span class="role-icon">🧑‍💼</span>
+        <span class="role-name">Field Operative</span>
+        <span class="role-desc">Guess words based on clues. (${fieldOps.length} joined)</span>
+    `;
 }
 
 function hideRoleModal() {
     roleModal.style.display = 'none';
 }
 
-// ===== Choose Role =====
 async function handleChooseRole(role) {
     chooseSpymasterBtn.disabled = true;
-    chooseFieldBtn.disabled = true;
+    chooseFieldBtn.disabled     = true;
 
     const endpoint = role === 'spymaster'
         ? `${API_BASE_URL}/rooms/${gameState.room.code}/assign-spymaster`
         : `${API_BASE_URL}/rooms/${gameState.room.code}/assign-field-operative`;
 
     try {
-        const response = await fetch(endpoint, {
+        const res = await fetch(endpoint, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ playerId: gameState.player.id })
         });
-
-        if (!response.ok) {
-            const text = await response.text();
-            throw new Error(text || 'Failed to assign role');
+        if (!res.ok) {
+            const txt = await res.text();
+            throw new Error(txt || 'Failed');
         }
-
         gameState.myRole = role === 'spymaster' ? 'Spymaster' : 'FieldOperative';
         showMessage(roleModalMessage, `✅ You are now the ${gameState.myRole === 'Spymaster' ? 'Spymaster 🕵️' : 'Field Operative 🧑‍💼'}!`, 'success');
-
-        setTimeout(() => {
-            hideRoleModal();
-            goToGame();
-        }, 900);
-
-    } catch (error) {
-        console.error('Error choosing role:', error);
-        showMessage(roleModalMessage, `❌ ${error.message}`, 'error');
+        setTimeout(() => { hideRoleModal(); goToGame(); }, 900);
+    } catch (err) {
+        showMessage(roleModalMessage, `❌ ${err.message}`, 'error');
         chooseSpymasterBtn.disabled = false;
-        chooseFieldBtn.disabled = false;
+        chooseFieldBtn.disabled     = false;
     }
 }
 
-// ===== Load Game Board =====
-async function loadGameBoard() {
+// ── Game Board ────────────────────────────────────
+async function loadAndRenderBoard() {
     try {
-        // Kirim playerId agar server tahu apakah kita spymaster (sehingga role card dikirim)
         const url = `${API_BASE_URL}/rooms/${gameState.room.code}?playerId=${gameState.player.id}`;
-        const response = await fetch(url);
-        if (!response.ok) throw new Error('Failed to load game');
+        const res  = await fetch(url);
+        if (!res.ok) return;
+        const room = await res.json();
 
-        const room = await response.json();
         gameState.room = {
-            code: room.code,
-            status: room.status,
-            players: room.players || [],
-            cards: room.cards || [],
-            state: room.state || {}
+            code: room.code, status: room.status,
+            players: room.players || [], cards: room.cards || [], state: room.state || {}
         };
 
-        // Sinkronisasi role dari server jika belum di-set
-        if (!gameState.myRole) {
-            const myPlayer = room.players.find(p => p.id === gameState.player.id);
-            if (myPlayer) gameState.myRole = myPlayer.gameRole;
+        // Sinkronisasi role dari server
+        if (!gameState.myRole || gameState.myRole === 'None') {
+            const me = room.players.find(p => p.id === gameState.player.id);
+            if (me && me.gameRole !== 'None') gameState.myRole = me.gameRole;
+        }
+
+        // Deteksi game over
+        if (room.status === 'Finished' || room.state?.winner) {
+            stopGamePoller();
+            renderBoard(room);
+            showGameOver(room.state?.winner);
+            return;
         }
 
         renderBoard(room);
-
-    } catch (error) {
-        console.error('Error loading game board:', error);
+    } catch (err) {
+        console.error('loadAndRenderBoard error:', err);
     }
 }
 
-// ===== Render Board =====
 function renderBoard(room) {
     const isSpymaster = gameState.myRole === 'Spymaster';
 
-    // Update header stats
+    // Header stats
     gameRound.textContent  = `Round: ${room.state?.round || 1}`;
     gameStatus.textContent = `Status: ${room.status}`;
     if (gamePhase) {
-        const phase = room.state?.phase || '';
-        gamePhase.textContent = phase === 'SpymasterSelection' ? '⏳ Choosing Roles...' 
-                              : phase === 'Playing' ? '🎮 Playing' : phase;
+        const p = room.state?.phase || '';
+        gamePhase.textContent =
+            p === 'SpymasterSelection' ? '⏳ Choosing Roles...' :
+            p === 'Playing'            ? '🎮 Playing'           :
+            p === 'Ended'              ? '🏁 Game Over'         : p;
     }
 
     // My role badge
     if (myRoleBadge) {
         if (isSpymaster) {
             myRoleBadge.textContent = '🕵️ You are the Spymaster';
-            myRoleBadge.className = 'my-role-badge spymaster';
+            myRoleBadge.className   = 'my-role-badge spymaster';
         } else if (gameState.myRole === 'FieldOperative') {
             myRoleBadge.textContent = '🧑‍💼 You are a Field Operative';
-            myRoleBadge.className = 'my-role-badge field-operative';
+            myRoleBadge.className   = 'my-role-badge field-operative';
         } else {
             myRoleBadge.textContent = '';
-            myRoleBadge.className = 'my-role-badge';
+            myRoleBadge.className   = 'my-role-badge';
         }
     }
 
-    // Render cards
+    // Cards
     cardsGrid.innerHTML = '';
-    gameState.room.cards.forEach(card => {
-        const cardEl = document.createElement('button');
-        cardEl.className = 'card';
-        cardEl.textContent = card.word;
+    (room.cards || []).forEach(card => {
+        const el = document.createElement('button');
+        el.className  = 'card';
+        el.textContent = card.word;
 
         if (card.isRevealed) {
-            // Kartu sudah direveal → tampilkan warna penuh
-            cardEl.classList.add('revealed');
-            cardEl.classList.add(getRoleClass(card.role));
-            cardEl.disabled = true;
+            // Sudah direveal → warna penuh
+            el.classList.add('revealed', getRoleClass(card.role));
+            el.disabled = true;
         } else if (isSpymaster && card.role) {
-            // Spymaster: tampilkan hint warna tapi bukan full reveal
-            cardEl.classList.add(getHintClass(card.role));
-            cardEl.disabled = true; // spymaster tidak bisa reveal kartu
+            // Spymaster → hint warna background
+            el.classList.add(getHintClass(card.role));
+            el.disabled = true;
         } else {
-            // Field operative: kartu polos, bisa diklik
-            cardEl.addEventListener('click', () => handleRevealCard(card, cardEl));
+            // Field Operative → bisa klik
+            el.addEventListener('click', () => handleRevealCard(card, el));
         }
 
-        cardsGrid.appendChild(cardEl);
+        cardsGrid.appendChild(el);
     });
 
-    // Players list dengan role tag
-    gamePlayers.innerHTML = gameState.room.players.map(p => {
+    // Players list
+    gamePlayers.innerHTML = (room.players || []).map(p => {
         const roleTag = p.gameRole && p.gameRole !== 'None'
             ? `<span class="player-role-tag">${p.gameRole === 'Spymaster' ? '🕵️' : '🧑‍💼'}</span>`
-            : '<span class="player-role-tag">⏳</span>';
-        const isSelf = p.id === gameState.player.id ? ' (you)' : '';
+            : `<span class="player-role-tag">⏳</span>`;
+        const isSelf  = p.id === gameState.player.id ? ' (you)' : '';
         return `<li class="player-item">${p.name}${isSelf}${roleTag}</li>`;
     }).join('');
 }
 
-// ===== Reveal Card (Field Operative only) =====
-async function handleRevealCard(card, cardEl) {
+async function handleRevealCard(card, el) {
     if (card.isRevealed) return;
-    if (gameState.myRole !== 'FieldOperative') return;
+    
+    // Safety check role
+    if (gameState.myRole !== 'FieldOperative') {
+        alert("Only Field Operatives can reveal cards. You are: " + (gameState.myRole || "None"));
+        return;
+    }
 
-    cardEl.disabled = true;
-    cardEl.classList.add('loading');
-
+    el.disabled = true;
+    el.classList.add('loading');
     try {
-        const response = await fetch(`${API_BASE_URL}/rooms/${gameState.room.code}/cards/${card.id}/reveal`, {
+        const res = await fetch(`${API_BASE_URL}/rooms/${gameState.room.code}/cards/${card.id}/reveal`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ playerId: gameState.player.id })
         });
-
-        if (!response.ok) {
-            const text = await response.text();
-            throw new Error(text || 'Failed to reveal card');
+        
+        if (!res.ok) {
+            const errorMsg = await res.text();
+            throw new Error(errorMsg || 'Failed to reveal card');
         }
 
-        // Refresh board setelah reveal
-        await loadGameBoard();
-
-    } catch (error) {
-        console.error('Error revealing card:', error);
-        cardEl.disabled = false;
-        cardEl.classList.remove('loading');
+        await loadAndRenderBoard();
+    } catch (err) {
+        console.error('RevealCard error:', err);
+        alert(`❌ Error: ${err.message}`);
+        el.disabled = false;
+        el.classList.remove('loading');
     }
 }
 
-// ===== Get Role Class (for revealed cards) =====
+// ── Game Over ─────────────────────────────────────
+function showGameOver(winner) {
+    const box = gameOverOverlay.querySelector('.modal-box');
+    box.classList.remove('winner-red', 'winner-blue', 'winner-assassin');
+
+    if (winner === 'Assassin') {
+        box.classList.add('winner-assassin');
+        gameOverIcon.textContent  = '💀';
+        gameOverTitle.textContent = 'Assassin Revealed!';
+        gameOverDesc.textContent  = 'The Assassin card was revealed. Game over!';
+    } else if (winner === 'RedTeam') {
+        box.classList.add('winner-red');
+        gameOverIcon.textContent  = '🔴';
+        gameOverTitle.textContent = 'Red Team Wins!';
+        gameOverDesc.textContent  = 'All Red Agent cards have been revealed. Red Team is victorious!';
+    } else if (winner === 'BlueTeam') {
+        box.classList.add('winner-blue');
+        gameOverIcon.textContent  = '🔵';
+        gameOverTitle.textContent = 'Blue Team Wins!';
+        gameOverDesc.textContent  = 'All Blue Agent cards have been revealed. Blue Team is victorious!';
+    } else {
+        gameOverIcon.textContent  = '🏁';
+        gameOverTitle.textContent = 'Game Over!';
+        gameOverDesc.textContent  = '';
+    }
+
+    gameOverOverlay.style.display = 'flex';
+}
+
+/* ============================================
+   9. UTILITIES
+   ============================================ */
+
+// ── Waitingroom poller ──
+function startWaitingPoller() {
+    if (waitingPoller) return;
+    waitingPoller = setInterval(() => {
+        if (gameState.room.code) loadWaitingRoomDetails();
+    }, WAITING_POLL_MS);
+}
+function stopWaitingPoller() {
+    if (waitingPoller) { clearInterval(waitingPoller); waitingPoller = null; }
+}
+
+// ── Game page poller ──
+function startGamePoller() {
+    if (gamePoller) return;
+    gamePoller = setInterval(() => {
+        if (gameState.room.code) loadAndRenderBoard();
+    }, GAME_POLL_MS);
+}
+function stopGamePoller() {
+    if (gamePoller) { clearInterval(gamePoller); gamePoller = null; }
+}
+
+// ── Card role class helpers ──
 function getRoleClass(role) {
     switch (role) {
         case 'RedAgent':  return 'red-agent';
         case 'BlueAgent': return 'blue-agent';
         case 'Bystander': return 'bystander';
         case 'Assassin':  return 'assassin';
-        default: return '';
+        default:          return '';
     }
 }
-
-// ===== Get Hint Class (for spymaster unrevealed cards) =====
 function getHintClass(role) {
     switch (role) {
         case 'RedAgent':  return 'hint-red';
         case 'BlueAgent': return 'hint-blue';
         case 'Bystander': return 'hint-bystander';
         case 'Assassin':  return 'hint-assassin';
-        default: return '';
+        default:          return '';
     }
 }
 
-// ===== Copy Room Code =====
-function handleCopyRoomCode() {
-    navigator.clipboard.writeText(gameState.room.code).then(() => {
-        const originalText = copyRoomCodeBtn.textContent;
-        copyRoomCodeBtn.textContent = '✓ Copied!';
-        setTimeout(() => {
-            copyRoomCodeBtn.textContent = originalText;
-        }, 2000);
-    });
-}
-
-// ===== Back to Lobby =====
-function handleBackToLobby() {
-    if (confirm('Are you sure? You will leave the room.')) {
-        gameState.room   = { code: null, status: null, players: [], cards: [], state: null };
-        gameState.myRole = null;
-        goToLobby();
-    }
-}
-
-/* ============================================
-   9. UTILITIES - Helper functions
-   ============================================ */
-
-// ===== Polling =====
-function startPolling() {
-    if (pollingInterval) return;
-    pollingInterval = setInterval(() => {
-        if (gameState.room.code) {
-            loadRoomDetails();
-        }
-    }, POLLING_INTERVAL);
-}
-
-function stopPolling() {
-    if (pollingInterval) {
-        clearInterval(pollingInterval);
-        pollingInterval = null;
-    }
-}
-
-// ===== Show Message =====
-function showMessage(element, message, type) {
-    element.textContent = message;
-    element.className = `message show ${type}`;
-
-    if (type === 'success') {
-        setTimeout(() => {
-            element.classList.remove('show');
-        }, 4000);
-    }
+// ── Message helper ──
+function showMessage(el, msg, type) {
+    el.textContent = msg;
+    el.className   = `message show ${type}`;
+    if (type === 'success') setTimeout(() => el.classList.remove('show'), 4000);
 }
