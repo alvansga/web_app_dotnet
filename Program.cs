@@ -34,6 +34,16 @@ builder.Services.AddScoped<GetAllPlayersService>();
 
 var app = builder.Build();
 
+// Add CORS for frontend requests
+app.UseCors(builder => builder
+    .AllowAnyOrigin()
+    .AllowAnyMethod()
+    .AllowAnyHeader());
+
+// Serve static files from wwwroot
+app.UseDefaultFiles();
+app.UseStaticFiles();
+
 app.UseSwagger();
 app.UseSwaggerUI();
 
