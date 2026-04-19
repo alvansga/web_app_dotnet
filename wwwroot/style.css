@@ -342,7 +342,7 @@ body {
     flex-direction: column;
     width: 100%;
     min-height: 100vh;
-    padding: 20px;
+    padding: 10px;
 }
 
 .game-header {
@@ -378,13 +378,15 @@ body {
 }
 
 .cards-grid {
-    display: grid;
-    grid-template-columns: repeat(5, 1fr);
+    display: grid !important;
+    grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
     gap: 8px;
-    padding: 12px;
+    padding: 10px;
     background: white;
     border-radius: 15px;
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+    width: 100%;
+    margin: 0 auto;
 }
 
 .card {
@@ -531,8 +533,9 @@ body {
     }
 
     .cards-grid {
-        grid-template-columns: repeat(4, 1fr);
-        gap: 10px;
+        grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+        gap: 4px;
+        padding: 6px;
     }
 
     .game-main {
@@ -554,8 +557,9 @@ body {
 
 @media (max-width: 480px) {
     .cards-grid {
-        grid-template-columns: repeat(3, 1fr);
-        gap: 8px;
+        grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+        gap: 3px;
+        padding: 4px;
     }
 
     .page-header {
@@ -567,7 +571,8 @@ body {
     }
 
     .card {
-        font-size: 0.8em;
+        font-size: 0.65em;
+        padding: 4px;
     }
 }
 
