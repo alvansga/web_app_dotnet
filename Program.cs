@@ -31,6 +31,8 @@ builder.Services.AddScoped<IGameRoomRepository, GameRoomRepository>();
 builder.Services.AddScoped<GetRoomDetailService>();
 builder.Services.AddScoped<StartGameService>();
 builder.Services.AddScoped<GetAllPlayersService>();
+builder.Services.AddScoped<AssignRoleService>();
+builder.Services.AddScoped<RevealCardService>();
 
 var app = builder.Build();
 

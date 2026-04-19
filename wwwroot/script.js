@@ -11,7 +11,7 @@
  * 5. Page Navigation     - Switch between pages
  * 6. Player Management   - Create player, logout
  * 7. Room Management     - Create/join rooms
- * 8. Gameplay            - Start game, load board
+ * 8. Gameplay            - Start game, role selection, board
  * 9. Utilities           - Helper functions
  */
 
@@ -19,12 +19,13 @@
    1. CONFIG & STATE - Constants and variables
    ============================================ */
 const API_BASE_URL = '/api';
-const POLLING_INTERVAL = 2000; // Refresh every 2 seconds
+const POLLING_INTERVAL = 2000;
 
 // Global game state object
 let gameState = {
     player: { id: null, name: null },
-    room: { code: null, status: null, players: [], cards: [], state: null }
+    room: { code: null, status: null, players: [], cards: [], state: null },
+    myRole: null  // 'Spymaster' | 'FieldOperative' | null
 };
 
 let pollingInterval = null;
@@ -32,39 +33,47 @@ let pollingInterval = null;
 /* ============================================
    2. DOM ELEMENTS - UI element references
    ============================================ */
-const welcomePage = document.getElementById('welcomePage');
-const playerNameInput = document.getElementById('playerNameInput');
-const startBtn = document.getElementById('startBtn');
-const welcomeMessage = document.getElementById('welcomeMessage');
+const welcomePage        = document.getElementById('welcomePage');
+const playerNameInput    = document.getElementById('playerNameInput');
+const startBtn           = document.getElementById('startBtn');
+const welcomeMessage     = document.getElementById('welcomeMessage');
 
-// ===== DOM Elements - Lobby =====
-const lobbyPage = document.getElementById('lobbyPage');
-const playerNameDisplay = document.getElementById('playerNameDisplay');
-const logoutBtn = document.getElementById('logoutBtn');
-const createRoomBtn = document.getElementById('createRoomBtn');
-const createRoomMessage = document.getElementById('createRoomMessage');
-const roomCodeInput = document.getElementById('roomCodeInput');
-const joinRoomBtn = document.getElementById('joinRoomBtn');
-const joinRoomMessage = document.getElementById('joinRoomMessage');
+// Lobby
+const lobbyPage          = document.getElementById('lobbyPage');
+const playerNameDisplay  = document.getElementById('playerNameDisplay');
+const logoutBtn          = document.getElementById('logoutBtn');
+const createRoomBtn      = document.getElementById('createRoomBtn');
+const createRoomMessage  = document.getElementById('createRoomMessage');
+const roomCodeInput      = document.getElementById('roomCodeInput');
+const joinRoomBtn        = document.getElementById('joinRoomBtn');
+const joinRoomMessage    = document.getElementById('joinRoomMessage');
 const availableRoomsList = document.getElementById('availableRoomsList');
 
-// ===== DOM Elements - Waiting Room =====
-const waitingRoomPage = document.getElementById('waitingRoomPage');
-const roomCodeDisplay = document.getElementById('roomCodeDisplay');
-const backToLobbyBtn = document.getElementById('backToLobbyBtn');
-const playersList = document.getElementById('playersList');
-const minPlayersMsg = document.getElementById('minPlayersMsg');
-const startGameBtn = document.getElementById('startGameBtn');
-const startGameInfo = document.getElementById('startGameInfo');
-const copyRoomCodeBtn = document.getElementById('copyRoomCodeBtn');
+// Waiting Room
+const waitingRoomPage    = document.getElementById('waitingRoomPage');
+const roomCodeDisplay    = document.getElementById('roomCodeDisplay');
+const backToLobbyBtn     = document.getElementById('backToLobbyBtn');
+const playersList        = document.getElementById('playersList');
+const minPlayersMsg      = document.getElementById('minPlayersMsg');
+const startGameBtn       = document.getElementById('startGameBtn');
+const startGameInfo      = document.getElementById('startGameInfo');
+const copyRoomCodeBtn    = document.getElementById('copyRoomCodeBtn');
 
-// ===== DOM Elements - Game =====
-const gamePage = document.getElementById('gamePage');
-const gameRoomCode = document.getElementById('gameRoomCode');
-const gameRound = document.getElementById('gameRound');
-const gameStatus = document.getElementById('gameStatus');
-const cardsGrid = document.getElementById('cardsGrid');
-const gamePlayers = document.getElementById('gamePlayers');
+// Game
+const gamePage           = document.getElementById('gamePage');
+const gameRoomCode       = document.getElementById('gameRoomCode');
+const gameRound          = document.getElementById('gameRound');
+const gameStatus         = document.getElementById('gameStatus');
+const gamePhase          = document.getElementById('gamePhase');
+const cardsGrid          = document.getElementById('cardsGrid');
+const gamePlayers        = document.getElementById('gamePlayers');
+const myRoleBadge        = document.getElementById('myRoleBadge');
+
+// Role Selection Modal
+const roleModal          = document.getElementById('roleModal');
+const chooseSpymasterBtn = document.getElementById('chooseSpymasterBtn');
+const chooseFieldBtn     = document.getElementById('chooseFieldBtn');
+const roleModalMessage   = document.getElementById('roleModalMessage');
 
 /* ============================================
    3. EVENT LISTENERS - User interactions
@@ -84,6 +93,10 @@ backToLobbyBtn.addEventListener('click', handleBackToLobby);
 startGameBtn.addEventListener('click', handleStartGame);
 copyRoomCodeBtn.addEventListener('click', handleCopyRoomCode);
 
+// Role Modal buttons
+chooseSpymasterBtn.addEventListener('click', () => handleChooseRole('spymaster'));
+chooseFieldBtn.addEventListener('click', () => handleChooseRole('field-operative'));
+
 /* ============================================
    4. INITIALIZATION - App startup
    ============================================ */
@@ -98,8 +111,6 @@ document.addEventListener('DOMContentLoaded', () => {
 /* ============================================
    5. PAGE NAVIGATION - Switch between pages
    ============================================ */
-
-// ===== Page Navigation =====
 function showPage(pageElement) {
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
     pageElement.classList.add('active');
@@ -134,8 +145,6 @@ function goToGame() {
 /* ============================================
    6. PLAYER MANAGEMENT - Create & manage players
    ============================================ */
-
-// ===== Create Player =====
 async function handleCreatePlayer() {
     const name = playerNameInput.value.trim();
 
@@ -179,11 +188,11 @@ async function handleCreatePlayer() {
     }
 }
 
-// ===== Logout =====
 function handleLogout() {
     localStorage.removeItem('player');
     gameState.player = { id: null, name: null };
-    gameState.room = { code: null, status: null, players: [], cards: [], state: null };
+    gameState.room   = { code: null, status: null, players: [], cards: [], state: null };
+    gameState.myRole = null;
     playerNameInput.value = '';
     goToWelcome();
 }
@@ -191,8 +200,6 @@ function handleLogout() {
 /* ============================================
    7. ROOM MANAGEMENT - Create & join rooms
    ============================================ */
-
-// ===== Create Room =====
 async function handleCreateRoom() {
     createRoomBtn.disabled = true;
     createRoomBtn.classList.add('loading');
@@ -221,7 +228,6 @@ async function handleCreateRoom() {
     }
 }
 
-// ===== Join Room =====
 async function handleJoinRoom() {
     const code = roomCodeInput.value.trim().toUpperCase();
 
@@ -261,7 +267,6 @@ async function handleJoinRoom() {
     }
 }
 
-// ===== Load Available Rooms =====
 async function loadAvailableRooms() {
     try {
         const response = await fetch(`${API_BASE_URL}/rooms`);
@@ -291,13 +296,11 @@ async function loadAvailableRooms() {
     }
 }
 
-// ===== Quick Join Room =====
 function quickJoinRoom(code) {
     roomCodeInput.value = code;
     handleJoinRoom();
 }
 
-// ===== Load Room Details =====
 async function loadRoomDetails() {
     try {
         const response = await fetch(`${API_BASE_URL}/rooms/${gameState.room.code}`);
@@ -314,9 +317,19 @@ async function loadRoomDetails() {
 
         updateWaitingRoomUI();
 
-        // If game started, go to game page
+        // Jika game sudah dimulai (status Playing)
         if (room.status === 'Playing') {
-            goToGame();
+            // Cek apakah player ini sudah punya role
+            const myPlayer = room.players.find(p => p.id === gameState.player.id);
+            if (myPlayer && myPlayer.gameRole !== 'None') {
+                // Sudah punya role, langsung ke game
+                gameState.myRole = myPlayer.gameRole;
+                goToGame();
+            } else {
+                // Belum punya role, tampilkan modal
+                stopPolling();
+                showRoleModal();
+            }
         }
 
     } catch (error) {
@@ -324,14 +337,11 @@ async function loadRoomDetails() {
     }
 }
 
-// ===== Update Waiting Room UI =====
 function updateWaitingRoomUI() {
-    // Update players list
-    playersList.innerHTML = gameState.room.players.map(p => 
+    playersList.innerHTML = gameState.room.players.map(p =>
         `<li class="player-item">${p.name}</li>`
     ).join('');
 
-    // Enable start button if enough players
     const canStart = gameState.room.players.length >= 2;
     startGameBtn.disabled = !canStart;
     
@@ -346,7 +356,7 @@ function updateWaitingRoomUI() {
 }
 
 /* ============================================
-   8. GAMEPLAY - Start game, load board
+   8. GAMEPLAY - Start game, role selection, board
    ============================================ */
 
 // ===== Start Game =====
@@ -355,20 +365,16 @@ async function handleStartGame() {
     startGameBtn.classList.add('loading');
 
     try {
-        // For now, generate 25 random words
-        const words = generateRandomWords(25);
-        
         const response = await fetch(`${API_BASE_URL}/rooms/${gameState.room.code}/start`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ words })
+            headers: { 'Content-Type': 'application/json' }
         });
 
         if (!response.ok) throw new Error('Failed to start game');
 
         showMessage(startGameInfo, '✅ Game started!', 'success');
-        await loadRoomDetails();
-        setTimeout(() => goToGame(), 1000);
+        // Tampilkan modal pemilihan peran
+        setTimeout(() => showRoleModal(), 800);
 
     } catch (error) {
         console.error('Error starting game:', error);
@@ -378,22 +384,62 @@ async function handleStartGame() {
     }
 }
 
-// ===== Generate Random Words =====
-function generateRandomWords(count) {
-    const words = [
-        'APPLE', 'BANANA', 'CASTLE', 'DIAMOND', 'ELEPHANT',
-        'FOREST', 'GUITAR', 'HOUSE', 'ISLAND', 'JUNGLE',
-        'KEYBOARD', 'LION', 'MOUNTAIN', 'NOTEBOOK', 'OCEAN',
-        'PIANO', 'QUEEN', 'RIVER', 'SCHOOL', 'TIGER',
-        'UMBRELLA', 'VIOLIN', 'WINDOW', 'XENOPHOBE', 'ZEBRA'
-    ];
-    return words.slice(0, count);
+// ===== Show Role Modal =====
+function showRoleModal() {
+    roleModalMessage.className = 'message';
+    roleModalMessage.textContent = '';
+    chooseSpymasterBtn.disabled = false;
+    chooseFieldBtn.disabled = false;
+    roleModal.style.display = 'flex';
+}
+
+function hideRoleModal() {
+    roleModal.style.display = 'none';
+}
+
+// ===== Choose Role =====
+async function handleChooseRole(role) {
+    chooseSpymasterBtn.disabled = true;
+    chooseFieldBtn.disabled = true;
+
+    const endpoint = role === 'spymaster'
+        ? `${API_BASE_URL}/rooms/${gameState.room.code}/assign-spymaster`
+        : `${API_BASE_URL}/rooms/${gameState.room.code}/assign-field-operative`;
+
+    try {
+        const response = await fetch(endpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ playerId: gameState.player.id })
+        });
+
+        if (!response.ok) {
+            const text = await response.text();
+            throw new Error(text || 'Failed to assign role');
+        }
+
+        gameState.myRole = role === 'spymaster' ? 'Spymaster' : 'FieldOperative';
+        showMessage(roleModalMessage, `✅ You are now the ${gameState.myRole === 'Spymaster' ? 'Spymaster 🕵️' : 'Field Operative 🧑‍💼'}!`, 'success');
+
+        setTimeout(() => {
+            hideRoleModal();
+            goToGame();
+        }, 900);
+
+    } catch (error) {
+        console.error('Error choosing role:', error);
+        showMessage(roleModalMessage, `❌ ${error.message}`, 'error');
+        chooseSpymasterBtn.disabled = false;
+        chooseFieldBtn.disabled = false;
+    }
 }
 
 // ===== Load Game Board =====
 async function loadGameBoard() {
     try {
-        const response = await fetch(`${API_BASE_URL}/rooms/${gameState.room.code}`);
+        // Kirim playerId agar server tahu apakah kita spymaster (sehingga role card dikirim)
+        const url = `${API_BASE_URL}/rooms/${gameState.room.code}?playerId=${gameState.player.id}`;
+        const response = await fetch(url);
         if (!response.ok) throw new Error('Failed to load game');
 
         const room = await response.json();
@@ -405,52 +451,130 @@ async function loadGameBoard() {
             state: room.state || {}
         };
 
-        // Render cards
-        cardsGrid.innerHTML = '';
-        gameState.room.cards.forEach(card => {
-            const cardEl = document.createElement('button');
-            cardEl.className = 'card';
-            cardEl.textContent = card.word;
-            
-            if (card.isRevealed) {
-                cardEl.classList.add('revealed');
-                cardEl.classList.add(getRoleClass(card.role));
-            }
-            
-            cardEl.addEventListener('click', () => selectCard(card));
-            cardsGrid.appendChild(cardEl);
-        });
+        // Sinkronisasi role dari server jika belum di-set
+        if (!gameState.myRole) {
+            const myPlayer = room.players.find(p => p.id === gameState.player.id);
+            if (myPlayer) gameState.myRole = myPlayer.gameRole;
+        }
 
-        // Update players
-        gamePlayers.innerHTML = gameState.room.players.map(p =>
-            `<li class="player-item">${p.name}</li>`
-        ).join('');
-
-        // Update stats
-        gameRound.textContent = `Round: ${gameState.room.state.round || 1}`;
-        gameStatus.textContent = `Status: ${gameState.room.status}`;
+        renderBoard(room);
 
     } catch (error) {
         console.error('Error loading game board:', error);
     }
 }
 
-// ===== Get Role Class =====
+// ===== Render Board =====
+function renderBoard(room) {
+    const isSpymaster = gameState.myRole === 'Spymaster';
+
+    // Update header stats
+    gameRound.textContent  = `Round: ${room.state?.round || 1}`;
+    gameStatus.textContent = `Status: ${room.status}`;
+    if (gamePhase) {
+        const phase = room.state?.phase || '';
+        gamePhase.textContent = phase === 'SpymasterSelection' ? '⏳ Choosing Roles...' 
+                              : phase === 'Playing' ? '🎮 Playing' : phase;
+    }
+
+    // My role badge
+    if (myRoleBadge) {
+        if (isSpymaster) {
+            myRoleBadge.textContent = '🕵️ You are the Spymaster';
+            myRoleBadge.className = 'my-role-badge spymaster';
+        } else if (gameState.myRole === 'FieldOperative') {
+            myRoleBadge.textContent = '🧑‍💼 You are a Field Operative';
+            myRoleBadge.className = 'my-role-badge field-operative';
+        } else {
+            myRoleBadge.textContent = '';
+            myRoleBadge.className = 'my-role-badge';
+        }
+    }
+
+    // Render cards
+    cardsGrid.innerHTML = '';
+    gameState.room.cards.forEach(card => {
+        const cardEl = document.createElement('button');
+        cardEl.className = 'card';
+        cardEl.textContent = card.word;
+
+        if (card.isRevealed) {
+            // Kartu sudah direveal → tampilkan warna penuh
+            cardEl.classList.add('revealed');
+            cardEl.classList.add(getRoleClass(card.role));
+            cardEl.disabled = true;
+        } else if (isSpymaster && card.role) {
+            // Spymaster: tampilkan hint warna tapi bukan full reveal
+            cardEl.classList.add(getHintClass(card.role));
+            cardEl.disabled = true; // spymaster tidak bisa reveal kartu
+        } else {
+            // Field operative: kartu polos, bisa diklik
+            cardEl.addEventListener('click', () => handleRevealCard(card, cardEl));
+        }
+
+        cardsGrid.appendChild(cardEl);
+    });
+
+    // Players list dengan role tag
+    gamePlayers.innerHTML = gameState.room.players.map(p => {
+        const roleTag = p.gameRole && p.gameRole !== 'None'
+            ? `<span class="player-role-tag">${p.gameRole === 'Spymaster' ? '🕵️' : '🧑‍💼'}</span>`
+            : '<span class="player-role-tag">⏳</span>';
+        const isSelf = p.id === gameState.player.id ? ' (you)' : '';
+        return `<li class="player-item">${p.name}${isSelf}${roleTag}</li>`;
+    }).join('');
+}
+
+// ===== Reveal Card (Field Operative only) =====
+async function handleRevealCard(card, cardEl) {
+    if (card.isRevealed) return;
+    if (gameState.myRole !== 'FieldOperative') return;
+
+    cardEl.disabled = true;
+    cardEl.classList.add('loading');
+
+    try {
+        const response = await fetch(`${API_BASE_URL}/rooms/${gameState.room.code}/cards/${card.id}/reveal`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ playerId: gameState.player.id })
+        });
+
+        if (!response.ok) {
+            const text = await response.text();
+            throw new Error(text || 'Failed to reveal card');
+        }
+
+        // Refresh board setelah reveal
+        await loadGameBoard();
+
+    } catch (error) {
+        console.error('Error revealing card:', error);
+        cardEl.disabled = false;
+        cardEl.classList.remove('loading');
+    }
+}
+
+// ===== Get Role Class (for revealed cards) =====
 function getRoleClass(role) {
     switch (role) {
-        case 'RedAgent': return 'red-agent';
+        case 'RedAgent':  return 'red-agent';
         case 'BlueAgent': return 'blue-agent';
         case 'Bystander': return 'bystander';
-        case 'Assassin': return 'assassin';
+        case 'Assassin':  return 'assassin';
         default: return '';
     }
 }
 
-// ===== Select Card =====
-function selectCard(card) {
-    if (card.isRevealed) return;
-    // TODO: Implement card reveal logic
-    console.log('Card selected:', card);
+// ===== Get Hint Class (for spymaster unrevealed cards) =====
+function getHintClass(role) {
+    switch (role) {
+        case 'RedAgent':  return 'hint-red';
+        case 'BlueAgent': return 'hint-blue';
+        case 'Bystander': return 'hint-bystander';
+        case 'Assassin':  return 'hint-assassin';
+        default: return '';
+    }
 }
 
 // ===== Copy Room Code =====
@@ -467,7 +591,8 @@ function handleCopyRoomCode() {
 // ===== Back to Lobby =====
 function handleBackToLobby() {
     if (confirm('Are you sure? You will leave the room.')) {
-        gameState.room = { code: null, status: null, players: [], cards: [], state: null };
+        gameState.room   = { code: null, status: null, players: [], cards: [], state: null };
+        gameState.myRole = null;
         goToLobby();
     }
 }

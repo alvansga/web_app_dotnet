@@ -42,5 +42,9 @@ public class AppDbContext : DbContext
             {
                 state.Property(s => s.Phase).HasConversion<string>();
             });
+
+        modelBuilder.Entity<Player>()
+            .Property(p => p.GameRole)
+            .HasConversion<string>();
     }
 }

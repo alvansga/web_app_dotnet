@@ -599,3 +599,167 @@ body {
 .btn.loading {
     animation: pulse 1.5s ease-in-out infinite;
 }
+
+/* ===== 10. MODAL - Role Selection ===== */
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.65);
+    backdrop-filter: blur(6px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    animation: slideIn 0.3s ease;
+}
+
+.modal-box {
+    background: white;
+    border-radius: 20px;
+    padding: 40px 36px;
+    max-width: 520px;
+    width: 90%;
+    box-shadow: 0 30px 80px rgba(0, 0, 0, 0.4);
+    text-align: center;
+}
+
+.modal-box h2 {
+    font-size: 1.8em;
+    color: var(--primary);
+    margin-bottom: 8px;
+}
+
+.modal-subtitle {
+    color: #888;
+    margin-bottom: 28px;
+    font-size: 0.95em;
+}
+
+.role-cards {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 20px;
+}
+
+.role-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 24px 16px;
+    border: 2px solid transparent;
+    border-radius: 14px;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    font-family: inherit;
+}
+
+.role-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 30px rgba(0,0,0,0.15);
+}
+
+.role-spymaster {
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+    color: white;
+}
+
+.role-spymaster:hover {
+    border-color: #667eea;
+}
+
+.role-field {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.role-field:hover {
+    border-color: #2ecc71;
+}
+
+.role-icon {
+    font-size: 2.4em;
+}
+
+.role-name {
+    font-size: 1.1em;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+}
+
+.role-desc {
+    font-size: 0.78em;
+    opacity: 0.85;
+    line-height: 1.4;
+}
+
+/* ===== 11. ROLE BADGE & PHASE BADGE ===== */
+.my-role-badge {
+    border-radius: 10px;
+    padding: 12px 16px;
+    margin-bottom: 16px;
+    font-weight: 700;
+    font-size: 0.95em;
+    text-align: center;
+    letter-spacing: 0.5px;
+}
+
+.my-role-badge.spymaster {
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+    color: #a78bfa;
+    border: 1px solid #a78bfa44;
+}
+
+.my-role-badge.field-operative {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.phase-badge {
+    background: #fef3c7;
+    color: #92400e;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.8em;
+    font-weight: 600;
+}
+
+/* ===== 12. SPYMASTER CARD HINT (sebelum direveal) ===== */
+/* Kartu yang rolenya diketahui spymaster tapi belum direveal: warna subtle di border/background */
+.card.hint-red {
+    background: linear-gradient(135deg, #e74c3c99 0%, #c0392b99 100%);
+    border: 3px solid #e74c3c;
+}
+
+.card.hint-blue {
+    background: linear-gradient(135deg, #3498db99 0%, #2980b999 100%);
+    border: 3px solid #3498db;
+}
+
+.card.hint-bystander {
+    background: linear-gradient(135deg, #ecf0f199 0%, #bdc3c799 100%);
+    color: #333;
+    border: 3px solid #95a5a6;
+}
+
+.card.hint-assassin {
+    background: linear-gradient(135deg, #2c3e5099 0%, #00000099 100%);
+    border: 3px solid #000;
+}
+
+/* ===== Player role indicator in list ===== */
+.player-item .player-role-tag {
+    margin-left: auto;
+    font-size: 0.7em;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-weight: 600;
+    background: rgba(255,255,255,0.25);
+}
+
+@media (max-width: 480px) {
+    .role-cards {
+        grid-template-columns: 1fr;
+    }
+}

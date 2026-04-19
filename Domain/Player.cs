@@ -8,9 +8,19 @@ public class Player
     public Guid? GameRoomId { get; set; }
     public GameRoom? GameRoom { get; set; }
 
+    public PlayerGameRole GameRole { get; private set; } = PlayerGameRole.None;
+
+    // For EF Core
+    private Player() { }
+
     public Player(string name)
     {
         Id = Guid.NewGuid();
         Name = name;
+    }
+
+    public void SetGameRole(PlayerGameRole role)
+    {
+        GameRole = role;
     }
 }

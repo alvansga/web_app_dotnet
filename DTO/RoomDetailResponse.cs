@@ -15,6 +15,7 @@ public class PlayerDto
 {
     public Guid Id { get; set; }
     public string Name { get; set; } = string.Empty;
+    public string GameRole { get; set; } = "None";
 }
 
 public class GameStateDto
@@ -24,10 +25,23 @@ public class GameStateDto
     public bool IsStarted { get; set; } = false;
 }
 
+/// <summary>Field operative: hanya tahu apakah kartu sudah direveal, tidak tahu role-nya (kecuali sudah reveal)</summary>
 public class GameCardDto
 {
     public Guid Id { get; set; }
     public string Word { get; set; } = string.Empty;
-    public CardRole Role { get; set; }
+    /// <summary>Null jika belum direveal dan requester bukan spymaster</summary>
+    public string? Role { get; set; }
     public bool IsRevealed { get; set; }
+}
+
+// ====== Request DTOs ======
+public class AssignRoleRequest
+{
+    public Guid PlayerId { get; set; }
+}
+
+public class RevealCardRequest
+{
+    public Guid PlayerId { get; set; }
 }

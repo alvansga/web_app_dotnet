@@ -43,7 +43,7 @@ public class GameRoom
             throw new Exception("Need exactly 25 words to start the game");
 
         Status = RoomStatus.Playing;
-        State.Phase = GamePhase.Playing;
+        State.Phase = GamePhase.SpymasterSelection;
         State.IsStarted = true;
         State.Round = 1;
 
@@ -71,6 +71,52 @@ public class GameRoom
             Cards.Add(new GameCard(wordList[i], roles[i]));
         }
     }
+
+    public void AssignSpymaster(Guid playerId)
+    {
+        if (Status != RoomStatus.Playing)
+            throw new Exception("Game has not started");
+
+        var player = Players.FirstOrDefault(p => p.Id == playerId)
+            ?? throw new Exception("Player not found in this room");
+
+        player.SetGameRole(PlayerGameRole.Spymaster);
+        
+        // Check if all players have chosen a role -> move to Playing phase
+        if (Players.All(p => p.GameRole != PlayerGameRole.None))
+            State.Phase = GamePhase.Playing;
+    }
+
+    public void AssignFieldOperative(Guid playerId)
+    {
+        if (Status != RoomStatus.Playing)
+            throw new Exception("Game has not started");
+
+        var player = Players.FirstOrDefault(p => p.Id == playerId)
+            ?? throw new Exception("Player not found in this room");
+
+        player.SetGameRole(PlayerGameRole.FieldOperative);
+
+        if (Players.All(p => p.GameRole != PlayerGameRole.None))
+            State.Phase = GamePhase.Playing;
+    }
+
+    public void RevealCard(Guid cardId, Guid requestingPlayerId)
+    {
+        var player = Players.FirstOrDefault(p => p.Id == requestingPlayerId)
+            ?? throw new Exception("Player not found in this room");
+
+        if (player.GameRole != PlayerGameRole.FieldOperative)
+            throw new Exception("Only field operatives can reveal cards");
+
+        var card = Cards.FirstOrDefault(c => c.Id == cardId)
+            ?? throw new Exception("Card not found");
+
+        if (card.IsRevealed)
+            throw new Exception("Card already revealed");
+
+        card.Reveal();
+    }
 }
 
 
@@ -94,6 +140,7 @@ public enum GamePhase
 {
     Empty,
     Lobby,
+    SpymasterSelection,
     Playing,
     Ended
 }
@@ -106,12 +153,19 @@ public enum CardRole
     Bystander
 }
 
+public enum PlayerGameRole
+{
+    None,
+    Spymaster,
+    FieldOperative
+}
+
 public class GameCard
 {
     public Guid Id { get; private set; }
     public string Word { get; private set; }
     public CardRole Role { get; private set; }
-    public bool IsRevealed { get; set; } = false;
+    public bool IsRevealed { get; private set; } = false;
 
     // Foreign Key mapping back to GameRoom
     public Guid GameRoomId { get; private set; }
@@ -125,4 +179,6 @@ public class GameCard
         Word = word;
         Role = role;
     }
+
+    public void Reveal() => IsRevealed = true;
 }

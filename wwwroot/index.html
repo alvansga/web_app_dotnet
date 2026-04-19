@@ -129,6 +129,7 @@
                         <div class="game-stats">
                             <span id="gameRound">Round: 1</span>
                             <span id="gameStatus">Status: Playing</span>
+                            <span id="gamePhase" class="phase-badge"></span>
                         </div>
                     </div>
                 </header>
@@ -137,11 +138,35 @@
                     <div class="cards-grid" id="cardsGrid"></div>
 
                     <section class="game-info-panel">
+                        <div id="myRoleBadge" class="my-role-badge"></div>
                         <h3>Players in Game</h3>
                         <ul id="gamePlayers" class="players-list"></ul>
                     </section>
                 </main>
             </div>
+        </div>
+    </div>
+
+    <!-- ========================================
+         MODAL: ROLE SELECTION (Spymaster / Field Operative)
+         ======================================== -->
+    <div id="roleModal" class="modal-overlay" style="display:none;">
+        <div class="modal-box">
+            <h2>🎭 Choose Your Role</h2>
+            <p class="modal-subtitle">Game has started! Select your role for this round.</p>
+            <div class="role-cards">
+                <button id="chooseSpymasterBtn" class="role-card role-spymaster">
+                    <span class="role-icon">🕵️</span>
+                    <span class="role-name">Spymaster</span>
+                    <span class="role-desc">See all card colors, give clues to your team</span>
+                </button>
+                <button id="chooseFieldBtn" class="role-card role-field">
+                    <span class="role-icon">🧑‍💼</span>
+                    <span class="role-name">Field Operative</span>
+                    <span class="role-desc">Guess the words based on your Spymaster's clues</span>
+                </button>
+            </div>
+            <div id="roleModalMessage" class="message"></div>
         </div>
     </div>
 
