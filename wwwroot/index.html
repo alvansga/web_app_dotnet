@@ -141,6 +141,26 @@
                         <div id="myRoleBadge" class="my-role-badge"></div>
                         <h3>Players in Game</h3>
                         <ul id="gamePlayers" class="players-list"></ul>
+                        
+                        <div class="clue-section">
+                            <h3>Clues</h3>
+                            <div id="clueList" class="clue-list"></div>
+                            
+                            <!-- Spymaster only form -->
+                            <div id="spymasterClueForm" class="spymaster-form" style="display:none;">
+                                <div class="clue-inputs">
+                                    <input type="text" id="clueWordInput" placeholder="Clue word..." class="clue-input-text">
+                                    
+                                    <div class="clue-count-control">
+                                        <button type="button" class="btn-count" id="btnCountDown">-</button>
+                                        <input type="number" id="clueCountInput" value="1" min="0" max="9" readonly>
+                                        <button type="button" class="btn-count" id="btnCountUp">+</button>
+                                    </div>
+
+                                    <button id="setClueBtn" class="btn-add-clue" title="Add Clue">+</button>
+                                </div>
+                            </div>
+                        </div>
                     </section>
                 </main>
             </div>

@@ -35,6 +35,7 @@ builder.Services.AddScoped<AssignRoleService>();
 builder.Services.AddScoped<RevealCardService>();
 builder.Services.AddScoped<DeleteRoomService>();
 builder.Services.AddScoped<LeaveRoomService>();
+builder.Services.AddScoped<ClueService>();
 
 var app = builder.Build();
 

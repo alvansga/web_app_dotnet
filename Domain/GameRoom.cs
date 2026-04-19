@@ -14,6 +14,7 @@ public class GameRoom
     public GameState State { get; set; } = new();
     
     public List<GameCard> Cards { get; private set; } = new();
+    public List<Clue> Clues { get; private set; } = new();
 
 
     public GameRoom(string code)
@@ -167,6 +168,52 @@ public class GameRoom
             State.Winner = "BlueTeam";
         }
     }
+
+    public void AddClue(string word, int count, Guid spymasterId)
+    {
+        var player = Players.FirstOrDefault(p => p.Id == spymasterId)
+            ?? throw new Exception("Player not found");
+        
+        if (player.GameRole != PlayerGameRole.Spymaster)
+            throw new Exception("Only spymasters can set clues");
+
+        if (string.IsNullOrWhiteSpace(word) || word.Trim().Contains(" "))
+            throw new Exception("Clue must be a single word");
+
+        Clues.Add(new Clue(word.Trim().ToUpper(), count));
+    }
+
+    public void RemoveClue(Guid clueId, Guid spymasterId)
+    {
+        var player = Players.FirstOrDefault(p => p.Id == spymasterId)
+            ?? throw new Exception("Player not found");
+        
+        if (player.GameRole != PlayerGameRole.Spymaster)
+            throw new Exception("Only spymasters can remove clues");
+
+        var clue = Clues.FirstOrDefault(c => c.Id == clueId);
+        if (clue != null)
+        {
+            Clues.Remove(clue);
+        }
+    }
+}
+
+public class Clue
+{
+    public Guid Id { get; private set; }
+    public string Word { get; private set; }
+    public int Count { get; private set; }
+    public Guid GameRoomId { get; private set; }
+
+    public Clue(string word, int count)
+    {
+        Id = Guid.NewGuid();
+        Word = word;
+        Count = count;
+    }
+
+    private Clue() { } // For EF Core
 }
 
 

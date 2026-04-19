@@ -3,6 +3,7 @@ using System;
 using CodenameApp.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace WebAppSandbox.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260419114418_AddClueSystem")]
+    partial class AddClueSystem
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "9.0.0");
@@ -20,12 +23,13 @@ namespace WebAppSandbox.Migrations
             modelBuilder.Entity("CodenameApp.Domain.Clue", b =>
                 {
                     b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
                         .HasColumnType("TEXT");
 
                     b.Property<int>("Count")
                         .HasColumnType("INTEGER");
 
-                    b.Property<Guid>("GameRoomId")
+                    b.Property<Guid?>("GameRoomId")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Word")
@@ -132,8 +136,7 @@ namespace WebAppSandbox.Migrations
                     b.HasOne("CodenameApp.Domain.GameRoom", null)
                         .WithMany("Clues")
                         .HasForeignKey("GameRoomId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Cascade);
                 });
 
             modelBuilder.Entity("CodenameApp.Domain.GameCard", b =>

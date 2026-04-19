@@ -7,6 +7,7 @@ public class RoomDetailResponse
     public Guid Id { get; set; }
     public List<PlayerDto> Players { get; set; } = new();
     public List<GameCardDto> Cards { get; set; } = new();
+    public List<ClueDto> Clues { get; set; } = new();
 }
 
 public class PlayerDto
@@ -34,6 +35,13 @@ public class GameCardDto
     public bool IsRevealed { get; set; }
 }
 
+public class ClueDto
+{
+    public Guid Id { get; set; }
+    public string Word { get; set; } = string.Empty;
+    public int Count { get; set; }
+}
+
 // ====== Request DTOs ======
 public class AssignRoleRequest
 {
@@ -53,4 +61,11 @@ public class StartGameRequest
 public class LeaveRoomRequest
 {
     public Guid PlayerId { get; set; }
+}
+
+public class AddClueRequest
+{
+    public Guid PlayerId { get; set; }
+    public string Word { get; set; } = string.Empty;
+    public int Count { get; set; }
 }

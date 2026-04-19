@@ -66,7 +66,13 @@ public class GetRoomDetailService
                 // Spymaster melihat semua role. Field operative hanya melihat role yg sudah direveal.
                 Role = (isSpymaster || c.IsRevealed) ? c.Role.ToString() : null,
                 IsRevealed = c.IsRevealed
+            }).ToList(),
+            Clues = room.Clues.Select(clue => new ClueDto
+            {
+                Id = clue.Id,
+                Word = clue.Word,
+                Count = clue.Count
             }).ToList()
         };
     }
-}
+}

@@ -94,6 +94,10 @@ startGameBtn.addEventListener('click', handleStartGame);
 copyRoomCodeBtn.addEventListener('click', handleCopyRoomCode);
 chooseSpymasterBtn.addEventListener('click', () => handleChooseRole('spymaster'));
 chooseFieldBtn.addEventListener('click', () => handleChooseRole('field-operative'));
+document.getElementById('setClueBtn').addEventListener('click', handleSetClue);
+document.getElementById('btnCountUp').addEventListener('click', () => adjustClueCount(1));
+document.getElementById('btnCountDown').addEventListener('click', () => adjustClueCount(-1));
+
 gameOverBackBtn.addEventListener('click', () => {
     gameOverOverlay.style.display = 'none';
     stopGamePoller();
@@ -415,6 +419,7 @@ function hideRoleModal() {
     roleModal.style.display = 'none';
 }
 
+// Role Choosing logic (tetap dipertahankan utk backup jika phase error)
 async function handleChooseRole(role) {
     chooseSpymasterBtn.disabled = true;
     chooseFieldBtn.disabled     = true;
@@ -505,36 +510,80 @@ function renderBoard(room) {
     }
 
     // Cards
-    cardsGrid.innerHTML = '';
-    (room.cards || []).forEach(card => {
-        const el = document.createElement('button');
-        el.className  = 'card';
-        el.textContent = card.word;
+    const cardsJson = JSON.stringify(room.cards);
+    if (cardsGrid.dataset.lastCards !== cardsJson) {
+        cardsGrid.innerHTML = '';
+        (room.cards || []).forEach(card => {
+            const el = document.createElement('button');
+            el.className  = 'card';
+            el.textContent = card.word;
 
-        if (card.isRevealed) {
-            // Sudah direveal → warna penuh
-            el.classList.add('revealed', getRoleClass(card.role));
-            el.disabled = true;
-        } else if (isSpymaster && card.role) {
-            // Spymaster → hint warna background
-            el.classList.add(getHintClass(card.role));
-            el.disabled = true;
-        } else {
-            // Field Operative → bisa klik
-            el.addEventListener('click', () => handleRevealCard(card, el));
-        }
-
-        cardsGrid.appendChild(el);
-    });
+            if (card.isRevealed) {
+                el.classList.add('revealed', getRoleClass(card.role));
+                el.disabled = true;
+            } else if (isSpymaster && card.role) {
+                el.classList.add(getHintClass(card.role));
+                el.disabled = true;
+            } else {
+                el.addEventListener('click', () => handleRevealCard(card, el));
+            }
+            cardsGrid.appendChild(el);
+        });
+        cardsGrid.dataset.lastCards = cardsJson;
+    }
 
     // Players list
-    gamePlayers.innerHTML = (room.players || []).map(p => {
-        const roleTag = p.gameRole && p.gameRole !== 'None'
-            ? `<span class="player-role-tag">${p.gameRole === 'Spymaster' ? '🕵️' : '🧑‍💼'}</span>`
-            : `<span class="player-role-tag">⏳</span>`;
-        const isSelf  = p.id === gameState.player.id ? ' (you)' : '';
-        return `<li class="player-item">${p.name}${isSelf}${roleTag}</li>`;
-    }).join('');
+    const playersJson = JSON.stringify(room.players);
+    if (gamePlayers.dataset.lastPlayers !== playersJson) {
+        gamePlayers.innerHTML = (room.players || []).map(p => {
+            const roleTag = p.gameRole && p.gameRole !== 'None'
+                ? `<span class="player-role-tag">${p.gameRole === 'Spymaster' ? '🕵️' : '🧑‍💼'}</span>`
+                : `<span class="player-role-tag">⏳</span>`;
+            const isSelf  = p.id === gameState.player.id ? ' (you)' : '';
+            return `<li class="player-item">${p.name}${isSelf}${roleTag}</li>`;
+        }).join('');
+        gamePlayers.dataset.lastPlayers = playersJson;
+    }
+
+    // Clues list
+    renderClueView(room.clues, room.players);
+}
+
+function renderClueView(clues, players) {
+    const clueListEl = document.getElementById('clueList');
+    const spymasterForm = document.getElementById('spymasterClueForm');
+    
+    if (!clueListEl || !spymasterForm) return;
+
+    // Cek apakah data berubah untuk menghindari kedip/re-render yang tidak perlu
+    const cluesJson = JSON.stringify(clues);
+    if (clueListEl.dataset.lastClues === cluesJson) {
+        // Data sama, tapi kita tetap harus pastikan visibility form spymaster benar
+        const playerInRoom = (players || []).find(p => p.id === gameState.player.id);
+        const isSpymaster = playerInRoom && playerInRoom.gameRole === 'Spymaster';
+        spymasterForm.style.display = isSpymaster ? 'flex' : 'none';
+        return; 
+    }
+    clueListEl.dataset.lastClues = cluesJson;
+
+    const playerInRoom = (players || []).find(p => p.id === gameState.player.id);
+    const isSpymaster = playerInRoom && playerInRoom.gameRole === 'Spymaster';
+    
+    spymasterForm.style.display = isSpymaster ? 'flex' : 'none';
+    
+    if (!clues || clues.length === 0) {
+        clueListEl.innerHTML = '<p class="empty-message">No clues yet</p>';
+    } else {
+        clueListEl.innerHTML = clues.map(clue => `
+            <div class="clue-card">
+                <div>
+                    <span class="clue-text">${clue.word}</span>
+                    <span class="clue-count">${clue.count}</span>
+                </div>
+                ${isSpymaster ? `<button class="btn-remove-clue" onclick="handleRemoveClue('${clue.id}')">✖</button>` : ''}
+            </div>
+        `).join('');
+    }
 }
 
 async function handleRevealCard(card, el) {
@@ -649,4 +698,59 @@ function showMessage(el, msg, type) {
     el.textContent = msg;
     el.className   = `message show ${type}`;
     if (type === 'success') setTimeout(() => el.classList.remove('show'), 4000);
+}
+// ── Clue Handlers ──
+function adjustClueCount(delta) {
+    const input = document.getElementById('clueCountInput');
+    let val = parseInt(input.value) + delta;
+    if (val < 0) val = 0;
+    if (val > 9) val = 9;
+    input.value = val;
+}
+
+async function handleSetClue() {
+    const wordInput = document.getElementById('clueWordInput');
+    const countInput = document.getElementById('clueCountInput');
+    const word = wordInput.value.trim();
+    const count = parseInt(countInput.value);
+    
+    if (!word || word.includes(' ')) {
+        alert('Please enter a single word');
+        return;
+    }
+    
+    try {
+        const res = await fetch(`${API_BASE_URL}/rooms/${gameState.room.code}/clue`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                playerId: gameState.player.id,
+                word: word,
+                count: count
+            })
+        });
+        
+        if (res.ok) {
+            wordInput.value = '';
+            countInput.value = '1';
+            await loadAndRenderBoard();
+        } else {
+            const err = await res.text();
+            alert(err);
+        }
+    } catch (err) {
+        console.error('Failed to set clue:', err);
+    }
+}
+
+async function handleRemoveClue(clueId) {
+    if (!confirm('Remove this clue?')) return;
+    try {
+        await fetch(`${API_BASE_URL}/rooms/${gameState.room.code}/clue/${clueId}?playerId=${gameState.player.id}`, {
+            method: 'DELETE'
+        });
+        await loadAndRenderBoard();
+    } catch (err) {
+        console.error('Failed to remove clue:', err);
+    }
 }

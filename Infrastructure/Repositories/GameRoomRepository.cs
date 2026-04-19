@@ -23,6 +23,8 @@ public class GameRoomRepository : IGameRoomRepository
         return await _context.GameRooms
             .Include(r => r.Players)
             .Include(r => r.Cards)
+            .Include(r => r.Clues.OrderBy(c => c.Word))
+            .AsSplitQuery()
             .FirstOrDefaultAsync(r => r.Code == code);
     }
 
@@ -31,6 +33,7 @@ public class GameRoomRepository : IGameRoomRepository
         return await _context.GameRooms
             .Include(r => r.Players)
             .Include(r => r.Cards)
+            .Include(r => r.Clues)
             .AsSplitQuery()
             .ToListAsync();
     }

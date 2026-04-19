@@ -126,7 +126,7 @@ public class GameRoomController : ControllerBase
     }
 
     /// <summary>Field Operative reveal sebuah kartu</summary>
-    [HttpPost("{code}/cards/{cardId}/reveal")]
+    [HttpPost("{code}/reveal/{cardId}")]
     public async Task<IActionResult> RevealCard(string code, Guid cardId, [FromBody] RevealCardRequest req)
     {
         try
@@ -139,4 +139,32 @@ public class GameRoomController : ControllerBase
             return BadRequest(ex.Message);
         }
     }
-}
+
+    [HttpPost("{code}/clue")]
+    public async Task<IActionResult> AddClue(string code, [FromBody] AddClueRequest req, [FromServices] ClueService clueService)
+    {
+        try
+        {
+            await clueService.AddClue(code, req.Word, req.Count, req.PlayerId);
+            return Ok(new { message = "Clue added!" });
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(ex.Message);
+        }
+    }
+
+    [HttpDelete("{code}/clue/{clueId}")]
+    public async Task<IActionResult> RemoveClue(string code, Guid clueId, [FromQuery] Guid playerId, [FromServices] ClueService clueService)
+    {
+        try
+        {
+            await clueService.RemoveClue(code, clueId, playerId);
+            return Ok(new { message = "Clue removed!" });
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(ex.Message);
+        }
+    }
+}
