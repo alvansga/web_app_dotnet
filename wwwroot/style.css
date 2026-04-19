@@ -1,4 +1,10 @@
-/* ===== Global Styles ===== */
+/**
+ * CODENAME GAME - Stylesheet
+ * Well-organized CSS for easy maintenance
+ * Sections: Global, Pages, Components, Responsive, Animations
+ */
+
+/* ===== 1. GLOBAL STYLES ===== */
 * {
     margin: 0;
     padding: 0;
@@ -6,13 +12,16 @@
 }
 
 :root {
+    /* Primary colors */
     --primary: #667eea;
     --primary-dark: #5568d3;
     --secondary: #764ba2;
+    /* Card role colors */
     --red: #e74c3c;
     --blue: #3498db;
     --assassin: #2c3e50;
     --bystander: #ecf0f1;
+    /* Semantic colors */
     --success: #2ecc71;
     --warning: #f39c12;
     --error: #e74c3c;
@@ -22,26 +31,23 @@ body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     min-height: 100vh;
-    color: #333;
-}
-
-.app {
-    min-height: 100vh;
     display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
-/* ===== Page Navigation ===== */
+/* ===== 2. PAGE NAVIGATION ===== */
 .page {
-    display: none;
+    display: none;  /* Hidden by default */
     width: 100%;
     min-height: 100vh;
 }
 
 .page.active {
-    display: flex;
+    display: flex;  /* Show active page */
 }
 
-/* ===== Welcome Page ===== */
+/* ===== 3. WELCOME PAGE ===== */
 .welcome-container {
     display: flex;
     align-items: center;
@@ -126,7 +132,7 @@ body {
     font-weight: bold;
 }
 
-/* ===== Lobby Page ===== */
+/* ===== 4. LOBBY PAGE ===== */
 .lobby-container {
     display: flex;
     flex-direction: column;
@@ -264,7 +270,7 @@ body {
     font-style: italic;
 }
 
-/* ===== Waiting Room ===== */
+/* ===== 5. WAITING ROOM ===== */
 .waiting-container {
     display: flex;
     flex-direction: column;
@@ -330,7 +336,7 @@ body {
     font-style: italic;
 }
 
-/* ===== Game Board ===== */
+/* ===== 6. GAME BOARD ===== */
 .game-container {
     display: flex;
     flex-direction: column;
@@ -374,8 +380,8 @@ body {
 .cards-grid {
     display: grid;
     grid-template-columns: repeat(5, 1fr);
-    gap: 12px;
-    padding: 20px;
+    gap: 8px;
+    padding: 12px;
     background: white;
     border-radius: 15px;
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
@@ -388,10 +394,10 @@ body {
     border-radius: 10px;
     color: white;
     font-weight: 700;
-    font-size: 0.95em;
+    font-size: 1.5em;
     cursor: pointer;
     transition: all 0.3s ease;
-    padding: 10px;
+    padding: 8px;
     text-align: center;
     display: flex;
     align-items: center;
@@ -443,7 +449,7 @@ body {
     padding-bottom: 10px;
 }
 
-/* ===== Buttons ===== */
+/* ===== 7. COMPONENTS (Buttons, Messages) ===== */
 .btn {
     padding: 12px 24px;
     border: none;
@@ -514,7 +520,7 @@ body {
     border: 1px solid #bee5eb;
 }
 
-/* ===== Responsive Design ===== */
+/* ===== 8. RESPONSIVE DESIGN ===== */
 @media (max-width: 768px) {
     .welcome-content {
         padding: 30px 20px;
@@ -565,7 +571,7 @@ body {
     }
 }
 
-/* ===== Animations ===== */
+/* ===== 9. ANIMATIONS ===== */
 @keyframes slideIn {
     from {
         opacity: 0;

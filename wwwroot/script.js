@@ -1,25 +1,37 @@
-// ===== Configuration =====
-const API_BASE_URL = '/api';
-const POLLING_INTERVAL = 2000; // Poll every 2 seconds for room updates
+/**
+ * CODENAME GAME - JavaScript Controller
+ * ======================================
+ * Manages: Game logic, API calls, UI updates
+ * 
+ * Organized Sections:
+ * 1. Config & State      - Constants and global variables
+ * 2. DOM Elements        - UI element references
+ * 3. Event Listeners     - User interaction handlers
+ * 4. Initialization      - App startup
+ * 5. Page Navigation     - Switch between pages
+ * 6. Player Management   - Create player, logout
+ * 7. Room Management     - Create/join rooms
+ * 8. Gameplay            - Start game, load board
+ * 9. Utilities           - Helper functions
+ */
 
-// ===== State Management =====
+/* ============================================
+   1. CONFIG & STATE - Constants and variables
+   ============================================ */
+const API_BASE_URL = '/api';
+const POLLING_INTERVAL = 2000; // Refresh every 2 seconds
+
+// Global game state object
 let gameState = {
-    player: {
-        id: null,
-        name: null
-    },
-    room: {
-        code: null,
-        status: null,
-        players: [],
-        cards: [],
-        state: null
-    }
+    player: { id: null, name: null },
+    room: { code: null, status: null, players: [], cards: [], state: null }
 };
 
 let pollingInterval = null;
 
-// ===== DOM Elements - Welcome =====
+/* ============================================
+   2. DOM ELEMENTS - UI element references
+   ============================================ */
 const welcomePage = document.getElementById('welcomePage');
 const playerNameInput = document.getElementById('playerNameInput');
 const startBtn = document.getElementById('startBtn');
@@ -54,7 +66,9 @@ const gameStatus = document.getElementById('gameStatus');
 const cardsGrid = document.getElementById('cardsGrid');
 const gamePlayers = document.getElementById('gamePlayers');
 
-// ===== Event Listeners =====
+/* ============================================
+   3. EVENT LISTENERS - User interactions
+   ============================================ */
 startBtn.addEventListener('click', handleCreatePlayer);
 playerNameInput.addEventListener('keypress', (e) => {
     if (e.key === 'Enter') handleCreatePlayer();
@@ -70,7 +84,9 @@ backToLobbyBtn.addEventListener('click', handleBackToLobby);
 startGameBtn.addEventListener('click', handleStartGame);
 copyRoomCodeBtn.addEventListener('click', handleCopyRoomCode);
 
-// ===== Initialize =====
+/* ============================================
+   4. INITIALIZATION - App startup
+   ============================================ */
 document.addEventListener('DOMContentLoaded', () => {
     const savedPlayer = localStorage.getItem('player');
     if (savedPlayer) {
@@ -78,6 +94,10 @@ document.addEventListener('DOMContentLoaded', () => {
         goToLobby();
     }
 });
+
+/* ============================================
+   5. PAGE NAVIGATION - Switch between pages
+   ============================================ */
 
 // ===== Page Navigation =====
 function showPage(pageElement) {
@@ -110,6 +130,10 @@ function goToGame() {
     loadGameBoard();
     showPage(gamePage);
 }
+
+/* ============================================
+   6. PLAYER MANAGEMENT - Create & manage players
+   ============================================ */
 
 // ===== Create Player =====
 async function handleCreatePlayer() {
@@ -160,9 +184,13 @@ function handleLogout() {
     localStorage.removeItem('player');
     gameState.player = { id: null, name: null };
     gameState.room = { code: null, status: null, players: [], cards: [], state: null };
-    goToWelcome();
     playerNameInput.value = '';
+    goToWelcome();
 }
+
+/* ============================================
+   7. ROOM MANAGEMENT - Create & join rooms
+   ============================================ */
 
 // ===== Create Room =====
 async function handleCreateRoom() {
@@ -317,6 +345,10 @@ function updateWaitingRoomUI() {
     }
 }
 
+/* ============================================
+   8. GAMEPLAY - Start game, load board
+   ============================================ */
+
 // ===== Start Game =====
 async function handleStartGame() {
     startGameBtn.disabled = true;
@@ -439,6 +471,10 @@ function handleBackToLobby() {
         goToLobby();
     }
 }
+
+/* ============================================
+   9. UTILITIES - Helper functions
+   ============================================ */
 
 // ===== Polling =====
 function startPolling() {

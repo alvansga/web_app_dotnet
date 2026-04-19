@@ -7,8 +7,11 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
+    <!-- Main application container with 4 pages -->
     <div class="app">
-        <!-- Welcome Page -->
+        <!-- ========================================
+             PAGE 1: WELCOME SCREEN - Player Entry
+             ======================================== -->
         <div id="welcomePage" class="page active">
             <div class="welcome-container">
                 <div class="welcome-content">
@@ -39,7 +42,9 @@
             </div>
         </div>
 
-        <!-- Lobby Page -->
+        <!-- ========================================
+             PAGE 2: LOBBY - Room Selection/Creation
+             ======================================== -->
         <div id="lobbyPage" class="page">
             <div class="lobby-container">
                 <header class="page-header">
@@ -86,7 +91,9 @@
             </div>
         </div>
 
-        <!-- Waiting Room Page -->
+        <!-- ========================================
+             PAGE 3: WAITING ROOM - Pre-game Setup
+             ======================================== -->
         <div id="waitingRoomPage" class="page">
             <div class="waiting-container">
                 <header class="page-header">
@@ -111,7 +118,9 @@
             </div>
         </div>
 
-        <!-- Game Board Page -->
+        <!-- ========================================
+             PAGE 4: GAME BOARD - Main Gameplay Area
+             ======================================== -->
         <div id="gamePage" class="page">
             <div class="game-container">
                 <header class="game-header">
@@ -136,6 +145,7 @@
         </div>
     </div>
 
+    <!-- Application JavaScript -->
     <script src="script.js"></script>
 </body>
 </html>
