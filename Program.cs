@@ -33,6 +33,8 @@ builder.Services.AddScoped<StartGameService>();
 builder.Services.AddScoped<GetAllPlayersService>();
 builder.Services.AddScoped<AssignRoleService>();
 builder.Services.AddScoped<RevealCardService>();
+builder.Services.AddScoped<DeleteRoomService>();
+builder.Services.AddScoped<LeaveRoomService>();
 
 var app = builder.Build();
 

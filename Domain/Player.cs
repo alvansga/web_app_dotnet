@@ -23,4 +23,11 @@ public class Player
     {
         GameRole = role;
     }
+
+    public void LeaveRoom()
+    {
+        GameRoomId = null;
+        GameRoom = null;
+        GameRole = PlayerGameRole.None;
+    }
 }

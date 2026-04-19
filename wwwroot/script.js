@@ -199,14 +199,25 @@ async function handleCreateRoom() {
     createRoomBtn.disabled = true;
     createRoomBtn.classList.add('loading');
     try {
+        // 1. Create the room
         const res = await fetch(`${API_BASE_URL}/rooms`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' }
         });
         if (!res.ok) throw new Error('Failed to create room');
         const data = await res.json();
-        gameState.room.code = data.code;
-        showMessage(createRoomMessage, `✅ Room created! Code: ${data.code}`, 'success');
+        const code = data.code;
+        
+        // 2. Automatically join the room as creator
+        const joinRes = await fetch(`${API_BASE_URL}/rooms/join`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ code, playerId: gameState.player.id })
+        });
+        if (!joinRes.ok) throw new Error('Room created but failed to join');
+
+        gameState.room.code = code;
+        showMessage(createRoomMessage, `✅ Room created & joined! Code: ${code}`, 'success');
         setTimeout(() => goToWaitingRoom(), 500);
     } catch (err) {
         showMessage(createRoomMessage, `❌ ${err.message}`, 'error');
@@ -273,8 +284,18 @@ function handleCopyRoomCode() {
     });
 }
 
-function handleBackToLobby() {
+async function handleBackToLobby() {
     if (confirm('Are you sure? You will leave the room.')) {
+        try {
+            await fetch(`${API_BASE_URL}/rooms/leave`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ playerId: gameState.player.id })
+            });
+        } catch (err) {
+            console.error('Failed to notify server about leaving:', err);
+        }
+        
         gameState.room   = { code: null, status: null, players: [], cards: [], state: null };
         gameState.myRole = null;
         goToLobby();

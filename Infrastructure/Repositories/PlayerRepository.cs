@@ -16,12 +16,15 @@ public class PlayerRepository : IPlayerRepository
     {
         await _context.Players.AddAsync(player);
         await _context.SaveChangesAsync();
-        Console.WriteLine("SAVED TO DB");
-        Console.WriteLine(Path.GetFullPath(_context.Database.GetDbConnection().DataSource));    
     }
 
     public async Task<Player?> GetByIdAsync(Guid id)
     {
         return await _context.Players.FindAsync(id);
+    }
+
+    public async Task SaveChangesAsync()
+    {
+        await _context.SaveChangesAsync();
     }
 }

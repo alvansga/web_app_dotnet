@@ -48,4 +48,9 @@ public class RevealCardRequest
 public class StartGameRequest
 {
     public Guid PlayerId { get; set; }
-}
+}
+
+public class LeaveRoomRequest
+{
+    public Guid PlayerId { get; set; }
+}

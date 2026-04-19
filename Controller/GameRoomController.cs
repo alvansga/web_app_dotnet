@@ -35,10 +35,20 @@ public class GameRoomController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetAll()
+    public async Task<IActionResult> GetAll([FromServices] DeleteRoomService deleteService)
     {
+        // Cleanup empty rooms before returning list
+        await deleteService.CleanupEmptyRooms();
+        
         var rooms = await _getRoomDetailService.GetAllRooms();
         return Ok(rooms);
+    }
+
+    [HttpDelete("{code}")]
+    public async Task<IActionResult> Delete(string code, [FromServices] DeleteRoomService deleteService)
+    {
+        await deleteService.Execute(code);
+        return Ok(new { message = "Room deleted" });
     }
 
     /// <param name="playerId">Optional: pass Player ID untuk mendapat room detail sesuai peran (spymaster/field-operative)</param>
@@ -62,6 +72,13 @@ public class GameRoomController : ControllerBase
             return BadRequest("Room or player not found");
 
         return Ok();
+    }
+
+    [HttpPost("leave")]
+    public async Task<IActionResult> Leave([FromBody] LeaveRoomRequest req, [FromServices] LeaveRoomService leaveService)
+    {
+        await leaveService.Execute(req.PlayerId);
+        return Ok(new { message = "You left the room" });
     }
 
     [HttpPost("{code}/start")]

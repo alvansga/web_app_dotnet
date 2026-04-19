@@ -35,6 +35,12 @@ public class GameRoomRepository : IGameRoomRepository
             .ToListAsync();
     }
 
+    public async Task DeleteAsync(GameRoom room)
+    {
+        _context.GameRooms.Remove(room);
+        await _context.SaveChangesAsync();
+    }
+
     public async Task SaveChangesAsync()
     {
         await _context.SaveChangesAsync();
