@@ -78,7 +78,7 @@ public class GameRoom
         Cards.Clear();
         for (int i = 0; i < 25; i++)
         {
-            Cards.Add(new GameCard(wordList[i], roles[i]));
+            Cards.Add(new GameCard(Id, wordList[i], roles[i]));
         }
     }
 
@@ -180,7 +180,7 @@ public class GameRoom
         if (string.IsNullOrWhiteSpace(word) || word.Trim().Contains(" "))
             throw new Exception("Clue must be a single word");
 
-        Clues.Add(new Clue(word.Trim().ToUpper(), count));
+        Clues.Add(new Clue(Id, word.Trim().ToUpper(), count));
     }
 
     public void RemoveClue(Guid clueId, Guid spymasterId)
@@ -204,11 +204,14 @@ public class Clue
     public Guid Id { get; private set; }
     public string Word { get; private set; }
     public int Count { get; private set; }
+    
     public Guid GameRoomId { get; private set; }
+    public GameRoom? GameRoom { get; private set; }
 
-    public Clue(string word, int count)
+    public Clue(Guid gameRoomId, string word, int count)
     {
         Id = Guid.NewGuid();
+        GameRoomId = gameRoomId;
         Word = word;
         Count = count;
     }
@@ -267,13 +270,15 @@ public class GameCard
 
     // Foreign Key mapping back to GameRoom
     public Guid GameRoomId { get; private set; }
+    public GameRoom? GameRoom { get; private set; }
 
     // For EF Core
     private GameCard() { }
 
-    public GameCard(string word, CardRole role)
+    public GameCard(Guid gameRoomId, string word, CardRole role)
     {
         Id = Guid.NewGuid();
+        GameRoomId = gameRoomId;
         Word = word;
         Role = role;
     }

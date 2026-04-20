@@ -23,12 +23,12 @@ public class AppDbContext : DbContext
 
         modelBuilder.Entity<GameRoom>()
             .HasMany(r => r.Cards)
-            .WithOne()
+            .WithOne(c => c.GameRoom)
             .HasForeignKey(c => c.GameRoomId);
 
-        modelBuilder.Entity<Clue>()
-            .HasOne<GameRoom>()
-            .WithMany(r => r.Clues)
+        modelBuilder.Entity<GameRoom>()
+            .HasMany(r => r.Clues)
+            .WithOne(c => c.GameRoom)
             .HasForeignKey(c => c.GameRoomId)
             .OnDelete(DeleteBehavior.Cascade);
 
