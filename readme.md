@@ -64,3 +64,13 @@ dotnet ef database update
 
 
 ## add api get room details GET /api/rooms/{code}
+
+
+
+move to dotnet 10.0
+run:
+dotnet clean
+dotnet restore
+dotnet build
+dotnet ef database update
+dotnet run
