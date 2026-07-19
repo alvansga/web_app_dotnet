@@ -72,5 +72,10 @@ run:
 dotnet clean
 dotnet restore
 dotnet build
+
+pastikan: dotnet tool install --global dotnet-ef
+export PATH="$PATH:$HOME/.dotnet/tools"
+hash-r
+
 dotnet ef database update
 dotnet run
