@@ -1,6 +1,6 @@
 # CodeName Web App - System Documentation
 
-Welcome to the development documentation for **CodeName Web App**, a full-stack, multiplayer word-guessing game inspired by the classic board game *Codenames*. This project features a clean, domain-driven .NET 9.0 API backend coupled with a vanilla web-based single-page application (SPA) frontend.
+Welcome to the development documentation for **CodeName Web App**, a full-stack, multiplayer word-guessing game inspired by the classic board game *Codenames*. This project features a clean, domain-driven .NET 9.0 API backend coupled with a Vue 3 reactive single-page application (SPA) frontend.
 
 ---
 
@@ -9,7 +9,7 @@ Welcome to the development documentation for **CodeName Web App**, a full-stack,
 The project is built on the following technologies:
 * **Backend Framework**: ASP.NET Core (.NET 9.0) Web API
 * **Database & ORM**: SQLite database with Entity Framework Core (EF Core 9.0.0)
-* **Frontend**: Vanilla HTML5, CSS3, and JavaScript (Client-side single-page application served statically)
+* **Frontend**: Vue 3 (CDN, no build tools) with HTML5 and CSS3 — reactive single-page application served statically
 * **API Documentation**: Swagger/OpenAPI via Swashbuckle (`Swashbuckle.AspNetCore`)
 
 ---
@@ -26,8 +26,33 @@ graph TD
     Services --> Domain[Domain Entities & Rules]
     Infrastructure[Repositories & AppDbContext] -. Implement .-> Interfaces
     Infrastructure --> Domain
-    Frontend[wwwroot - HTML/CSS/JS] -. HTTP API Requests .-> Controller
+    Frontend[wwwroot - Vue 3 SPA] -. HTTP API Requests .-> Controller
+    Frontend --> Store[Vue Reactive Store]
+    Frontend --> Components[Page Components: Welcome, Lobby, WaitingRoom, GameBoard]
+    Components --> APILayer[api.js - Centralized API Layer]
 ```
+
+### Vue 3 Frontend Architecture
+
+The frontend uses Vue 3 loaded via CDN (`unpkg.com`) — no npm, no build tools. The application is a single-page app driven by a reactive store (`Vue.reactive()`) that switches between four page components:
+
+| Page Component | File | Purpose |
+|---|---|---|
+| WelcomePage | `wwwroot/js/components/WelcomePage.js` | Player name input & game rules |
+| LobbyPage | `wwwroot/js/components/LobbyPage.js` | Create/join rooms, available rooms list, logout |
+| WaitingRoomPage | `wwwroot/js/components/WaitingRoomPage.js` | Player list, start game, copy room code |
+| GameBoardPage | `wwwroot/js/components/GameBoardPage.js` | Card grid, role modal, clue system, game over overlay |
+
+**Key Files:**
+- `wwwroot/js/store.js` — Vue reactive store (`store.player`, `store.room`, `store.myRole`, `store.page`), single source of truth
+- `wwwroot/js/api.js` — Centralized API layer, all 12 backend endpoints wrapped as async methods
+- `wwwroot/js/app.js` — Vue 3 app entry, registers components, drives routing via `store.page`
+- `wwwroot/index.html` — Minimal shell, loads Vue CDN + component scripts, mounts `<div id="app">`
+
+**State Polling**: Pages poll `GET /api/rooms/{code}?playerId={playerId}` at different intervals:
+- Lobby: 3 seconds (room list)
+- Waiting Room: 2 seconds (player list, game start detection)
+- Game Board: 2.5 seconds (cards, clues, roles, game over)
 
 ### 📂 Directory Walkthrough
 
@@ -55,10 +80,17 @@ graph TD
   * [PlayerController.cs](file:///c:/Users/alva/MindPalace/Programming/csharp_projects/web_app/WebAppSandbox/Controller/PlayerController.cs): Player sign-in and retrieval.
   * [GameRoomController.cs](file:///c:/Users/alva/MindPalace/Programming/csharp_projects/web_app/WebAppSandbox/Controller/GameRoomController.cs): Game lobby, room creation, joining, role setup, starting games, giving clues, and revealing cards.
   * [CodenameController.cs](file:///c:/Users/alva/MindPalace/Programming/csharp_projects/web_app/WebAppSandbox/Controller/CodenameController.cs): Fetching and creating custom codenames.
-* **`wwwroot/`**: Static SPA assets:
-  * [index.html](file:///c:/Users/alva/MindPalace/Programming/csharp_projects/web_app/WebAppSandbox/wwwroot/index.html): HTML page with four main sections (Welcome, Lobby, Waiting Room, Game Board).
-  * [style.css](file:///c:/Users/alva/MindPalace/Programming/csharp_projects/web_app/WebAppSandbox/wwwroot/style.css): Vanilla styling, defining layouts, modern UI color tokens, transitions, and responsive grid layouts.
-  * [script.js](file:///c:/Users/alva/MindPalace/Programming/csharp_projects/web_app/WebAppSandbox/wwwroot/script.js): Game state loop, polling logic, REST integration, local storage player tracking, and dynamic UI rendering.
+* **`wwwroot/`**: Static Vue 3 SPA assets (no build tools — Vue loaded via CDN):
+  * [index.html](file:///c:/Users/alva/MindPalace/Programming/csharp_projects/web_app/WebAppSandbox/wwwroot/index.html): Minimal shell with `<div id="app">` mount point and CDN script references.
+  * [style.css](file:///c:/Users/alva/MindPalace/Programming/csharp_projects/web_app/WebAppSandbox/wwwroot/style.css): All component styling — layout, card colors, role badges, modals, spymaster hints, responsive design, and animations.
+  * `js/store.js`: Vue 3 reactive store (`Vue.reactive()`) — single source of truth for player, room, role, and page state.
+  * `js/api.js`: Centralized API layer wrapping all 12 backend endpoints.
+  * `js/app.js`: Vue 3 app entry point, component registration, page routing via `<component :is>`.
+  * `js/components/`: Four page components:
+    * `WelcomePage.js` — Player name input and game rules
+    * `LobbyPage.js` — Create/join rooms, available rooms list, logout
+    * `WaitingRoomPage.js` — Player list, start game, copy room code
+    * `GameBoardPage.js` — Card grid, role modal, clue system, game over overlay
 
 ---
 

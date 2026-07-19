@@ -5,204 +5,40 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Codename - Word Game</title>
     <link rel="stylesheet" href="style.css">
+    <!-- Vue 3 CDN (production, no build tools needed) -->
+    <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
 </head>
 <body>
-    <!-- Main application container with 4 pages -->
-    <div class="app">
-        <!-- ========================================
-             PAGE 1: WELCOME SCREEN - Player Entry
-             ======================================== -->
-        <div id="welcomePage" class="page active">
-            <div class="welcome-container">
-                <div class="welcome-content">
-                    <h1>🔐 CODENAME</h1>
-                    <p class="subtitle">Team word-guessing game</p>
-                    
-                    <div class="welcome-form">
-                        <input 
-                            type="text" 
-                            id="playerNameInput" 
-                            placeholder="Enter your name" 
-                            maxlength="20"
-                        >
-                        <button id="startBtn" class="btn btn-primary">Enter Game</button>
-                        <div id="welcomeMessage" class="message"></div>
-                    </div>
+    <!-- Vue mount point - all pages rendered dynamically here -->
+    <div id="app"></div>
 
-                    <div class="rules">
-                        <h3>How to Play</h3>
-                        <ul>
-                            <li>Create a room or join with a code</li>
-                            <li>Wait for players to join</li>
-                            <li>One team gives clues, others guess words</li>
-                            <li>Find all your team's words to win</li>
-                        </ul>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- ========================================
-             PAGE 2: LOBBY - Room Selection/Creation
-             ======================================== -->
-        <div id="lobbyPage" class="page">
-            <div class="lobby-container">
-                <header class="page-header">
-                    <h1>Game Lobby</h1>
-                    <div class="player-info">
-                        <span id="playerNameDisplay"></span>
-                        <button id="logoutBtn" class="btn-icon" title="Logout">🚪</button>
-                    </div>
-                </header>
-
-                <main class="lobby-main">
-                    <div class="lobby-content">
-                        <!-- Create Room -->
-                        <section class="lobby-section">
-                            <h2>Create a New Room</h2>
-                            <button id="createRoomBtn" class="btn btn-primary">Create Room</button>
-                            <div id="createRoomMessage" class="message"></div>
-                        </section>
-
-                        <!-- Join Room -->
-                        <section class="lobby-section">
-                            <h2>Join Existing Room</h2>
-                            <div class="join-room-form">
-                                <input 
-                                    type="text" 
-                                    id="roomCodeInput" 
-                                    placeholder="Enter room code (e.g., ABC123)" 
-                                    maxlength="6"
-                                >
-                                <button id="joinRoomBtn" class="btn btn-secondary">Join</button>
-                            </div>
-                            <div id="joinRoomMessage" class="message"></div>
-                        </section>
-
-                        <!-- Available Rooms -->
-                        <section class="lobby-section">
-                            <h2>Available Rooms</h2>
-                            <div id="availableRoomsList" class="rooms-list">
-                                <p class="empty-message">Loading rooms...</p>
-                            </div>
-                        </section>
-                    </div>
-                </main>
-            </div>
-        </div>
-
-        <!-- ========================================
-             PAGE 3: WAITING ROOM - Pre-game Setup
-             ======================================== -->
-        <div id="waitingRoomPage" class="page">
-            <div class="waiting-container">
-                <header class="page-header">
-                    <h1>Room: <span id="roomCodeDisplay"></span></h1>
-                    <button id="backToLobbyBtn" class="btn-icon" title="Back to Lobby">⬅️</button>
-                </header>
-
-                <main class="waiting-main">
-                    <section class="players-section">
-                        <h2>Players in Room</h2>
-                        <div id="playersList" class="players-list"></div>
-                        <p id="minPlayersMsg" class="info-msg">⏳ Waiting for at least 2 players...</p>
-                    </section>
-
-                    <section class="start-section">
-                        <button id="startGameBtn" class="btn btn-primary" disabled>Start Game</button>
-                        <p id="startGameInfo" class="info-msg"></p>
-                    </section>
-
-                    <button id="copyRoomCodeBtn" class="btn btn-secondary">📋 Copy Room Code</button>
-                </main>
-            </div>
-        </div>
-
-        <!-- ========================================
-             PAGE 4: GAME BOARD - Main Gameplay Area
-             ======================================== -->
-        <div id="gamePage" class="page">
-            <div class="game-container">
-                <header class="game-header">
-                    <div class="game-info">
-                        <h1>Room: <span id="gameRoomCode"></span></h1>
-                        <div class="game-stats">
-                            <span id="gameRound">Round: 1</span>
-                            <span id="gameStatus">Status: Playing</span>
-                            <span id="gamePhase" class="phase-badge"></span>
-                        </div>
-                    </div>
-                </header>
-
-                <main class="game-main">
-                    <div class="cards-grid" id="cardsGrid"></div>
-
-                    <section class="game-info-panel">
-                        <div id="myRoleBadge" class="my-role-badge"></div>
-                        <h3>Players in Game</h3>
-                        <ul id="gamePlayers" class="players-list"></ul>
-                        
-                        <div class="clue-section">
-                            <h3>Clues</h3>
-                            <div id="clueList" class="clue-list"></div>
-                            
-                            <!-- Spymaster only form -->
-                            <div id="spymasterClueForm" class="spymaster-form" style="display:none;">
-                                <div class="clue-inputs">
-                                    <input type="text" id="clueWordInput" placeholder="Clue word..." class="clue-input-text">
-                                    
-                                    <div class="clue-count-control">
-                                        <button type="button" class="btn-count" id="btnCountDown">-</button>
-                                        <input type="number" id="clueCountInput" value="1" min="0" max="9" readonly>
-                                        <button type="button" class="btn-count" id="btnCountUp">+</button>
-                                    </div>
-
-                                    <button id="setClueBtn" class="btn-add-clue" title="Add Clue">+</button>
-                                </div>
-                            </div>
-                        </div>
-                    </section>
-                </main>
-            </div>
-        </div>
-    </div>
-
-    <!-- ========================================
-         MODAL: ROLE SELECTION (Spymaster / Field Operative)
-         ======================================== -->
-    <div id="roleModal" class="modal-overlay" style="display:none;">
-        <div class="modal-box">
-            <h2>🎭 Choose Your Role</h2>
-            <p class="modal-subtitle">Game has started! Select your role for this round.</p>
-            <div class="role-cards">
-                <button id="chooseSpymasterBtn" class="role-card role-spymaster">
-                    <span class="role-icon">🕵️</span>
-                    <span class="role-name">Spymaster</span>
-                    <span class="role-desc">See all card colors, give clues to your team</span>
-                </button>
-                <button id="chooseFieldBtn" class="role-card role-field">
-                    <span class="role-icon">🧑‍💼</span>
-                    <span class="role-name">Field Operative</span>
-                    <span class="role-desc">Guess the words based on your Spymaster's clues</span>
-                </button>
-            </div>
-            <div id="roleModalMessage" class="message"></div>
-        </div>
-    </div>
-
-    <!-- ========================================
-         OVERLAY: GAME OVER
-         ======================================== -->
-    <div id="gameOverOverlay" class="modal-overlay" style="display:none;">
-        <div class="modal-box game-over-box">
-            <div id="gameOverIcon" class="game-over-icon"></div>
-            <h2 id="gameOverTitle" class="game-over-title"></h2>
-            <p id="gameOverDesc" class="game-over-desc"></p>
-            <button id="gameOverBackBtn" class="btn btn-primary" style="margin-top:24px;">🏠 Back to Lobby</button>
-        </div>
-    </div>
-
-    <!-- Application JavaScript -->
-    <script src="script.js"></script>
+    <!-- ===== Vue Application Scripts (load order matters) ===== -->
+    <script src="js/store.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/components/WelcomePage.js"></script>
+    <script src="js/components/LobbyPage.js"></script>
+    <script src="js/components/WaitingRoomPage.js"></script>
+    <script src="js/components/GameBoardPage.js"></script>
+    <script src="js/app.js"></script>
+    <script>
+        /**
+         * Auto-reconnect: if player exists in localStorage, skip welcome page.
+         * Runs after Vue app is mounted so store is available.
+         */
+        document.addEventListener('DOMContentLoaded', () => {
+            const savedPlayer = localStorage.getItem('player');
+            if (savedPlayer) {
+                try {
+                    const parsed = JSON.parse(savedPlayer);
+                    if (parsed && parsed.id && parsed.name) {
+                        store.player = parsed;
+                        store.page = 'lobby';
+                    }
+                } catch (e) {
+                    localStorage.removeItem('player');
+                }
+            }
+        });
+    </script>
 </body>
 </html>

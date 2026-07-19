@@ -9,7 +9,7 @@ Welcome! This document is designed for AI Coding Agents (such as Antigravity, Cu
 * **Backend**: .NET 9.0 ASP.NET Core Web API.
 * **Database**: SQLite locally configured as `codename.db` in the project root.
 * **ORM**: Entity Framework Core 9.0.0.
-* **Frontend**: Single-Page Application (SPA) served statically via `wwwroot` using Vanilla HTML, CSS, and JS (no build tools, frameworks, or TailwindCSS unless explicitly requested).
+* **Frontend**: Vue 3 Single-Page Application (SPA) served statically via `wwwroot`. Vue is loaded via CDN (`unpkg.com`) — no npm, no build tools, no `.vue` files. Components are plain JS objects with inline templates.
 * **Game Assets**: Word lists are loaded from [words-id.txt](file:///c:/Users/alva/MindPalace/Programming/csharp_projects/web_app/WebAppSandbox/words-id.txt) (Indonesian wordlist) or fall back to English defaults defined in [StartGameService.cs](file:///c:/Users/alva/MindPalace/Programming/csharp_projects/web_app/WebAppSandbox/Application/Services/StartGameService.cs).
 
 ---
@@ -71,9 +71,21 @@ This project uses a DDD-inspired Clean Architecture. Follow these instructions w
 * **DTO Schema**: Ensure request bodies and response types use the classes located under `DTO/`. Never expose raw domain entities directly through the API endpoints.
 
 ### 5. Frontend SPA Integrity
-* **Rule**: Do not add frontend frameworks (React, Vue, etc.) or packaging build tools (Webpack, Vite) unless requested. Keep the JS code in [script.js](file:///c:/Users/alva/MindPalace/Programming/csharp_projects/web_app/WebAppSandbox/wwwroot/script.js) clean, modular, and performant.
-* **State Polling**: The frontend SPA polls `GET /api/rooms/{code}?playerId={playerId}` every 2 seconds to synchronize UI state. If you add new data to the game, ensure it's mapped to `RoomDetailResponse` and is properly bound in the UI inside the polling handler.
-* **Styles**: Keep styling in [style.css](file:///c:/Users/alva/MindPalace/Programming/csharp_projects/web_app/WebAppSandbox/wwwroot/style.css). Maintain the dark-themed glassmorphism and clean flex/grid structures.
+* **Rule**: The frontend uses Vue 3 via CDN. Do NOT introduce npm, Webpack, Vite, `.vue` Single File Components, or other frameworks (React, Svelte, etc.).
+* **Architecture**: The app is a reactive SPA with four page components driven by a `Vue.reactive()` store:
+  * `wwwroot/js/store.js` — Reactive store (`store.player`, `store.room`, `store.myRole`, `store.page`). Single source of truth.
+  * `wwwroot/js/api.js` — Centralized API layer. All fetch calls go here, returning parsed JSON or throwing errors.
+  * `wwwroot/js/app.js` — Vue 3 app entry. Registers components, renders `<component :is="currentPageComponent">` based on `store.page`.
+  * `wwwroot/js/components/` — Four page components: `WelcomePage.js`, `LobbyPage.js`, `WaitingRoomPage.js`, `GameBoardPage.js`.
+* **State Polling**: Each page component manages its own polling via `setInterval` in `mounted()` / `clearInterval` in `beforeUnmount()`:
+  * LobbyPage: polls `GET /api/rooms` every 3s for available rooms
+  * WaitingRoomPage: polls `GET /api/rooms/{code}?playerId={playerId}` every 2s
+  * GameBoardPage: polls `GET /api/rooms/{code}?playerId={playerId}` every 2.5s
+* **Reactivity Rules**:
+  * Always mutate `store.*` properties, never reassign `store` itself.
+  * Use `store.room.xxx` in templates via `$store.room.xxx` shorthand (registered as `app.config.globalProperties.$store`).
+  * Helper functions (`resetRoom()`, `syncMyRole()`, `isGameOver()`) are globals from `store.js` — use them directly.
+* **Styles**: Keep all styling in [style.css](file:///c:/Users/alva/MindPalace/Programming/csharp_projects/web_app/WebAppSandbox/wwwroot/style.css). Maintain the dark-themed glassmorphism and clean flex/grid structures. CSS classes cover: card roles, spymaster hints, role badges, modals, game-over overlays, phase badges, and responsive breakpoints.
 
 ---
 
@@ -86,4 +98,8 @@ This project uses a DDD-inspired Clean Architecture. Follow these instructions w
 3. **Infrastructure Map**: If database storage is required, mapping the new properties in `AppDbContext.cs` OnModelCreating and running migration commands.
 4. **Service Use-Case**: Add or update services in `Application/Services` to handle resetting/starting the timer. Register the service in `Program.cs`.
 5. **Controller Route**: Expose endpoints on `GameRoomController.cs` matching REST standards.
-6. **Frontend Integration**: Bind the new endpoint calls and render UI changes inside [index.html](file:///c:/Users/alva/MindPalace/Programming/csharp_projects/web_app/WebAppSandbox/wwwroot/index.html) and [script.js](file:///c:/Users/alva/MindPalace/Programming/csharp_projects/web_app/WebAppSandbox/wwwroot/script.js).
+6. **Frontend Integration**:
+   * Add the API call to `wwwroot/js/api.js` following the existing pattern (async, throws on error, returns JSON).
+   * If the feature affects room data, the polling in `GameBoardPage.js` will automatically pick it up from `RoomDetailResponse`. If it's a new action, add the method to the relevant page component.
+   * Bind new UI elements in the appropriate component template and component data/methods.
+   * If new state is needed, add reactive properties to the store in `wwwroot/js/store.js`.
