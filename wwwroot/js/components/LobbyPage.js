@@ -7,9 +7,9 @@ const LobbyPage = {
         <div class="page active">
             <div class="lobby-container">
                 <header class="page-header">
-                    <h1>Game Lobby</h1>
+                    <h1>🎮 Game Lobby</h1>
                     <div class="player-info">
-                        <span>{{ $store.player.name }}</span>
+                        <span>👋 {{ $store.player.name }}</span>
                         <button class="btn-icon" title="Logout" @click="handleLogout">🚪</button>
                     </div>
                 </header>
@@ -20,7 +20,8 @@ const LobbyPage = {
                         <section class="lobby-section">
                             <h2>Create a New Room</h2>
                             <button class="btn btn-primary" :disabled="creating" :class="{ loading: creating }" @click="handleCreateRoom">
-                                {{ creating ? 'Creating...' : 'Create Room' }}
+                                <span v-if="!creating">✨ Create Room</span>
+                                <span v-else>Creating...</span>
                             </button>
                             <div v-if="createMsg.text" class="message show" :class="createMsg.type">{{ createMsg.text }}</div>
                         </section>
@@ -32,12 +33,13 @@ const LobbyPage = {
                                 <input
                                     type="text"
                                     v-model="roomCode"
-                                    placeholder="Enter room code (e.g., ABC123)"
+                                    placeholder="Enter room code (e.g. ABC123)"
                                     maxlength="6"
                                     @keypress.enter="handleJoinRoom"
                                 >
                                 <button class="btn btn-secondary" :disabled="joining" :class="{ loading: joining }" @click="handleJoinRoom">
-                                    {{ joining ? 'Joining...' : 'Join' }}
+                                    <span v-if="!joining">🔗 Join</span>
+                                    <span v-else>Joining...</span>
                                 </button>
                             </div>
                             <div v-if="joinMsg.text" class="message show" :class="joinMsg.type">{{ joinMsg.text }}</div>
@@ -47,7 +49,10 @@ const LobbyPage = {
                         <section class="lobby-section">
                             <h2>Available Rooms</h2>
                             <div class="rooms-list">
-                                <div v-if="rooms.length === 0" class="empty-message">No available rooms. Create one!</div>
+                                <div v-if="rooms.length === 0" class="empty-message">
+                                    <div style="font-size:2em;margin-bottom:8px;">📭</div>
+                                    No rooms available — create one to get started!
+                                </div>
                                 <div
                                     v-for="room in rooms"
                                     :key="room.code"
@@ -55,8 +60,8 @@ const LobbyPage = {
                                     @click="quickJoin(room.code)"
                                 >
                                     <div class="room-details">
-                                        <h3>Room {{ room.code }}</h3>
-                                        <p>{{ room.players.length }} players</p>
+                                        <h3>🏠 Room {{ room.code }}</h3>
+                                        <p>{{ room.players.length }} player{{ room.players.length !== 1 ? 's' : '' }} waiting</p>
                                     </div>
                                     <div class="room-players">Join →</div>
                                 </div>

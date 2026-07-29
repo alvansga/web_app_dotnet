@@ -8,29 +8,32 @@ const WelcomePage = {
             <div class="welcome-container">
                 <div class="welcome-content">
                     <h1>🔐 CODENAME</h1>
-                    <p class="subtitle">Team word-guessing game</p>
+                    <p class="subtitle">The ultimate word-guessing game for teams</p>
 
                     <div class="welcome-form">
                         <input
                             type="text"
                             v-model="playerName"
-                            placeholder="Enter your name"
+                            placeholder="Enter your display name"
                             maxlength="20"
                             @keypress.enter="handleCreatePlayer"
+                            autofocus
                         >
                         <button class="btn btn-primary" :disabled="loading" :class="{ loading }" @click="handleCreatePlayer">
-                            {{ loading ? 'Entering...' : 'Enter Game' }}
+                            <span v-if="!loading">🚀 Enter Game</span>
+                            <span v-else>Entering...</span>
                         </button>
                         <div v-if="message.text" class="message show" :class="message.type">{{ message.text }}</div>
                     </div>
 
                     <div class="rules">
-                        <h3>How to Play</h3>
+                        <h3>📖 How to Play</h3>
                         <ul>
-                            <li>Create a room or join with a code</li>
-                            <li>Wait for players to join</li>
-                            <li>One team gives clues, others guess words</li>
-                            <li>Find all your team's words to win</li>
+                            <li>Create a new room or join with a room code</li>
+                            <li>Wait for at least 2 players to join</li>
+                            <li>Spymaster gives one-word clues + a number</li>
+                            <li>Field operatives guess the words on the board</li>
+                            <li>Find all your team's agents to win — but avoid the assassin!</li>
                         </ul>
                     </div>
                 </div>

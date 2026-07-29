@@ -4,13 +4,25 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Codename - Word Game</title>
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
     <!-- Vue 3 CDN (production, no build tools needed) -->
     <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
 </head>
 <body>
     <!-- Vue mount point - all pages rendered dynamically here -->
-    <div id="app"></div>
+    <div id="app">
+        <!-- Initial loading state - replaced by Vue on mount -->
+        <div style="display:flex;align-items:center;justify-content:center;min-height:100vh;">
+            <div style="color:rgba(255,255,255,0.4);font-family:Inter,sans-serif;font-size:1.2em;text-align:center;">
+                <div style="font-size:2.5em;margin-bottom:12px;">🔐</div>
+                <div>Loading...</div>
+            </div>
+        </div>
+    </div>
 
     <!-- ===== Vue Application Scripts (load order matters) ===== -->
     <script src="js/store.js"></script>

@@ -9,7 +9,7 @@ const GameBoardPage = {
             <div v-if="showRoleModal" class="modal-overlay" style="display:flex;">
                 <div class="modal-box">
                     <h2>🎭 Choose Your Role</h2>
-                    <p class="modal-subtitle">Game has started! Select your role for this round.</p>
+                    <p class="modal-subtitle">The game has started! Pick your role for this round.</p>
                     <div class="role-cards">
                         <button
                             class="role-card role-spymaster"
@@ -18,7 +18,7 @@ const GameBoardPage = {
                         >
                             <span class="role-icon">🕵️</span>
                             <span class="role-name">{{ spymasterTaken ? 'Spymaster (TAKEN)' : 'Spymaster' }}</span>
-                            <span class="role-desc">{{ spymasterTaken ? 'Taken by: ' + spymasterName : 'See all card colors, give clues to your team' }}</span>
+                            <span class="role-desc">{{ spymasterTaken ? 'Already taken by ' + spymasterName : 'See all card colors. Give one-word clues to guide your team.' }}</span>
                         </button>
                         <button
                             class="role-card role-field"
@@ -27,7 +27,7 @@ const GameBoardPage = {
                         >
                             <span class="role-icon">🧑‍💼</span>
                             <span class="role-name">Field Operative</span>
-                            <span class="role-desc">Guess the words based on your Spymaster's clues. ({{ fieldOpCount }} joined)</span>
+                            <span class="role-desc">Guess words based on your Spymaster's clues. ({{ fieldOpCount }} player{{ fieldOpCount !== 1 ? 's' : '' }})</span>
                         </button>
                     </div>
                     <div v-if="roleMsg.text" class="message show" :class="roleMsg.type">{{ roleMsg.text }}</div>
@@ -41,7 +41,7 @@ const GameBoardPage = {
                     <div class="game-over-icon">{{ gameOverIcon }}</div>
                     <h2 class="game-over-title">{{ gameOverTitle }}</h2>
                     <p class="game-over-desc">{{ gameOverDesc }}</p>
-                    <button class="btn btn-primary" style="margin-top:24px;" @click="backToLobby">🏠 Back to Lobby</button>
+                    <button class="btn btn-primary" @click="backToLobby">🏠 Back to Lobby</button>
                 </div>
             </div>
 
@@ -49,10 +49,9 @@ const GameBoardPage = {
             <div class="game-container">
                 <header class="game-header">
                     <div class="game-info">
-                        <h1>Room: <span>{{ $store.room.code }}</span></h1>
+                        <h1>🎯 Room: <span>{{ $store.room.code }}</span></h1>
                         <div class="game-stats">
-                            <span>Round: {{ $store.room.state?.round || 1 }}</span>
-                            <span>Status: {{ $store.room.status }}</span>
+                            <span>🔄 Round {{ $store.room.state?.round || 1 }}</span>
                             <span v-if="phaseLabel" class="phase-badge">{{ phaseLabel }}</span>
                         </div>
                     </div>
@@ -67,6 +66,7 @@ const GameBoardPage = {
                             :class="cardClasses(card)"
                             :disabled="isCardDisabled(card)"
                             @click="handleRevealCard(card, $event)"
+                            :title="isCardDisabled(card) ? '' : 'Click to reveal'"
                         >
                             {{ card.word }}
                         </button>
@@ -75,7 +75,8 @@ const GameBoardPage = {
 
                     <section class="game-info-panel">
                         <div v-if="myRoleLabel" class="my-role-badge" :class="myRoleBadgeClass">{{ myRoleLabel }}</div>
-                        <h3>Players in Game</h3>
+
+                        <h3>👥 Players</h3>
                         <ul class="players-list">
                             <li v-for="p in $store.room.players" :key="p.id" class="player-item">
                                 {{ p.name }}{{ p.id === $store.player.id ? ' (you)' : '' }}
@@ -84,7 +85,7 @@ const GameBoardPage = {
                         </ul>
 
                         <div class="clue-section">
-                            <h3>Clues</h3>
+                            <h3>💡 Clues</h3>
                             <div class="clue-list">
                                 <div v-if="!$store.room.clues || $store.room.clues.length === 0" class="empty-message">No clues yet</div>
                                 <div v-for="clue in $store.room.clues" :key="clue.id" class="clue-card">
@@ -92,7 +93,7 @@ const GameBoardPage = {
                                         <span class="clue-text">{{ clue.word }}</span>
                                         <span class="clue-count">{{ clue.count }}</span>
                                     </div>
-                                    <button v-if="isSpymaster" class="btn-remove-clue" @click="handleRemoveClue(clue.id)">✖</button>
+                                    <button v-if="isSpymaster" class="btn-remove-clue" title="Remove clue" @click="handleRemoveClue(clue.id)">✖</button>
                                 </div>
                             </div>
 
@@ -106,7 +107,7 @@ const GameBoardPage = {
                                         @keypress.enter="handleSetClue"
                                     >
                                     <div class="clue-count-control">
-                                        <button class="btn-count" @click="adjustClueCount(-1)">-</button>
+                                        <button class="btn-count" @click="adjustClueCount(-1)">−</button>
                                         <input type="number" v-model.number="clueCount" min="0" max="9" readonly>
                                         <button class="btn-count" @click="adjustClueCount(1)">+</button>
                                     </div>
@@ -156,9 +157,9 @@ const GameBoardPage = {
         },
         phaseLabel() {
             const p = store.room.state?.phase || '';
-            if (p === 'SpymasterSelection') return '⏳ Choosing Roles...';
-            if (p === 'Playing') return '🎮 Playing';
-            if (p === 'Ended') return '🏁 Game Over';
+            if (p === 'SpymasterSelection') return '🎭 Choosing Roles';
+            if (p === 'Playing') return '🎮 In Progress';
+            if (p === 'Ended') return '🏁 Finished';
             return p;
         },
         spymasterTaken() {

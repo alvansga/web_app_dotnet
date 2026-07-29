@@ -7,19 +7,20 @@ const WaitingRoomPage = {
         <div class="page active">
             <div class="waiting-container">
                 <header class="page-header">
-                    <h1>Room: <span>{{ $store.room.code }}</span></h1>
+                    <h1>📋 Room: <span>{{ $store.room.code }}</span></h1>
                     <button class="btn-icon" title="Back to Lobby" @click="handleBackToLobby">⬅️</button>
                 </header>
 
                 <main class="waiting-main">
                     <section class="players-section">
-                        <h2>Players in Room</h2>
+                        <h2>👥 Players in Room</h2>
                         <ul class="players-list">
                             <li class="player-item" v-for="p in $store.room.players" :key="p.id">
                                 {{ p.name }}
+                                <span v-if="p.id === $store.player.id" style="margin-left:auto;font-size:0.75em;opacity:0.6;">(host)</span>
                             </li>
                         </ul>
-                        <p v-if="$store.room.players.length < 2" class="info-msg">⏳ Waiting for at least 2 players...</p>
+                        <p v-if="$store.room.players.length < 2" class="info-msg">⏳ Waiting for at least 2 players to start...</p>
                     </section>
 
                     <section class="start-section">
@@ -29,10 +30,11 @@ const WaitingRoomPage = {
                             :class="{ loading: starting }"
                             @click="handleStartGame"
                         >
-                            {{ starting ? 'Starting...' : 'Start Game' }}
+                            <span v-if="!starting">🎯 Start Game</span>
+                            <span v-else>Starting...</span>
                         </button>
-                        <p v-if="!canStart" class="info-msg">{{ $store.room.players.length }}/2 players</p>
-                        <p v-else class="info-msg" style="color:var(--success)">✅ Ready to start!</p>
+                        <p v-if="!canStart" class="info-msg">{{ $store.room.players.length }}/2 players needed</p>
+                        <p v-else class="info-msg" style="color:#4ade80">✅ Ready to start!</p>
                         <div v-if="startMsg.text" class="message show" :class="startMsg.type">{{ startMsg.text }}</div>
                     </section>
 
