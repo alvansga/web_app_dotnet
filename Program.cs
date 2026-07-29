@@ -76,6 +76,13 @@ builder.Services.AddScoped<ClueService>();
 
 var app = builder.Build();
 
+// ── Auto-migrate database on startup ──
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    db.Database.Migrate();
+}
+
 // ── Security Middleware Pipeline ──
 app.UseCors("GameCorsPolicy");
 app.UseRateLimiter();
