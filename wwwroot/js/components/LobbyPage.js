@@ -139,8 +139,8 @@ const LobbyPage = {
             this.handleJoinRoom();
         },
         handleLogout() {
-            localStorage.removeItem('player');
-            store.player = { id: null, name: null };
+            sessionStorage.removeItem('player');
+            store.player = { id: null, name: null, token: null };
             resetRoom();
             store.page = 'welcome';
         }

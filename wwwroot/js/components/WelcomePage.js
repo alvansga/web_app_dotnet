@@ -59,8 +59,8 @@ const WelcomePage = {
             this.message = { text: '', type: '' };
             try {
                 const data = await api.createPlayer(name);
-                store.player = { id: data.id, name };
-                localStorage.setItem('player', JSON.stringify(store.player));
+                store.player = { id: data.id, name, token: data.token };
+                sessionStorage.setItem('player', JSON.stringify(store.player));
                 this.message = { text: '✅ Welcome! Redirecting...', type: 'success' };
                 setTimeout(() => { store.page = 'lobby'; }, 1000);
             } catch (err) {

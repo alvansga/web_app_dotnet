@@ -1,15 +1,25 @@
 /**
  * CODENAME GAME - Centralized API Layer
  * Semua fetch call ke backend dikumpulkan di sini.
+ * Token dikirim di setiap request body untuk autentikasi.
  */
 const API_BASE_URL = '/api';
+
+/** Helper: baca CSRF token dari cookie */
+function getCsrfToken() {
+    const match = document.cookie.match(/(?:^|;\s*)CSRF-TOKEN=([^;]*)/);
+    return match ? match[1] : '';
+}
 
 const api = {
     /* ── Player ── */
     async createPlayer(name) {
         const res = await fetch(`${API_BASE_URL}/players`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': getCsrfToken()
+            },
             body: JSON.stringify({ name })
         });
         if (!res.ok) {
@@ -23,7 +33,10 @@ const api = {
     async createRoom() {
         const res = await fetch(`${API_BASE_URL}/rooms`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' }
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': getCsrfToken()
+            }
         });
         if (!res.ok) throw new Error('Failed to create room');
         return res.json();
@@ -35,7 +48,8 @@ const api = {
     },
 
     async getRoomDetail(code, playerId) {
-        const url = `${API_BASE_URL}/rooms/${code}?playerId=${playerId || ''}`;
+        const token = store.player.token || '';
+        const url = `${API_BASE_URL}/rooms/${code}?playerId=${playerId || ''}&token=${encodeURIComponent(token)}`;
         const res = await fetch(url);
         if (!res.ok) return null;
         return res.json();
@@ -44,8 +58,11 @@ const api = {
     async joinRoom(code, playerId) {
         const res = await fetch(`${API_BASE_URL}/rooms/join`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ code, playerId })
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': getCsrfToken()
+            },
+            body: JSON.stringify({ code, playerId, token: store.player.token })
         });
         if (!res.ok) {
             const txt = await res.text();
@@ -56,16 +73,22 @@ const api = {
     async leaveRoom(playerId) {
         await fetch(`${API_BASE_URL}/rooms/leave`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ playerId })
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': getCsrfToken()
+            },
+            body: JSON.stringify({ playerId, token: store.player.token })
         });
     },
 
     async startGame(code, playerId) {
         const res = await fetch(`${API_BASE_URL}/rooms/${code}/start`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ playerId })
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': getCsrfToken()
+            },
+            body: JSON.stringify({ playerId, token: store.player.token })
         });
         if (!res.ok) {
             const txt = await res.text();
@@ -77,8 +100,11 @@ const api = {
     async assignSpymaster(code, playerId) {
         const res = await fetch(`${API_BASE_URL}/rooms/${code}/assign-spymaster`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ playerId })
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': getCsrfToken()
+            },
+            body: JSON.stringify({ playerId, token: store.player.token })
         });
         if (!res.ok) {
             const txt = await res.text();
@@ -89,8 +115,11 @@ const api = {
     async assignFieldOperative(code, playerId) {
         const res = await fetch(`${API_BASE_URL}/rooms/${code}/assign-field-operative`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ playerId })
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': getCsrfToken()
+            },
+            body: JSON.stringify({ playerId, token: store.player.token })
         });
         if (!res.ok) {
             const txt = await res.text();
@@ -101,8 +130,11 @@ const api = {
     async revealCard(code, cardId, playerId) {
         const res = await fetch(`${API_BASE_URL}/rooms/${code}/reveal/${cardId}`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ playerId })
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': getCsrfToken()
+            },
+            body: JSON.stringify({ playerId, token: store.player.token })
         });
         if (!res.ok) {
             const txt = await res.text();
@@ -113,8 +145,11 @@ const api = {
     async addClue(code, playerId, word, count) {
         const res = await fetch(`${API_BASE_URL}/rooms/${code}/clue`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ playerId, word, count })
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': getCsrfToken()
+            },
+            body: JSON.stringify({ playerId, word, count, token: store.player.token })
         });
         if (!res.ok) {
             const txt = await res.text();
@@ -123,8 +158,11 @@ const api = {
     },
 
     async removeClue(code, clueId, playerId) {
-        const res = await fetch(`${API_BASE_URL}/rooms/${code}/clue/${clueId}?playerId=${playerId}`, {
-            method: 'DELETE'
+        const res = await fetch(`${API_BASE_URL}/rooms/${code}/clue/${clueId}?playerId=${playerId}&token=${encodeURIComponent(store.player.token)}`, {
+            method: 'DELETE',
+            headers: {
+                'X-CSRF-TOKEN': getCsrfToken()
+            }
         });
         if (!res.ok) {
             const txt = await res.text();

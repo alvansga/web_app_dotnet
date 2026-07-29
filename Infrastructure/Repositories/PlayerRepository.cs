@@ -23,6 +23,14 @@ public class PlayerRepository : IPlayerRepository
         return await _context.Players.FindAsync(id);
     }
 
+    public async Task<Player?> GetByIdAndTokenAsync(Guid id, string token)
+    {
+        var player = await _context.Players.FindAsync(id);
+        if (player == null || player.Token != token)
+            return null;
+        return player;
+    }
+
     public async Task SaveChangesAsync()
     {
         await _context.SaveChangesAsync();

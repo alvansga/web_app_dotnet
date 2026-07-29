@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using CodenameApp.Application.Services;
 using CodenameApp.DTOs;
 
@@ -7,6 +8,7 @@ using CodenameApp.Domain;
 
 [ApiController]
 [Route("api/players")]
+[EnableRateLimiting("fixed")]
 public class PlayerController : ControllerBase
 {
     private readonly CreatePlayerService _service;
@@ -22,8 +24,8 @@ public class PlayerController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] CreatePlayerRequest req)
     {
-        var id = await _service.Execute(req.Name);
-        return Ok(new { id });
+        var (id, token) = await _service.Execute(req.Name);
+        return Ok(new { id, token });
     }
 
     [HttpGet]

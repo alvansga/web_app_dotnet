@@ -46,21 +46,25 @@ public class ClueDto
 public class AssignRoleRequest
 {
     public Guid PlayerId { get; set; }
+    public string Token { get; set; } = string.Empty;
 }
 
 public class RevealCardRequest
 {
     public Guid PlayerId { get; set; }
+    public string Token { get; set; } = string.Empty;
 }
 
 public class StartGameRequest
 {
     public Guid PlayerId { get; set; }
+    public string Token { get; set; } = string.Empty;
 }
 
 public class LeaveRoomRequest
 {
     public Guid PlayerId { get; set; }
+    public string Token { get; set; } = string.Empty;
 }
 
 public class AddClueRequest
@@ -68,4 +72,5 @@ public class AddClueRequest
     public Guid PlayerId { get; set; }
     public string Word { get; set; } = string.Empty;
     public int Count { get; set; }
+    public string Token { get; set; } = string.Empty;
 }

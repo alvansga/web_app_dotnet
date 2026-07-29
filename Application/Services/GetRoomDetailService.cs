@@ -4,14 +4,17 @@ using CodenameApp.Domain;
 public class GetRoomDetailService
 {
     private readonly IGameRoomRepository _repo;
+    private readonly IPlayerRepository _playerRepo;
 
-    public GetRoomDetailService(IGameRoomRepository repo)
+    public GetRoomDetailService(IGameRoomRepository repo, IPlayerRepository playerRepo)
     {
         _repo = repo;
+        _playerRepo = playerRepo;
     }
 
     /// <param name="playerId">Optional: jika diisi dan player adalah Spymaster, semua card role akan ditampilkan</param>
-    public async Task<RoomDetailResponse?> Execute(string code, Guid? playerId = null)
+    /// <param name="token">Required jika playerId diisi — untuk validasi identitas</param>
+    public async Task<RoomDetailResponse?> Execute(string code, Guid? playerId = null, string? token = null)
     {
         code = code.Trim().ToUpper();
 
@@ -20,8 +23,13 @@ public class GetRoomDetailService
         if (room == null)
             return null;
 
-        bool isSpymaster = playerId.HasValue &&
-            room.Players.Any(p => p.Id == playerId.Value && p.GameRole == PlayerGameRole.Spymaster);
+        bool isSpymaster = false;
+        if (playerId.HasValue && !string.IsNullOrEmpty(token))
+        {
+            var player = await _playerRepo.GetByIdAndTokenAsync(playerId.Value, token);
+            isSpymaster = player != null &&
+                room.Players.Any(p => p.Id == playerId.Value && p.GameRole == PlayerGameRole.Spymaster);
+        }
 
         return MapToResponse(room, isSpymaster);
     }

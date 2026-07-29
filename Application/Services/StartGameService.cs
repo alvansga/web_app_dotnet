@@ -6,15 +6,21 @@ public class StartGameService
 {
     private readonly IGameRoomRepository _roomRepo;
     private readonly ICodenameRepository _codenameRepo;
+    private readonly IPlayerRepository _playerRepo;
 
-    public StartGameService(IGameRoomRepository roomRepo, ICodenameRepository codenameRepo)
+    public StartGameService(IGameRoomRepository roomRepo, ICodenameRepository codenameRepo, IPlayerRepository playerRepo)
     {
         _roomRepo = roomRepo;
         _codenameRepo = codenameRepo;
+        _playerRepo = playerRepo;
     }
 
-    public async Task Execute(string code, Guid starterId)
+    public async Task Execute(string code, Guid starterId, string token)
     {
+        // Validate player credentials
+        var player = await _playerRepo.GetByIdAndTokenAsync(starterId, token)
+            ?? throw new UnauthorizedAccessException("Invalid credentials");
+
         var room = await _roomRepo.GetByCodeAsync(code);
         if (room == null) throw new Exception("Room not found");
 

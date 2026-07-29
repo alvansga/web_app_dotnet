@@ -4,6 +4,7 @@ public class Player
 {
     public Guid Id { get; private set; }
     public string Name { get; private set; }
+    public string Token { get; private set; }
 
     public Guid? GameRoomId { get; set; }
     public GameRoom? GameRoom { get; set; }
@@ -17,6 +18,7 @@ public class Player
     {
         Id = Guid.NewGuid();
         Name = name;
+        Token = Guid.NewGuid().ToString("N");
     }
 
     public void SetGameRole(PlayerGameRole role)

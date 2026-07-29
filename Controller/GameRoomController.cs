@@ -1,7 +1,9 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 [ApiController]
 [Route("api/rooms")]
+[EnableRateLimiting("fixed")]
 public class GameRoomController : ControllerBase
 {
     private readonly CreateRoomService _createService;
@@ -53,9 +55,9 @@ public class GameRoomController : ControllerBase
 
     /// <param name="playerId">Optional: pass Player ID untuk mendapat room detail sesuai peran (spymaster/field-operative)</param>
     [HttpGet("{code}")]
-    public async Task<IActionResult> GetByCode(string code, [FromQuery] Guid? playerId = null)
+    public async Task<IActionResult> GetByCode(string code, [FromQuery] Guid? playerId = null, [FromQuery] string? token = null)
     {
-        var result = await _getRoomDetailService.Execute(code, playerId);
+        var result = await _getRoomDetailService.Execute(code, playerId, token);
 
         if (result == null)
             return NotFound("Room not found");
@@ -66,10 +68,10 @@ public class GameRoomController : ControllerBase
     [HttpPost("join")]
     public async Task<IActionResult> Join(JoinRoomRequest req)
     {
-        var success = await _joinService.Execute(req.Code, req.PlayerId);
+        var success = await _joinService.Execute(req.Code, req.PlayerId, req.Token);
 
         if (!success)
-            return BadRequest("Room or player not found");
+            return BadRequest("Room or player not found, or invalid credentials");
 
         return Ok();
     }
@@ -77,8 +79,15 @@ public class GameRoomController : ControllerBase
     [HttpPost("leave")]
     public async Task<IActionResult> Leave([FromBody] LeaveRoomRequest req, [FromServices] LeaveRoomService leaveService)
     {
-        await leaveService.Execute(req.PlayerId);
-        return Ok(new { message = "You left the room" });
+        try
+        {
+            await leaveService.Execute(req.PlayerId, req.Token);
+            return Ok(new { message = "You left the room" });
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return Unauthorized("Invalid credentials");
+        }
     }
 
     [HttpPost("{code}/start")]
@@ -86,8 +95,12 @@ public class GameRoomController : ControllerBase
     {
         try
         {
-            await _startGameService.Execute(code, req.PlayerId);
+            await _startGameService.Execute(code, req.PlayerId, req.Token);
             return Ok(new { message = "Game started! Roles assigned automatically." });
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return Unauthorized("Invalid credentials");
         }
         catch (Exception ex)
         {
@@ -101,8 +114,12 @@ public class GameRoomController : ControllerBase
     {
         try
         {
-            await _assignRoleService.AssignSpymaster(code, req.PlayerId);
+            await _assignRoleService.AssignSpymaster(code, req.PlayerId, req.Token);
             return Ok(new { message = "You are now the Spymaster!" });
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return Unauthorized("Invalid credentials");
         }
         catch (Exception ex)
         {
@@ -116,8 +133,12 @@ public class GameRoomController : ControllerBase
     {
         try
         {
-            await _assignRoleService.AssignFieldOperative(code, req.PlayerId);
+            await _assignRoleService.AssignFieldOperative(code, req.PlayerId, req.Token);
             return Ok(new { message = "You are now a Field Operative!" });
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return Unauthorized("Invalid credentials");
         }
         catch (Exception ex)
         {
@@ -131,8 +152,12 @@ public class GameRoomController : ControllerBase
     {
         try
         {
-            await _revealCardService.Execute(code, cardId, req.PlayerId);
+            await _revealCardService.Execute(code, cardId, req.PlayerId, req.Token);
             return Ok(new { message = "Card revealed!" });
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return Unauthorized("Invalid credentials");
         }
         catch (Exception ex)
         {
@@ -145,8 +170,12 @@ public class GameRoomController : ControllerBase
     {
         try
         {
-            await clueService.AddClue(code, req.Word, req.Count, req.PlayerId);
+            await clueService.AddClue(code, req.Word, req.Count, req.PlayerId, req.Token);
             return Ok(new { message = "Clue added!" });
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return Unauthorized("Invalid credentials");
         }
         catch (Exception ex)
         {
@@ -155,12 +184,16 @@ public class GameRoomController : ControllerBase
     }
 
     [HttpDelete("{code}/clue/{clueId}")]
-    public async Task<IActionResult> RemoveClue(string code, Guid clueId, [FromQuery] Guid playerId, [FromServices] ClueService clueService)
+    public async Task<IActionResult> RemoveClue(string code, Guid clueId, [FromQuery] Guid playerId, [FromQuery] string token, [FromServices] ClueService clueService)
     {
         try
         {
-            await clueService.RemoveClue(code, clueId, playerId);
+            await clueService.RemoveClue(code, clueId, playerId, token);
             return Ok(new { message = "Clue removed!" });
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return Unauthorized("Invalid credentials");
         }
         catch (Exception ex)
         {

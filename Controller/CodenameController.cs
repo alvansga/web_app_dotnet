@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using CodenameApp.Application.Services;
 using CodenameApp.DTOs;
 
@@ -6,6 +7,7 @@ namespace CodenameApp.Controllers;
 
 [ApiController]
 [Route("api/codenames")]
+[EnableRateLimiting("fixed")]
 public class CodenameController : ControllerBase
 {
     private readonly CreateCodenameService _createService;

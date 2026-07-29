@@ -4,7 +4,7 @@
  * Semua komponen membaca/menulis store ini sebagai single source of truth.
  */
 const store = Vue.reactive({
-    player: { id: null, name: null },
+    player: { id: null, name: null, token: null },
     room:   { code: null, status: null, players: [], cards: [], state: {}, clues: [] },
     myRole: null,   // 'Spymaster' | 'FieldOperative' | null
     page:   'welcome'  // 'welcome' | 'lobby' | 'waiting' | 'game'

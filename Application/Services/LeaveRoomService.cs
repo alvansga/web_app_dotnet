@@ -9,13 +9,12 @@ public class LeaveRoomService
         _playerRepo = playerRepo;
     }
 
-    public async Task Execute(Guid playerId)
+    public async Task Execute(Guid playerId, string token)
     {
-        var player = await _playerRepo.GetByIdAsync(playerId);
-        if (player != null)
-        {
-            player.LeaveRoom();
-            await _playerRepo.SaveChangesAsync();
-        }
+        var player = await _playerRepo.GetByIdAndTokenAsync(playerId, token)
+            ?? throw new UnauthorizedAccessException("Invalid credentials");
+
+        player.LeaveRoom();
+        await _playerRepo.SaveChangesAsync();
     }
 }
