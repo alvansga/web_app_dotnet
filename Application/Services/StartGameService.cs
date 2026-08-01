@@ -24,9 +24,8 @@ public class StartGameService
         var room = await _roomRepo.GetByCodeAsync(code);
         if (room == null) throw new Exception("Room not found");
 
-        // Load words from words.txt
+        // Load words from words-id.txt
         var filePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "words-id.txt");
-        // Fallback to project root if BaseDirectory is bin/Debug/...
         if (!File.Exists(filePath))
         {
             filePath = "words-id.txt";
@@ -53,6 +52,7 @@ public class StartGameService
         var random = new Random();
         var selectedWords = words.OrderBy(x => random.Next()).Take(25).ToList();
 
+        // GameRoom.StartGame now validates RedSpymaster + BlueSpymaster exist
         room.StartGame(selectedWords, starterId);
 
         await _roomRepo.SaveChangesAsync();

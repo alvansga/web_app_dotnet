@@ -27,8 +27,14 @@ public class GetRoomDetailService
         if (playerId.HasValue && !string.IsNullOrEmpty(token))
         {
             var player = await _playerRepo.GetByIdAndTokenAsync(playerId.Value, token);
-            isSpymaster = player != null &&
-                room.Players.Any(p => p.Id == playerId.Value && p.GameRole == PlayerGameRole.Spymaster);
+            if (player != null)
+            {
+                var me = room.Players.FirstOrDefault(p => p.Id == playerId.Value);
+                isSpymaster = me != null && (
+                    me.GameRole == PlayerGameRole.RedSpymaster ||
+                    me.GameRole == PlayerGameRole.BlueSpymaster ||
+                    me.GameRole == PlayerGameRole.Spymaster);
+            }
         }
 
         return MapToResponse(room, isSpymaster);
@@ -52,7 +58,8 @@ public class GetRoomDetailService
                 Phase = room.State.Phase.ToString(),
                 Round = room.State.Round,
                 IsStarted = room.State.IsStarted,
-                Winner = room.State.Winner
+                Winner = room.State.Winner,
+                CurrentTurn = room.State.CurrentTurn
             },
             Players = room.Players.Select(p => {
                 var displayRole = p.GameRole.ToString();
@@ -79,7 +86,8 @@ public class GetRoomDetailService
             {
                 Id = clue.Id,
                 Word = clue.Word,
-                Count = clue.Count
+                Count = clue.Count,
+                SpymasterTeam = clue.SpymasterTeam
             }).ToList()
         };
     }

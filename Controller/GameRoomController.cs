@@ -96,7 +96,7 @@ public class GameRoomController : ControllerBase
         try
         {
             await _startGameService.Execute(code, req.PlayerId, req.Token);
-            return Ok(new { message = "Game started! Roles assigned automatically." });
+            return Ok(new { message = "Game started! Teams are ready." });
         }
         catch (UnauthorizedAccessException)
         {
@@ -108,7 +108,7 @@ public class GameRoomController : ControllerBase
         }
     }
 
-    /// <summary>Assign player sebagai Spymaster di room</summary>
+    /// <summary>Assign player sebagai Spymaster di room (backward compat, defaults to Red)</summary>
     [HttpPost("{code}/assign-spymaster")]
     public async Task<IActionResult> AssignSpymaster(string code, [FromBody] AssignRoleRequest req)
     {
@@ -127,7 +127,7 @@ public class GameRoomController : ControllerBase
         }
     }
 
-    /// <summary>Assign player sebagai Field Operative di room</summary>
+    /// <summary>Assign player sebagai Field Operative di room (backward compat, defaults to Red)</summary>
     [HttpPost("{code}/assign-field-operative")]
     public async Task<IActionResult> AssignFieldOperative(string code, [FromBody] AssignRoleRequest req)
     {
@@ -135,6 +135,82 @@ public class GameRoomController : ControllerBase
         {
             await _assignRoleService.AssignFieldOperative(code, req.PlayerId, req.Token);
             return Ok(new { message = "You are now a Field Operative!" });
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return Unauthorized("Invalid credentials");
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(ex.Message);
+        }
+    }
+
+    /// <summary>Assign player sebagai Red Spymaster 🕵️🔴</summary>
+    [HttpPost("{code}/assign-red-spymaster")]
+    public async Task<IActionResult> AssignRedSpymaster(string code, [FromBody] AssignRoleRequest req)
+    {
+        try
+        {
+            await _assignRoleService.AssignRedSpymaster(code, req.PlayerId, req.Token);
+            return Ok(new { message = "You are now the Red Spymaster! 🔴🕵️" });
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return Unauthorized("Invalid credentials");
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(ex.Message);
+        }
+    }
+
+    /// <summary>Assign player sebagai Blue Spymaster 🕵️🔵</summary>
+    [HttpPost("{code}/assign-blue-spymaster")]
+    public async Task<IActionResult> AssignBlueSpymaster(string code, [FromBody] AssignRoleRequest req)
+    {
+        try
+        {
+            await _assignRoleService.AssignBlueSpymaster(code, req.PlayerId, req.Token);
+            return Ok(new { message = "You are now the Blue Spymaster! 🔵🕵️" });
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return Unauthorized("Invalid credentials");
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(ex.Message);
+        }
+    }
+
+    /// <summary>Assign player sebagai Red Field Operative 🔴</summary>
+    [HttpPost("{code}/assign-red-operative")]
+    public async Task<IActionResult> AssignRedFieldOperative(string code, [FromBody] AssignRoleRequest req)
+    {
+        try
+        {
+            await _assignRoleService.AssignRedFieldOperative(code, req.PlayerId, req.Token);
+            return Ok(new { message = "You are now a Red Field Operative! 🔴🧑‍💼" });
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return Unauthorized("Invalid credentials");
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(ex.Message);
+        }
+    }
+
+    /// <summary>Assign player sebagai Blue Field Operative 🔵</summary>
+    [HttpPost("{code}/assign-blue-operative")]
+    public async Task<IActionResult> AssignBlueFieldOperative(string code, [FromBody] AssignRoleRequest req)
+    {
+        try
+        {
+            await _assignRoleService.AssignBlueFieldOperative(code, req.PlayerId, req.Token);
+            return Ok(new { message = "You are now a Blue Field Operative! 🔵🧑‍💼" });
         }
         catch (UnauthorizedAccessException)
         {

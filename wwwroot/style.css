@@ -512,6 +512,131 @@ body::after {
     font-size: 0.9em;
 }
 
+/* ── Waiting Room Role Selection ── */
+.role-selection-section {
+    background: rgba(255,255,255,0.06);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: var(--radius-lg);
+    padding: 32px;
+}
+
+.role-selection-section h2 {
+    color: var(--text-primary);
+    margin-bottom: 20px;
+    font-size: 1.25em;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.role-selection-section h2::before {
+    content: '';
+    display: inline-block;
+    width: 4px;
+    height: 20px;
+    background: linear-gradient(180deg, var(--primary), var(--secondary));
+    border-radius: 2px;
+}
+
+.role-cards-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+}
+
+.role-card-red-sm, .role-card-blue-sm,
+.role-card-red-op, .role-card-blue-op {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 24px 16px;
+    border: 2px solid rgba(255,255,255,0.08);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    font-family: inherit;
+    position: relative;
+    overflow: hidden;
+    color: var(--text-primary);
+}
+
+.role-card-red-sm, .role-card-red-op {
+    background: linear-gradient(145deg, rgba(239,68,68,0.15), rgba(30,27,75,0.8));
+    border-color: rgba(239,68,68,0.25);
+}
+
+.role-card-blue-sm, .role-card-blue-op {
+    background: linear-gradient(145deg, rgba(59,130,246,0.15), rgba(30,27,75,0.8));
+    border-color: rgba(59,130,246,0.25);
+}
+
+.role-card-red-sm:hover:not(:disabled),
+.role-card-red-op:hover:not(:disabled) {
+    border-color: #f87171;
+    box-shadow: 0 0 24px rgba(239,68,68,0.15);
+    transform: translateY(-3px);
+}
+
+.role-card-blue-sm:hover:not(:disabled),
+.role-card-blue-op:hover:not(:disabled) {
+    border-color: #60a5fa;
+    box-shadow: 0 0 24px rgba(59,130,246,0.15);
+    transform: translateY(-3px);
+}
+
+.role-card-red-sm:disabled, .role-card-blue-sm:disabled,
+.role-card-red-op:disabled, .role-card-blue-op:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+    filter: grayscale(0.4);
+}
+
+.role-icon-big {
+    font-size: 2.4em;
+}
+
+.role-team-icon {
+    font-size: 1.1em;
+    position: absolute;
+    top: 8px;
+    right: 10px;
+}
+
+/* Player dots in waiting room */
+.player-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.player-dot.dot-red { background: #ef4444; box-shadow: 0 0 8px rgba(239,68,68,0.5); }
+.player-dot.dot-blue { background: #3b82f6; box-shadow: 0 0 8px rgba(59,130,246,0.5); }
+.player-dot.dot-none { background: #94a3b8; }
+
+/* Player name and role badge spacing */
+.player-name { flex: 1; }
+
+.player-role-badge {
+    font-size: 0.7em;
+    padding: 3px 10px;
+    border-radius: 10px;
+    font-weight: 600;
+}
+
+.player-role-badge.badge-red-sm { background: rgba(239,68,68,0.15); color: #fca5a5; border: 1px solid rgba(239,68,68,0.3); }
+.player-role-badge.badge-blue-sm { background: rgba(59,130,246,0.15); color: #93c5fd; border: 1px solid rgba(59,130,246,0.3); }
+.player-role-badge.badge-red-op { background: rgba(239,68,68,0.08); color: #fca5a5; border: 1px solid rgba(239,68,68,0.15); }
+.player-role-badge.badge-blue-op { background: rgba(59,130,246,0.08); color: #93c5fd; border: 1px solid rgba(59,130,246,0.15); }
+.player-role-badge.badge-none { background: rgba(255,255,255,0.06); color: var(--text-secondary); border: 1px solid rgba(255,255,255,0.08); }
+
+/* Player item team colors */
+.player-item.player-red { border-left: 3px solid #ef4444; }
+.player-item.player-blue { border-left: 3px solid #3b82f6; }
+
 /* ===== 6. GAME BOARD ===== */
 .game-container {
     display: flex;
@@ -712,6 +837,55 @@ body::after {
 .clue-card:hover {
     background: rgba(124,92,252,0.18);
     border-color: rgba(124,92,252,0.35);
+}
+
+.clue-card.clue-team-red {
+    background: rgba(239,68,68,0.12);
+    border-color: rgba(239,68,68,0.25);
+    color: #fca5a5;
+}
+
+.clue-card.clue-team-red:hover {
+    background: rgba(239,68,68,0.2);
+    border-color: rgba(239,68,68,0.4);
+}
+
+.clue-card.clue-team-blue {
+    background: rgba(59,130,246,0.12);
+    border-color: rgba(59,130,246,0.25);
+    color: #93c5fd;
+}
+
+.clue-card.clue-team-blue:hover {
+    background: rgba(59,130,246,0.2);
+    border-color: rgba(59,130,246,0.4);
+}
+
+.clue-content {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.clue-team-tag {
+    font-size: 0.7em;
+    padding: 2px 8px;
+    border-radius: 8px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.clue-team-tag.team-tag-red {
+    background: rgba(239,68,68,0.2);
+    color: #fca5a5;
+    border: 1px solid rgba(239,68,68,0.3);
+}
+
+.clue-team-tag.team-tag-blue {
+    background: rgba(59,130,246,0.2);
+    color: #93c5fd;
+    border: 1px solid rgba(59,130,246,0.3);
 }
 
 .clue-text {
@@ -1110,23 +1284,58 @@ body::after {
 .my-role-badge {
     border-radius: var(--radius-sm);
     padding: 14px 18px;
-    margin-bottom: 18px;
+    margin-bottom: 8px;
     font-weight: 700;
     font-size: 0.9em;
     text-align: center;
     letter-spacing: 0.5px;
 }
 
-.my-role-badge.spymaster {
-    background: rgba(124,92,252,0.12);
-    color: var(--primary-light);
-    border: 1px solid rgba(124,92,252,0.25);
+.my-role-badge.spymaster-red {
+    background: rgba(239,68,68,0.12);
+    color: #f87171;
+    border: 1px solid rgba(239,68,68,0.25);
 }
 
-.my-role-badge.field-operative {
+.my-role-badge.spymaster-blue {
     background: rgba(59,130,246,0.12);
     color: #60a5fa;
     border: 1px solid rgba(59,130,246,0.25);
+}
+
+.my-role-badge.operative-red {
+    background: rgba(239,68,68,0.08);
+    color: #fca5a5;
+    border: 1px solid rgba(239,68,68,0.15);
+}
+
+.my-role-badge.operative-blue {
+    background: rgba(59,130,246,0.08);
+    color: #93c5fd;
+    border: 1px solid rgba(59,130,246,0.15);
+}
+
+/* Team Badge */
+.my-team-badge {
+    border-radius: var(--radius-sm);
+    padding: 8px 18px;
+    margin-bottom: 18px;
+    font-weight: 700;
+    font-size: 0.85em;
+    text-align: center;
+    letter-spacing: 0.5px;
+}
+
+.my-team-badge.team-red {
+    background: rgba(239,68,68,0.15);
+    color: #fca5a5;
+    border: 1px solid rgba(239,68,68,0.3);
+}
+
+.my-team-badge.team-blue {
+    background: rgba(59,130,246,0.15);
+    color: #93c5fd;
+    border: 1px solid rgba(59,130,246,0.3);
 }
 
 .phase-badge {
@@ -1137,6 +1346,29 @@ body::after {
     font-size: 0.8em;
     font-weight: 600;
     border: 1px solid rgba(245,158,11,0.2);
+}
+
+/* Turn Indicator */
+.turn-indicator {
+    padding: 4px 16px;
+    border-radius: 20px;
+    font-weight: 700;
+    font-size: 0.85em;
+    letter-spacing: 0.5px;
+}
+
+.turn-indicator.turn-red {
+    background: rgba(239,68,68,0.15);
+    color: #fca5a5;
+    border: 1px solid rgba(239,68,68,0.35);
+    animation: pulse 2s ease-in-out infinite;
+}
+
+.turn-indicator.turn-blue {
+    background: rgba(59,130,246,0.15);
+    color: #93c5fd;
+    border: 1px solid rgba(59,130,246,0.35);
+    animation: pulse 2s ease-in-out infinite;
 }
 
 /* ===== 12. SPYMASTER CARD HINT ===== */
@@ -1173,6 +1405,24 @@ body::after {
     font-weight: 600;
     background: rgba(255,255,255,0.1);
     border: 1px solid rgba(255,255,255,0.08);
+}
+
+.player-item .player-role-tag.tag-red {
+    background: rgba(239,68,68,0.15);
+    color: #fca5a5;
+    border-color: rgba(239,68,68,0.3);
+}
+
+.player-item .player-role-tag.tag-blue {
+    background: rgba(59,130,246,0.15);
+    color: #93c5fd;
+    border-color: rgba(59,130,246,0.3);
+}
+
+.player-item .player-role-tag.tag-none {
+    background: rgba(255,255,255,0.06);
+    color: var(--text-secondary);
+    border-color: rgba(255,255,255,0.08);
 }
 
 /* ===== 13. GAME OVER OVERLAY ===== */

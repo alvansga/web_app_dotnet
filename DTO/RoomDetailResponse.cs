@@ -23,6 +23,7 @@ public class GameStateDto
     public int Round { get; set; } = 0;
     public bool IsStarted { get; set; } = false;
     public string? Winner { get; set; }
+    public string? CurrentTurn { get; set; }
 }
 
 /// <summary>Field operative: hanya tahu apakah kartu sudah direveal, tidak tahu role-nya (kecuali sudah reveal)</summary>
@@ -40,6 +41,7 @@ public class ClueDto
     public Guid Id { get; set; }
     public string Word { get; set; } = string.Empty;
     public int Count { get; set; }
+    public string SpymasterTeam { get; set; } = "Unknown";
 }
 
 // ====== Request DTOs ======

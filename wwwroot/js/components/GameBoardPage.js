@@ -1,40 +1,11 @@
 /**
  * CODENAME GAME - GameBoardPage Component
- * Halaman 4: Board, role modal, clue system, game over overlay
+ * Halaman 4: Board, turn indicator, team-based clue system, game over overlay
+ * Note: Role selection is now done in WaitingRoomPage (v1.3.0)
  */
 const GameBoardPage = {
     template: `
         <div class="page active">
-            <!-- Role Selection Modal -->
-            <div v-if="showRoleModal" class="modal-overlay" style="display:flex;">
-                <div class="modal-box">
-                    <h2>🎭 Choose Your Role</h2>
-                    <p class="modal-subtitle">The game has started! Pick your role for this round.</p>
-                    <div class="role-cards">
-                        <button
-                            class="role-card role-spymaster"
-                            :disabled="spymasterTaken || choosing"
-                            @click="chooseRole('spymaster')"
-                        >
-                            <span class="role-icon">🕵️</span>
-                            <span class="role-name">{{ spymasterTaken ? 'Spymaster (TAKEN)' : 'Spymaster' }}</span>
-                            <span class="role-desc">{{ spymasterTaken ? 'Already taken by ' + spymasterName : 'See all card colors. Give one-word clues to guide your team.' }}</span>
-                        </button>
-                        <button
-                            class="role-card role-field"
-                            :disabled="choosing"
-                            @click="chooseRole('field-operative')"
-                        >
-                            <span class="role-icon">🧑‍💼</span>
-                            <span class="role-name">Field Operative</span>
-                            <span class="role-desc">Guess words based on your Spymaster's clues. ({{ fieldOpCount }} player{{ fieldOpCount !== 1 ? 's' : '' }})</span>
-                        </button>
-                    </div>
-                    <div v-if="roleMsg.text" class="message show" :class="roleMsg.type">{{ roleMsg.text }}</div>
-                    <p v-if="!$store.myRole" class="info-msg" style="margin-top:12px;">Waiting for all players to choose roles...</p>
-                </div>
-            </div>
-
             <!-- Game Over Overlay -->
             <div v-if="showGameOver" class="modal-overlay" style="display:flex;">
                 <div class="modal-box game-over-box" :class="gameOverClass">
@@ -53,6 +24,7 @@ const GameBoardPage = {
                         <div class="game-stats">
                             <span>🔄 Round {{ $store.room.state?.round || 1 }}</span>
                             <span v-if="phaseLabel" class="phase-badge">{{ phaseLabel }}</span>
+                            <span v-if="turnLabel" class="turn-indicator" :class="turnClass">{{ turnLabel }}</span>
                         </div>
                     </div>
                 </header>
@@ -75,12 +47,13 @@ const GameBoardPage = {
 
                     <section class="game-info-panel">
                         <div v-if="myRoleLabel" class="my-role-badge" :class="myRoleBadgeClass">{{ myRoleLabel }}</div>
+                        <div v-if="myTeamLabel" class="my-team-badge" :class="myTeamBadgeClass">{{ myTeamLabel }}</div>
 
                         <h3>👥 Players</h3>
                         <ul class="players-list">
                             <li v-for="p in $store.room.players" :key="p.id" class="player-item">
                                 {{ p.name }}{{ p.id === $store.player.id ? ' (you)' : '' }}
-                                <span class="player-role-tag">{{ roleTag(p) }}</span>
+                                <span class="player-role-tag" :class="playerRoleTagClass(p)">{{ roleTag(p) }}</span>
                             </li>
                         </ul>
 
@@ -88,12 +61,13 @@ const GameBoardPage = {
                             <h3>💡 Clues</h3>
                             <div class="clue-list">
                                 <div v-if="!$store.room.clues || $store.room.clues.length === 0" class="empty-message">No clues yet</div>
-                                <div v-for="clue in $store.room.clues" :key="clue.id" class="clue-card">
-                                    <div>
+                                <div v-for="clue in $store.room.clues" :key="clue.id" class="clue-card" :class="clueTeamClass(clue)">
+                                    <div class="clue-content">
+                                        <span class="clue-team-tag" :class="clueTeamTagClass(clue)">{{ clue.spymasterTeam }}</span>
                                         <span class="clue-text">{{ clue.word }}</span>
                                         <span class="clue-count">{{ clue.count }}</span>
                                     </div>
-                                    <button v-if="isSpymaster" class="btn-remove-clue" title="Remove clue" @click="handleRemoveClue(clue.id)">✖</button>
+                                    <button v-if="canManageClue(clue)" class="btn-remove-clue" title="Remove clue" @click="handleRemoveClue(clue.id)">✖</button>
                                 </div>
                             </div>
 
@@ -124,10 +98,7 @@ const GameBoardPage = {
     data() {
         return {
             poller: null,
-            showRoleModal: false,
             showGameOver: false,
-            choosing: false,
-            roleMsg: { text: '', type: '' },
             clueWord: '',
             clueCount: 1,
             gameOverIcon: '🏁',
@@ -140,37 +111,56 @@ const GameBoardPage = {
     },
     computed: {
         isSpymaster() {
-            return store.myRole === 'Spymaster';
+            return store.myRole === 'RedSpymaster' || store.myRole === 'BlueSpymaster';
         },
         isFieldOperative() {
-            return store.myRole === 'FieldOperative';
+            return store.myRole === 'RedFieldOperative' || store.myRole === 'BlueFieldOperative';
+        },
+        isMyTeamsTurn() {
+            if (!store.myTeam || !store.room.state?.currentTurn) return true; // fallback: allow if turn unknown
+            return store.myTeam === store.room.state.currentTurn;
         },
         myRoleLabel() {
-            if (store.myRole === 'Spymaster') return '🕵️ You are the Spymaster';
-            if (store.myRole === 'FieldOperative') return '🧑‍💼 You are a Field Operative';
+            if (store.myRole === 'RedSpymaster') return '🕵️🔴 Red Spymaster';
+            if (store.myRole === 'BlueSpymaster') return '🕵️🔵 Blue Spymaster';
+            if (store.myRole === 'RedFieldOperative') return '🔴 Red Field Operative';
+            if (store.myRole === 'BlueFieldOperative') return '🔵 Blue Field Operative';
             return '';
         },
         myRoleBadgeClass() {
-            if (store.myRole === 'Spymaster') return 'spymaster';
-            if (store.myRole === 'FieldOperative') return 'field-operative';
+            if (store.myRole === 'RedSpymaster') return 'spymaster-red';
+            if (store.myRole === 'BlueSpymaster') return 'spymaster-blue';
+            if (store.myRole === 'RedFieldOperative') return 'operative-red';
+            if (store.myRole === 'BlueFieldOperative') return 'operative-blue';
+            return '';
+        },
+        myTeamLabel() {
+            if (store.myTeam === 'Red') return '🔴 Red Team';
+            if (store.myTeam === 'Blue') return '🔵 Blue Team';
+            return '';
+        },
+        myTeamBadgeClass() {
+            if (store.myTeam === 'Red') return 'team-red';
+            if (store.myTeam === 'Blue') return 'team-blue';
             return '';
         },
         phaseLabel() {
             const p = store.room.state?.phase || '';
-            if (p === 'SpymasterSelection') return '🎭 Choosing Roles';
             if (p === 'Playing') return '🎮 In Progress';
             if (p === 'Ended') return '🏁 Finished';
             return p;
         },
-        spymasterTaken() {
-            return (store.room.players || []).some(p => p.gameRole === 'Spymaster');
+        turnLabel() {
+            const t = store.room.state?.currentTurn;
+            if (t === 'Red') return "🔴 Red's Turn";
+            if (t === 'Blue') return "🔵 Blue's Turn";
+            return null;
         },
-        spymasterName() {
-            const sm = (store.room.players || []).find(p => p.gameRole === 'Spymaster');
-            return sm ? sm.name : '';
-        },
-        fieldOpCount() {
-            return (store.room.players || []).filter(p => p.gameRole === 'FieldOperative').length;
+        turnClass() {
+            const t = store.room.state?.currentTurn;
+            if (t === 'Red') return 'turn-red';
+            if (t === 'Blue') return 'turn-blue';
+            return '';
         }
     },
     mounted() {
@@ -185,7 +175,6 @@ const GameBoardPage = {
             try {
                 const room = await api.getRoomDetail(store.room.code, store.player.id);
                 if (!room) {
-                    // Room deleted or not found — stop polling, go back to lobby
                     this.stopPoller();
                     resetRoom();
                     store.page = 'lobby';
@@ -200,16 +189,6 @@ const GameBoardPage = {
                 store.room.clues   = room.clues || [];
 
                 syncMyRole(room.players);
-
-                const me = (room.players || []).find(p => p.id === store.player.id);
-                const hasNoRole = !me || !me.gameRole || me.gameRole === 'None';
-                const isPlaying = room.status === 'Playing' || room.status === 'Finished';
-
-                if (isPlaying && hasNoRole) {
-                    this.showRoleModal = true;
-                } else if (store.myRole && store.myRole !== 'None') {
-                    this.showRoleModal = false;
-                }
 
                 // Game over detection
                 if (isGameOver(room)) {
@@ -241,7 +220,10 @@ const GameBoardPage = {
         isCardDisabled(card) {
             if (card.isRevealed) return true;
             if (this.isSpymaster) return true; // Spymaster can't click cards
-            if (this.showRoleModal || this.showGameOver) return true;
+            if (this.showGameOver) return true;
+            if (!this.isFieldOperative) return true; // Only field ops can click
+            // Field operative can only click during their team's turn
+            if (!this.isMyTeamsTurn) return true;
             return false;
         },
         async handleRevealCard(card, event) {
@@ -249,6 +231,12 @@ const GameBoardPage = {
 
             if (!this.isFieldOperative) {
                 this.revealError = `Only Field Operatives can reveal cards. You are: ${store.myRole || 'None'}.`;
+                setTimeout(() => { this.revealError = ''; }, 4000);
+                return;
+            }
+
+            if (!this.isMyTeamsTurn) {
+                this.revealError = `⏳ It's not your team's turn. Wait for ${store.room.state?.currentTurn} team to finish.`;
                 setTimeout(() => { this.revealError = ''; }, 4000);
                 return;
             }
@@ -268,33 +256,16 @@ const GameBoardPage = {
             }
         },
         roleTag(player) {
-            if (player.gameRole === 'Spymaster') return '🕵️';
-            if (player.gameRole === 'FieldOperative') return '🧑‍💼';
+            if (player.gameRole === 'RedSpymaster') return '🕵️🔴 SM';
+            if (player.gameRole === 'BlueSpymaster') return '🕵️🔵 SM';
+            if (player.gameRole === 'RedFieldOperative') return '🔴 Op';
+            if (player.gameRole === 'BlueFieldOperative') return '🔵 Op';
             return '⏳';
         },
-
-        /* ── Role Modal ── */
-        async chooseRole(role) {
-            this.choosing = true;
-            this.roleMsg = { text: '', type: '' };
-            try {
-                if (role === 'spymaster') {
-                    await api.assignSpymaster(store.room.code, store.player.id);
-                    store.myRole = 'Spymaster';
-                } else {
-                    await api.assignFieldOperative(store.room.code, store.player.id);
-                    store.myRole = 'FieldOperative';
-                }
-                this.roleMsg = {
-                    text: `✅ You are now the ${role === 'spymaster' ? 'Spymaster 🕵️' : 'Field Operative 🧑‍💼'}!`,
-                    type: 'success'
-                };
-                setTimeout(() => { this.showRoleModal = false; }, 900);
-            } catch (err) {
-                this.roleMsg = { text: `❌ ${err.message}`, type: 'error' };
-            } finally {
-                this.choosing = false;
-            }
+        playerRoleTagClass(player) {
+            if (player.gameRole === 'RedSpymaster' || player.gameRole === 'RedFieldOperative') return 'tag-red';
+            if (player.gameRole === 'BlueSpymaster' || player.gameRole === 'BlueFieldOperative') return 'tag-blue';
+            return 'tag-none';
         },
 
         /* ── Clue System ── */
@@ -305,6 +276,13 @@ const GameBoardPage = {
             this.clueCount = val;
         },
         async handleSetClue() {
+            // Only spymasters can set clues (no turn restriction — clues are shown with team color)
+            if (!this.isSpymaster) {
+                this.clueError = 'Only Spymasters can give clues.';
+                setTimeout(() => { this.clueError = ''; }, 4000);
+                return;
+            }
+
             const word = this.clueWord.trim();
             if (!word || word.includes(' ')) {
                 this.clueError = 'Please enter a single word.';
@@ -322,6 +300,22 @@ const GameBoardPage = {
                 this.clueError = err.message || 'Failed to add clue';
                 setTimeout(() => { this.clueError = ''; }, 4000);
             }
+        },
+        canManageClue(clue) {
+            // Only spymasters can remove clues, and only from their own team
+            if (!this.isSpymaster) return false;
+            if (!clue.spymasterTeam || !store.myTeam) return false;
+            return clue.spymasterTeam === store.myTeam;
+        },
+        clueTeamClass(clue) {
+            if (clue.spymasterTeam === 'Red') return 'clue-team-red';
+            if (clue.spymasterTeam === 'Blue') return 'clue-team-blue';
+            return '';
+        },
+        clueTeamTagClass(clue) {
+            if (clue.spymasterTeam === 'Red') return 'team-tag-red';
+            if (clue.spymasterTeam === 'Blue') return 'team-tag-blue';
+            return '';
         },
         async handleRemoveClue(clueId) {
             if (!confirm('Remove this clue?')) return;

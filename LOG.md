@@ -7,6 +7,33 @@ Versioning follows [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [1.3.0] — Unreleased
+
+### Added
+- Team-specific player roles: `RedSpymaster`, `BlueSpymaster`, `RedFieldOperative`, `BlueFieldOperative`
+- `CurrentTurn` property to `GameState` — tracks which team's turn it is
+- `SpymasterTeam` property to `Clue` — clues are tagged by the spymaster's team (Red/Blue)
+- Role selection UI in `WaitingRoomPage` — players pick team and role before the game starts
+- `store.myTeam` in the frontend store — derived from the player's role
+- Team-based turn indicator on `GameBoardPage` (pulsing "🔴 Red's Turn" / "🔵 Blue's Turn" badge)
+- Team-colored clue cards — Red team clues show red, Blue team clues show blue
+- Turn-based restrictions — spymasters can only give clues on their team's turn, field operatives can only reveal cards on their team's turn
+- `canManageClue`, `clueTeamClass`, `clueTeamTagClass` methods to `GameBoardPage` for team-aware clue management
+- CSS: `.turn-indicator`, `.my-team-badge`, `.clue-team-red`/`.clue-team-blue`, `.clue-team-tag`, `.player-role-tag` variants, `.role-selection-section`, `.role-cards-grid`, `.player-dot`, `.player-role-badge`
+
+### Changed
+- `AssignRoleService` now handles team-specific role assignment endpoints
+- `StartGameService` respects pre-assigned team roles instead of auto-assigning legacy roles
+- `GetRoomDetailService` and `ClueService` updated for team-based clue storage
+- `GameBoardPage`: removed role selection modal (moved to WaitingRoom), removed legacy role fallbacks (`'Spymaster'`, `'FieldOperative'`), fixed corrupted `cardClasses`/`loadBoard` code
+- Role badge CSS split into team-specific variants (`.spymaster-red`, `.spymaster-blue`, `.operative-red`, `.operative-blue`)
+
+### Removed
+- Legacy role strings: `'Spymaster'`, `'FieldOperative'` — replaced by team-specific roles
+- Role selection modal from `GameBoardPage` (`chooseRole`, `showRoleModal`, `roleMsg`, `choosing`)
+
+---
+
 ## [1.2.0] — Unreleased
 
 ### Fixed
