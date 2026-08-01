@@ -13,6 +13,7 @@ public class AppDbContext : DbContext
     public DbSet<GameRoom> GameRooms { get; set; } = null!;
     public DbSet<GameCard> GameCards { get; set; } = null!;
     public DbSet<Clue> Clues { get; set; } = null!;
+    public DbSet<GameActionLog> GameActionLogs { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
 {
@@ -32,12 +33,22 @@ public class AppDbContext : DbContext
             .HasForeignKey(c => c.GameRoomId)
             .OnDelete(DeleteBehavior.Cascade);
 
+        modelBuilder.Entity<GameRoom>()
+            .HasMany(r => r.ActionLogs)
+            .WithOne(l => l.GameRoom)
+            .HasForeignKey(l => l.GameRoomId)
+            .OnDelete(DeleteBehavior.Cascade);
+
         modelBuilder.Entity<GameCard>()
             .Property(c => c.Id)
             .ValueGeneratedNever();
 
         modelBuilder.Entity<Clue>()
             .Property(c => c.Id)
+            .ValueGeneratedNever();
+
+        modelBuilder.Entity<GameActionLog>()
+            .Property(l => l.Id)
             .ValueGeneratedNever();
 
         modelBuilder.Entity<GameCard>()

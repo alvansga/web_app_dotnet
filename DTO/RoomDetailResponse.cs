@@ -8,6 +8,7 @@ public class RoomDetailResponse
     public List<PlayerDto> Players { get; set; } = new();
     public List<GameCardDto> Cards { get; set; } = new();
     public List<ClueDto> Clues { get; set; } = new();
+    public List<ActionLogDto> ActionLogs { get; set; } = new();
 }
 
 public class PlayerDto
@@ -75,4 +76,14 @@ public class AddClueRequest
     public string Word { get; set; } = string.Empty;
     public int Count { get; set; }
     public string Token { get; set; } = string.Empty;
+}
+
+public class ActionLogDto
+{
+    public Guid Id { get; set; }
+    public string PlayerName { get; set; } = string.Empty;
+    public string Team { get; set; } = string.Empty;
+    public string Word { get; set; } = string.Empty;
+    public string CardRole { get; set; } = string.Empty;
+    public DateTime Timestamp { get; set; }
 }

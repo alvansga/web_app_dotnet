@@ -88,6 +88,15 @@ public class GetRoomDetailService
                 Word = clue.Word,
                 Count = clue.Count,
                 SpymasterTeam = clue.SpymasterTeam
+            }).ToList(),
+            ActionLogs = room.ActionLogs.Select(log => new ActionLogDto
+            {
+                Id = log.Id,
+                PlayerName = log.PlayerName,
+                Team = log.Team,
+                Word = log.Word,
+                CardRole = log.CardRole,
+                Timestamp = log.Timestamp
             }).ToList()
         };
     }

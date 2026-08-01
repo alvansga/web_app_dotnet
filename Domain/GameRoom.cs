@@ -15,6 +15,7 @@ public class GameRoom
     
     public List<GameCard> Cards { get; private set; } = new();
     public List<Clue> Clues { get; private set; } = new();
+    public List<GameActionLog> ActionLogs { get; private set; } = new();
 
 
     public GameRoom(string code)
@@ -96,6 +97,7 @@ public class GameRoom
         // Create cards
         Cards.Clear();
         Clues.Clear();
+        ActionLogs.Clear();
         for (int i = 0; i < 25; i++)
         {
             Cards.Add(new GameCard(Id, wordList[i], roles[i]));
@@ -127,11 +129,6 @@ public class GameRoom
             player.GameRole != PlayerGameRole.FieldOperative)
             throw new Exception("Only field operatives can reveal cards");
 
-        // Check it's their team's turn
-        string? playerTeam = GetPlayerTeam(player);
-        if (playerTeam != null && State.CurrentTurn != null && playerTeam != State.CurrentTurn)
-            throw new Exception($"It's not your team's turn! Current turn: {State.CurrentTurn} team");
-
         var card = Cards.FirstOrDefault(c => c.Id == cardId)
             ?? throw new Exception("Card not found");
 
@@ -139,6 +136,10 @@ public class GameRoom
             throw new Exception("Card already revealed");
 
         card.Reveal();
+
+        // === Log the action ===
+        string? playerTeam = GetPlayerTeam(player);
+        ActionLogs.Add(new GameActionLog(player.Name, playerTeam ?? "Unknown", card.Word, card.Role.ToString()));
 
         // === Win/Lose condition checks ===
         if (card.Role == CardRole.Assassin)
@@ -210,7 +211,7 @@ public class GameRoom
         }
     }
 
-    private string? GetPlayerTeam(Player player)
+    public string? GetPlayerTeam(Player player)
     {
         if (player.GameRole == PlayerGameRole.RedSpymaster || player.GameRole == PlayerGameRole.RedFieldOperative)
             return "Red";
@@ -218,6 +219,31 @@ public class GameRoom
             return "Blue";
         return null;
     }
+}
+
+public class GameActionLog
+{
+    public Guid Id { get; private set; }
+    public string PlayerName { get; private set; }
+    public string Team { get; private set; }
+    public string Word { get; private set; }
+    public string CardRole { get; private set; }
+    public DateTime Timestamp { get; private set; }
+
+    public Guid GameRoomId { get; private set; }
+    public GameRoom? GameRoom { get; private set; }
+
+    public GameActionLog(string playerName, string team, string word, string cardRole)
+    {
+        Id = Guid.NewGuid();
+        PlayerName = playerName;
+        Team = team;
+        Word = word;
+        CardRole = cardRole;
+        Timestamp = DateTime.UtcNow;
+    }
+
+    private GameActionLog() { } // For EF Core
 }
 
 public class Clue

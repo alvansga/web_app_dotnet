@@ -1464,3 +1464,108 @@ body::after {
     from { transform: scale(0.3); opacity: 0; }
     to   { transform: scale(1);   opacity: 1; }
 }
+
+/* ===== 14. ACTION LOG ===== */
+.action-log-section {
+    margin-top: 24px;
+    padding-top: 16px;
+    border-top: 1px solid rgba(255,255,255,0.06);
+}
+
+.action-log-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.action-log-entry {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-size: 0.82em;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.06);
+    animation: slideIn 0.3s ease;
+    flex-wrap: wrap;
+}
+
+.action-log-entry.log-entry-red {
+    border-left: 3px solid rgba(239,68,68,0.5);
+}
+
+.action-log-entry.log-entry-blue {
+    border-left: 3px solid rgba(59,130,246,0.5);
+}
+
+.log-team-badge {
+    font-size: 0.75em;
+    padding: 2px 8px;
+    border-radius: 6px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.log-team-badge.log-badge-red {
+    background: rgba(239,68,68,0.15);
+    color: #fca5a5;
+    border: 1px solid rgba(239,68,68,0.3);
+}
+
+.log-team-badge.log-badge-blue {
+    background: rgba(59,130,246,0.15);
+    color: #93c5fd;
+    border: 1px solid rgba(59,130,246,0.3);
+}
+
+.log-player {
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.log-action {
+    color: var(--text-secondary);
+}
+
+.log-word {
+    font-weight: 600;
+    color: var(--primary-light);
+}
+
+.log-player-team.log-badge-red { color: #fca5a5; font-weight: 600; }
+.log-player-team.log-badge-blue { color: #93c5fd; font-weight: 600; }
+
+.log-card-role {
+    font-size: 0.75em;
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-weight: 700;
+}
+
+.log-card-role.role-badge-red {
+    background: rgba(239,68,68,0.15);
+    color: #fca5a5;
+    border: 1px solid rgba(239,68,68,0.3);
+}
+
+.log-card-role.role-badge-blue {
+    background: rgba(59,130,246,0.15);
+    color: #93c5fd;
+    border: 1px solid rgba(59,130,246,0.3);
+}
+
+.log-card-role.role-badge-assassin {
+    background: rgba(30,27,75,0.2);
+    color: #a78bfa;
+    border: 1px solid rgba(30,27,75,0.4);
+}
+
+.log-card-role.role-badge-bystander {
+    background: rgba(212,212,216,0.1);
+    color: #a1a1aa;
+    border: 1px solid rgba(161,161,170,0.2);
+}

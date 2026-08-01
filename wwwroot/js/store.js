@@ -5,7 +5,7 @@
  */
 const store = Vue.reactive({
     player: { id: null, name: null, token: null },
-    room:   { code: null, status: null, players: [], cards: [], state: {}, clues: [] },
+    room:   { code: null, status: null, players: [], cards: [], state: {}, clues: [], actionLogs: [] },
     myRole: null,   // 'RedSpymaster' | 'BlueSpymaster' | 'RedFieldOperative' | 'BlueFieldOperative' | null
     myTeam: null,   // 'Red' | 'Blue' | null
     page:   'welcome'  // 'welcome' | 'lobby' | 'waiting' | 'game'
@@ -13,7 +13,7 @@ const store = Vue.reactive({
 
 /* ── Helper: reset room state ── */
 function resetRoom() {
-    store.room   = { code: null, status: null, players: [], cards: [], state: {}, clues: [] };
+    store.room   = { code: null, status: null, players: [], cards: [], state: {}, clues: [], actionLogs: [] };
     store.myRole = null;
     store.myTeam = null;
 }
@@ -36,10 +36,4 @@ function syncMyRole(players) {
 /* ── Helper: check if game over ── */
 function isGameOver(room) {
     return room.status === 'Finished' || !!room.state?.winner;
-}
-
-/* ── Helper: check if my team's turn ── */
-function isMyTeamsTurn() {
-    if (!store.myTeam || !store.room.state?.currentTurn) return false;
-    return store.myTeam === store.room.state.currentTurn;
 }

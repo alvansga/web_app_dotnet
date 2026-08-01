@@ -1,7 +1,7 @@
 /**
  * CODENAME GAME - GameBoardPage Component
- * Halaman 4: Board, turn indicator, team-based clue system, game over overlay
- * Note: Role selection is now done in WaitingRoomPage (v1.3.0)
+ * Halaman 4: Board, team-based clue system, game over overlay, action log
+ * Note: Role selection is done in WaitingRoomPage. No turn system — all field ops can click freely.
  */
 const GameBoardPage = {
     template: `
@@ -24,7 +24,6 @@ const GameBoardPage = {
                         <div class="game-stats">
                             <span>🔄 Round {{ $store.room.state?.round || 1 }}</span>
                             <span v-if="phaseLabel" class="phase-badge">{{ phaseLabel }}</span>
-                            <span v-if="turnLabel" class="turn-indicator" :class="turnClass">{{ turnLabel }}</span>
                         </div>
                     </div>
                 </header>
@@ -90,6 +89,21 @@ const GameBoardPage = {
                                 <div v-if="clueError" class="message show error" style="margin-top:8px;">{{ clueError }}</div>
                             </div>
                         </div>
+
+                        <!-- === Action Log === -->
+                        <div class="action-log-section">
+                            <h3>📋 Action Log</h3>
+                            <div class="action-log-list">
+                                <div v-if="!$store.room.actionLogs || $store.room.actionLogs.length === 0" class="empty-message">No actions yet</div>
+                                <div v-for="log in actionLogsSorted" :key="log.id" class="action-log-entry" :class="actionLogTeamClass(log)">
+                                    <span class="log-player">{{ log.playerName }}</span>
+                                    <span class="log-player-team" :class="actionLogTeamBadgeClass(log)">({{ log.team }})</span>
+                                    <span class="log-action">membuka kata</span>
+                                    <span class="log-word">{{ log.word }}</span>
+                                    <span class="log-card-role" :class="cardRoleBadgeClass(log)">({{ formatCardRole(log.cardRole) }})</span>
+                                </div>
+                            </div>
+                        </div>
                     </section>
                 </main>
             </div>
@@ -115,10 +129,6 @@ const GameBoardPage = {
         },
         isFieldOperative() {
             return store.myRole === 'RedFieldOperative' || store.myRole === 'BlueFieldOperative';
-        },
-        isMyTeamsTurn() {
-            if (!store.myTeam || !store.room.state?.currentTurn) return true; // fallback: allow if turn unknown
-            return store.myTeam === store.room.state.currentTurn;
         },
         myRoleLabel() {
             if (store.myRole === 'RedSpymaster') return '🕵️🔴 Red Spymaster';
@@ -150,17 +160,9 @@ const GameBoardPage = {
             if (p === 'Ended') return '🏁 Finished';
             return p;
         },
-        turnLabel() {
-            const t = store.room.state?.currentTurn;
-            if (t === 'Red') return "🔴 Red's Turn";
-            if (t === 'Blue') return "🔵 Blue's Turn";
-            return null;
-        },
-        turnClass() {
-            const t = store.room.state?.currentTurn;
-            if (t === 'Red') return 'turn-red';
-            if (t === 'Blue') return 'turn-blue';
-            return '';
+        actionLogsSorted() {
+            const logs = store.room.actionLogs || [];
+            return [...logs].reverse(); // newest first
         }
     },
     mounted() {
@@ -181,12 +183,13 @@ const GameBoardPage = {
                     return;
                 }
 
-                store.room.code    = room.code;
-                store.room.status  = room.status;
-                store.room.players = room.players || [];
-                store.room.cards   = room.cards || [];
-                store.room.state   = room.state || {};
-                store.room.clues   = room.clues || [];
+                store.room.code        = room.code;
+                store.room.status      = room.status;
+                store.room.players     = room.players || [];
+                store.room.cards       = room.cards || [];
+                store.room.state       = room.state || {};
+                store.room.clues       = room.clues || [];
+                store.room.actionLogs  = room.actionLogs || [];
 
                 syncMyRole(room.players);
 
@@ -222,8 +225,7 @@ const GameBoardPage = {
             if (this.isSpymaster) return true; // Spymaster can't click cards
             if (this.showGameOver) return true;
             if (!this.isFieldOperative) return true; // Only field ops can click
-            // Field operative can only click during their team's turn
-            if (!this.isMyTeamsTurn) return true;
+            // No turn restriction — all field operatives can click freely
             return false;
         },
         async handleRevealCard(card, event) {
@@ -231,12 +233,6 @@ const GameBoardPage = {
 
             if (!this.isFieldOperative) {
                 this.revealError = `Only Field Operatives can reveal cards. You are: ${store.myRole || 'None'}.`;
-                setTimeout(() => { this.revealError = ''; }, 4000);
-                return;
-            }
-
-            if (!this.isMyTeamsTurn) {
-                this.revealError = `⏳ It's not your team's turn. Wait for ${store.room.state?.currentTurn} team to finish.`;
                 setTimeout(() => { this.revealError = ''; }, 4000);
                 return;
             }
@@ -276,7 +272,6 @@ const GameBoardPage = {
             this.clueCount = val;
         },
         async handleSetClue() {
-            // Only spymasters can set clues (no turn restriction — clues are shown with team color)
             if (!this.isSpymaster) {
                 this.clueError = 'Only Spymasters can give clues.';
                 setTimeout(() => { this.clueError = ''; }, 4000);
@@ -302,7 +297,6 @@ const GameBoardPage = {
             }
         },
         canManageClue(clue) {
-            // Only spymasters can remove clues, and only from their own team
             if (!this.isSpymaster) return false;
             if (!clue.spymasterTeam || !store.myTeam) return false;
             return clue.spymasterTeam === store.myTeam;
@@ -325,6 +319,32 @@ const GameBoardPage = {
             } catch (err) {
                 console.error('Failed to remove clue:', err);
             }
+        },
+
+        /* ── Action Log ── */
+        actionLogTeamClass(log) {
+            if (log.team === 'Red') return 'log-entry-red';
+            if (log.team === 'Blue') return 'log-entry-blue';
+            return '';
+        },
+        actionLogTeamBadgeClass(log) {
+            if (log.team === 'Red') return 'log-badge-red';
+            if (log.team === 'Blue') return 'log-badge-blue';
+            return '';
+        },
+        formatCardRole(cardRole) {
+            if (cardRole === 'RedAgent') return 'RED';
+            if (cardRole === 'BlueAgent') return 'BLUE';
+            if (cardRole === 'Assassin') return 'ASSASSIN';
+            if (cardRole === 'Bystander') return 'BYSTANDER';
+            return cardRole;
+        },
+        cardRoleBadgeClass(log) {
+            if (log.cardRole === 'RedAgent') return 'role-badge-red';
+            if (log.cardRole === 'BlueAgent') return 'role-badge-blue';
+            if (log.cardRole === 'Assassin') return 'role-badge-assassin';
+            if (log.cardRole === 'Bystander') return 'role-badge-bystander';
+            return '';
         },
 
         /* ── Game Over ── */

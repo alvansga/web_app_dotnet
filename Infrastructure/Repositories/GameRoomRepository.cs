@@ -24,6 +24,7 @@ public class GameRoomRepository : IGameRoomRepository
             .Include(r => r.Players)
             .Include(r => r.Cards)
             .Include(r => r.Clues.OrderBy(c => c.Word))
+            .Include(r => r.ActionLogs)
             .AsSplitQuery()
             .FirstOrDefaultAsync(r => r.Code == code);
     }
@@ -34,6 +35,7 @@ public class GameRoomRepository : IGameRoomRepository
             .Include(r => r.Players)
             .Include(r => r.Cards)
             .Include(r => r.Clues)
+            .Include(r => r.ActionLogs)
             .AsSplitQuery()
             .ToListAsync();
     }
