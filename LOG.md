@@ -7,6 +7,13 @@ Versioning follows [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [1.2.0] — Unreleased
+
+### Fixed
+- "Back to Lobby" button on game-over screen now keeps players inside the room (navigates to waiting room instead of leaving the room entirely)
+
+---
+
 ## [1.1.0] — Unreleased (staged, not committed)
 
 ### Added

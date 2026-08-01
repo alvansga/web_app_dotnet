@@ -360,8 +360,7 @@ const GameBoardPage = {
         backToLobby() {
             this.showGameOver = false;
             this.stopPoller();
-            resetRoom();
-            store.page = 'lobby';
+            store.page = 'waiting';
         },
         stopPoller() {
             if (this.poller) { clearInterval(this.poller); this.poller = null; }

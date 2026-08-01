@@ -82,18 +82,13 @@ const WaitingRoomPage = {
                 store.room.state    = room.state || {};
 
                 // Detect transition: game started by someone else
-                if (room.status === 'Playing' || room.status === 'Finished') {
+                if (room.status === 'Playing') {
                     const me = (room.players || []).find(p => p.id === store.player.id);
                     const serverRole = me?.gameRole;
                     if (serverRole && serverRole !== 'None') {
                         store.myRole = serverRole;
                         store.page = 'game';
                     }
-                }
-
-                // Detect if game over while in waiting room
-                if (isGameOver(room)) {
-                    store.page = 'game';
                 }
             } catch (err) {
                 console.error('WaitingRoom poll error:', err);
