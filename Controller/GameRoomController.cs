@@ -46,6 +46,13 @@ public class GameRoomController : ControllerBase
         return Ok(rooms);
     }
 
+    [HttpGet("stats")]
+    public async Task<IActionResult> GetStats([FromServices] GetOnlineStatsService statsService)
+    {
+        var stats = await statsService.Execute();
+        return Ok(stats);
+    }
+
     [HttpDelete("{code}")]
     public async Task<IActionResult> Delete(string code, [FromServices] DeleteRoomService deleteService)
     {

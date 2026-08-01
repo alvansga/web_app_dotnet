@@ -73,6 +73,7 @@ builder.Services.AddScoped<RevealCardService>();
 builder.Services.AddScoped<DeleteRoomService>();
 builder.Services.AddScoped<LeaveRoomService>();
 builder.Services.AddScoped<ClueService>();
+builder.Services.AddScoped<GetOnlineStatsService>();
 
 var app = builder.Build();
 

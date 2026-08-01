@@ -13,6 +13,13 @@ const LobbyPage = {
                         <button class="btn-icon" title="Logout" @click="handleLogout">🚪</button>
                     </div>
                 </header>
+                <div class="online-stats-bar">
+                    <span class="stat-item">🟢 {{ stats.totalOnline }} online</span>
+                    <span class="stat-sep">•</span>
+                    <span class="stat-item">🏠 {{ stats.inLobby }} di lobby</span>
+                    <span class="stat-sep">•</span>
+                    <span class="stat-item">🎯 {{ stats.playing }} bermain</span>
+                </div>
 
                 <main class="lobby-main">
                     <div class="lobby-content">
@@ -80,15 +87,20 @@ const LobbyPage = {
             createMsg: { text: '', type: '' },
             joinMsg: { text: '', type: '' },
             rooms: [],
-            poller: null
+            stats: { totalOnline: 0, inLobby: 0, playing: 0, totalRooms: 0 },
+            poller: null,
+            statsPoller: null
         };
     },
     mounted() {
         this.loadRooms();
+        this.loadStats();
         this.poller = setInterval(() => this.loadRooms(), 3000);
+        this.statsPoller = setInterval(() => this.loadStats(), 5000);
     },
     beforeUnmount() {
         if (this.poller) { clearInterval(this.poller); this.poller = null; }
+        if (this.statsPoller) { clearInterval(this.statsPoller); this.statsPoller = null; }
     },
     methods: {
         async loadRooms() {
@@ -97,6 +109,13 @@ const LobbyPage = {
                 this.rooms = allRooms.filter(r => r.status === 'Waiting');
             } catch {
                 // Silently fail, rooms will refresh next poll
+            }
+        },
+        async loadStats() {
+            try {
+                this.stats = await api.getOnlineStats();
+            } catch {
+                // Silently fail, stats will refresh next poll
             }
         },
         async handleCreateRoom() {

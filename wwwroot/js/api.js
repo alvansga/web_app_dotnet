@@ -47,6 +47,12 @@ const api = {
         return res.json();
     },
 
+    async getOnlineStats() {
+        const res = await fetch(`${API_BASE_URL}/rooms/stats`);
+        if (!res.ok) return { totalOnline: 0, inLobby: 0, playing: 0, totalRooms: 0 };
+        return res.json();
+    },
+
     async getRoomDetail(code, playerId) {
         const token = store.player.token || '';
         const url = `${API_BASE_URL}/rooms/${code}?playerId=${playerId || ''}&token=${encodeURIComponent(token)}`;

@@ -7,6 +7,19 @@ Versioning follows [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [1.5.0] — Unreleased
+
+### Added
+- Online player traffic indicator in Game Lobby: a compact stats bar shows `🟢 N online • 🏠 N di lobby • 🎯 N bermain`
+- Backend: `GET /api/rooms/stats` endpoint returning aggregated player counts (`TotalOnline`, `InLobby`, `Playing`, `TotalRooms`)
+- Backend: `GetOnlineStatsService` — aggregates player counts by room status (Waiting → lobby, others → playing)
+- Backend: `DTO/OnlineStatsResponse.cs` — response DTO for stats endpoint
+- Frontend: `api.getOnlineStats()` in `api.js` — fetches stats from the new endpoint
+- Frontend: `LobbyPage.js` — polls `/api/rooms/stats` every 5s and renders `.online-stats-bar`
+- CSS: `.online-stats-bar`, `.stat-item`, `.stat-sep` — glassmorphism-styled traffic bar
+
+---
+
 ## [1.4.0] — Unreleased
 
 ### Added
