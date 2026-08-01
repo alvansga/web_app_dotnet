@@ -281,6 +281,12 @@ body::after {
     transform: scale(1.08);
 }
 
+.header-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
 .lobby-main {
     flex: 1;
     padding: 36px;

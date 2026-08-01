@@ -8,7 +8,10 @@ const WaitingRoomPage = {
             <div class="waiting-container">
                 <header class="page-header">
                     <h1>📋 Room: <span>{{ $store.room.code }}</span></h1>
-                    <button class="btn-icon" title="Back to Lobby" @click="handleBackToLobby">⬅️</button>
+                    <div class="header-actions">
+                        <button class="btn-icon" title="Copy Room Code" @click="handleCopyRoomCode">📋</button>
+                        <button class="btn-icon" title="Back to Lobby" @click="handleBackToLobby">⬅️</button>
+                    </div>
                 </header>
 
                 <main class="waiting-main">
@@ -85,7 +88,8 @@ const WaitingRoomPage = {
                     <!-- Start Game Section -->
                     <section class="start-section">
                         <p v-if="!readyToStart" class="info-msg">⚠️ Need at least 1 Spymaster and 2+ players to start ({{ $store.room.players.length }}/2+ players)</p>
-                        <p v-else class="info-msg" style="color:#4ade80">✅ Ready to start! Spymaster(s) confirmed.</p>
+                        <p v-else class="info-msg" style="color:#4ade80;">✅ Ready to start! Spymaster(s) confirmed.</p>
+                        <div class="spacer" style="height:28px;"></div>
                         <button
                             class="btn btn-primary"
                             :disabled="!readyToStart || starting"
@@ -98,7 +102,6 @@ const WaitingRoomPage = {
                         <div v-if="startMsg.text" class="message show" :class="startMsg.type">{{ startMsg.text }}</div>
                     </section>
 
-                    <button class="btn btn-secondary" @click="handleCopyRoomCode">{{ copyBtnText }}</button>
                 </main>
             </div>
         </div>
@@ -110,7 +113,6 @@ const WaitingRoomPage = {
             roleMsg: { text: '', type: '' },
             starting: false,
             startMsg: { text: '', type: '' },
-            copyBtnText: '📋 Copy Room Code'
         };
     },
     computed: {
@@ -231,12 +233,8 @@ const WaitingRoomPage = {
         },
 
         handleCopyRoomCode() {
-            navigator.clipboard.writeText(store.room.code).then(() => {
-                this.copyBtnText = '✓ Copied!';
-                setTimeout(() => { this.copyBtnText = '📋 Copy Room Code'; }, 2000);
-            }).catch(() => {
-                this.copyBtnText = '⚠ Copy failed';
-                setTimeout(() => { this.copyBtnText = '📋 Copy Room Code'; }, 2000);
+            navigator.clipboard.writeText(store.room.code).catch(err => {
+                console.error('Copy failed:', err);
             });
         },
 
