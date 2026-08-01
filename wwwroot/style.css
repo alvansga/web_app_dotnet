@@ -1439,44 +1439,85 @@ body::after {
     border-color: rgba(255,255,255,0.08);
 }
 
-/* ===== 13. GAME OVER OVERLAY ===== */
-.game-over-box {
-    text-align: center;
-    padding: 52px 44px;
+/* ===== 13. GAME OVER BANNER ===== */
+.game-over-banner {
+    background: rgba(30,27,55,0.95);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: var(--radius-lg);
+    padding: 18px 28px;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    animation: fadeSlideIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.game-over-banner-content {
+    display: flex;
+    align-items: center;
+    gap: 16px;
 }
 
 .game-over-icon {
-    font-size: 5em;
-    margin-bottom: 16px;
+    font-size: 2.8em;
     animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    flex-shrink: 0;
 }
 
-.game-over-title {
-    font-size: 2em;
-    margin-bottom: 14px;
+.game-over-banner-text .game-over-title {
+    font-size: 1.3em;
+    margin-bottom: 4px;
     font-weight: 800;
+    color: var(--text-primary);
 }
 
-.game-over-desc {
+.game-over-banner-text .game-over-desc {
     color: var(--text-secondary);
-    font-size: 1.05em;
-    line-height: 1.6;
+    font-size: 0.9em;
+    line-height: 1.4;
 }
 
-.game-over-box.winner-red   { border-color: rgba(239,68,68,0.3); }
-.game-over-box.winner-red   .game-over-title { color: #f87171; }
-.game-over-box.winner-blue  { border-color: rgba(59,130,246,0.3); }
-.game-over-box.winner-blue  .game-over-title { color: #60a5fa; }
-.game-over-box.winner-assassin { border-color: rgba(30,27,75,0.4); }
-.game-over-box.winner-assassin .game-over-title { color: #a78bfa; }
-
-.game-over-box .btn {
-    margin-top: 28px;
+.game-over-banner .game-over-btn {
+    flex-shrink: 0;
+    width: auto;
+    padding: 12px 24px;
+    font-size: 0.9em;
 }
+
+.game-over-banner.winner-red   { border-color: rgba(239,68,68,0.3); }
+.game-over-banner.winner-red   .game-over-title { color: #f87171; }
+.game-over-banner.winner-blue  { border-color: rgba(59,130,246,0.3); }
+.game-over-banner.winner-blue  .game-over-title { color: #60a5fa; }
+.game-over-banner.winner-assassin { border-color: rgba(30,27,75,0.4); }
+.game-over-banner.winner-assassin .game-over-title { color: #a78bfa; }
 
 @keyframes popIn {
     from { transform: scale(0.3); opacity: 0; }
     to   { transform: scale(1);   opacity: 1; }
+}
+
+/* Responsive game-over banner */
+@media (max-width: 768px) {
+    .game-over-banner {
+        flex-direction: column;
+        text-align: center;
+        padding: 14px 20px;
+    }
+
+    .game-over-banner-content {
+        flex-direction: column;
+    }
+
+    .game-over-banner .game-over-btn {
+        width: 100%;
+    }
+
+    .game-over-icon {
+        font-size: 2.2em;
+    }
 }
 
 /* ===== 14. ACTION LOG ===== */

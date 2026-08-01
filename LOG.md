@@ -7,6 +7,23 @@ Versioning follows [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [1.4.0] — Unreleased
+
+### Added
+- Game-over board reveal: all 25 cards show their true colors (RedAgent, BlueAgent, Bystander, Assassin) when the game ends, giving players the "aha!" moment of seeing the full board
+- Game-over banner replaces the full-screen modal overlay — board stays visible behind a compact winner announcement banner
+- Backend: `GetRoomDetailService` exposes all `CardRole` values when `GamePhase == Ended` (previously only spymasters saw unrevealed roles)
+
+### Changed
+- `GameBoardPage.js` template: replaced `<div class="modal-overlay">` with `<div class="game-over-banner">` inline at top of `.game-container`
+- `GameBoardPage.js` `cardClasses()`: added `showGameOver` branch that applies `red-agent`/`blue-agent`/`bystander`/`assassin` + `revealed` classes to all cards regardless of `isRevealed` state
+- `style.css`: replaced section "*13. GAME OVER OVERLAY*" with "*13. GAME OVER BANNER*" — flexbox layout with icon+text left, button right; responsive stacking on mobile
+
+### Removed
+- Full-screen `.modal-overlay` + `.game-over-box` for game-over display (replaced by `.game-over-banner`)
+
+---
+
 ## [1.3.0] — Unreleased
 
 ### Added

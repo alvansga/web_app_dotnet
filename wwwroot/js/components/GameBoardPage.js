@@ -6,18 +6,19 @@
 const GameBoardPage = {
     template: `
         <div class="page active">
-            <!-- Game Over Overlay -->
-            <div v-if="showGameOver" class="modal-overlay" style="display:flex;">
-                <div class="modal-box game-over-box" :class="gameOverClass">
-                    <div class="game-over-icon">{{ gameOverIcon }}</div>
-                    <h2 class="game-over-title">{{ gameOverTitle }}</h2>
-                    <p class="game-over-desc">{{ gameOverDesc }}</p>
-                    <button class="btn btn-primary" @click="backToLobby">🏠 Back to Lobby</button>
-                </div>
-            </div>
-
             <!-- Game Board -->
             <div class="game-container">
+                <!-- Game Over Banner -->
+                <div v-if="showGameOver" class="game-over-banner" :class="gameOverClass">
+                    <div class="game-over-banner-content">
+                        <span class="game-over-icon">{{ gameOverIcon }}</span>
+                        <div class="game-over-banner-text">
+                            <h2 class="game-over-title">{{ gameOverTitle }}</h2>
+                            <p class="game-over-desc">{{ gameOverDesc }}</p>
+                        </div>
+                    </div>
+                    <button class="btn btn-primary game-over-btn" @click="backToLobby">🏠 Back to Lobby</button>
+                </div>
                 <header class="game-header">
                     <div class="game-info">
                         <h1>🎯 Room: <span>{{ $store.room.code }}</span></h1>
@@ -211,12 +212,18 @@ const GameBoardPage = {
                 if (card.role === 'BlueAgent') classes.push('blue-agent');
                 if (card.role === 'Bystander') classes.push('bystander');
                 if (card.role === 'Assassin') classes.push('assassin');
-            } else if (this.isSpymaster && card.role) {
+            } else if (this.isSpymaster) {
                 // Hint colors for spymaster (unrevealed cards)
                 if (card.role === 'RedAgent') classes.push('hint-red');
                 if (card.role === 'BlueAgent') classes.push('hint-blue');
                 if (card.role === 'Bystander') classes.push('hint-bystander');
                 if (card.role === 'Assassin') classes.push('hint-assassin');
+            } else if (this.showGameOver && card.role) {
+                // Reveal all card colors on game over — use the full reveal classes
+                if (card.role === 'RedAgent') classes.push('red-agent', 'revealed');
+                if (card.role === 'BlueAgent') classes.push('blue-agent', 'revealed');
+                if (card.role === 'Bystander') classes.push('bystander', 'revealed');
+                if (card.role === 'Assassin') classes.push('assassin', 'revealed');
             }
             return classes;
         },

@@ -79,7 +79,7 @@ public class GetRoomDetailService
                 Id = c.Id,
                 Word = c.Word,
                 // Spymaster melihat semua role. Field operative hanya melihat role yg sudah direveal.
-                Role = (isSpymaster || c.IsRevealed) ? c.Role.ToString() : null,
+                Role = (isSpymaster || c.IsRevealed || room.State.Phase == GamePhase.Ended) ? c.Role.ToString() : null,
                 IsRevealed = c.IsRevealed
             }).ToList(),
             Clues = room.Clues.Select(clue => new ClueDto
