@@ -223,13 +223,15 @@ body::after {
     background: rgba(15,11,31,0.85);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
-    padding: 20px 36px;
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: var(--radius-lg);
+    padding: 18px 28px;
+    margin: 16px 20px 0 20px;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    border-bottom: 1px solid rgba(255,255,255,0.08);
     position: sticky;
-    top: 0;
+    top: 16px;
     z-index: 100;
 }
 
@@ -1129,7 +1131,7 @@ body::after {
 
     .join-room-form input { width: 100%; }
 
-    .page-header { padding: 14px 20px; }
+    .page-header { padding: 14px 18px; margin: 12px 12px 0 12px; top: 12px; }
 
     .page-header h1 { font-size: 1.3em; }
 
