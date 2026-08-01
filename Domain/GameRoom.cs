@@ -25,7 +25,7 @@ public class GameRoom
 
     public void AddPlayer(Player player)
     {
-        if (Status != RoomStatus.Waiting)
+        if (Status != RoomStatus.Waiting && Status != RoomStatus.Finished)
             throw new Exception("Game already started");
 
         if (Players.Any(p => p.Id == player.Id))
@@ -73,6 +73,7 @@ public class GameRoom
         State.Phase = GamePhase.Playing;
         State.IsStarted = true;
         State.Round = 1;
+        State.Winner = null;
 
         // Determine starting team randomly
         var random = new Random();
@@ -94,6 +95,7 @@ public class GameRoom
 
         // Create cards
         Cards.Clear();
+        Clues.Clear();
         for (int i = 0; i < 25; i++)
         {
             Cards.Add(new GameCard(Id, wordList[i], roles[i]));
@@ -102,7 +104,7 @@ public class GameRoom
 
     public void AssignRole(Guid playerId, PlayerGameRole role)
     {
-        if (Status != RoomStatus.Waiting)
+        if (Status != RoomStatus.Waiting && Status != RoomStatus.Finished)
             throw new Exception("Game has already started, cannot change role");
 
         var player = Players.FirstOrDefault(p => p.Id == playerId)
