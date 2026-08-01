@@ -114,8 +114,8 @@ const LobbyPage = {
         async loadStats() {
             try {
                 this.stats = await api.getOnlineStats();
-            } catch {
-                // Silently fail, stats will refresh next poll
+            } catch (err) {
+                console.error('Failed to load online stats:', err);
             }
         },
         async handleCreateRoom() {
