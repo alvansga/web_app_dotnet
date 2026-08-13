@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Organ Attack — Lobby</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@microsoft/signalr@8/dist/browser/signalr.min.js"></script>
+</head>
+<body>
+  <div id="app">
+    <h1>🫀 Organ Attack</h1>
+    <p class="status">Status koneksi: <strong>{{ connectionStatus }}</strong></p>
+
+    <button @click="ping">Ping semua client</button>
+    <button @click="clearLog">Bersihkan log</button>
+
+    <ul class="log">
+      <li v-for="entry in log" :key="entry.id">
+        <span class="time">{{ entry.time }}</span> — {{ entry.message }}
+      </li>
+    </ul>
+  </div>
+
+  <script src="js/main.js"></script>
+</body>
+</html>
