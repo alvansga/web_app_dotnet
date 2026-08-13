@@ -1,0 +1,68 @@
+namespace WebAppSandbox.GameEngine.Models;
+
+public class Deck
+{
+    private readonly Random _random;
+    private readonly List<Card> _drawPile = new();
+    private readonly List<Card> _discardPile = new();
+
+    public IReadOnlyList<Card> DrawPile => _drawPile;
+    public IReadOnlyList<Card> DiscardPile => _discardPile;
+
+    public Deck(Random random)
+    {
+        _random = random;
+    }
+
+    public void Build(IEnumerable<Card> cards)
+    {
+        _drawPile.Clear();
+        _discardPile.Clear();
+        _drawPile.AddRange(cards);
+        Shuffle();
+    }
+
+    public void Shuffle()
+    {
+        // Fisher-Yates
+        for (int i = _drawPile.Count - 1; i > 0; i--)
+        {
+            int j = _random.Next(i + 1);
+            (_drawPile[i], _drawPile[j]) = (_drawPile[j], _drawPile[i]);
+        }
+    }
+
+    public Card? Draw()
+    {
+        if (_drawPile.Count == 0)
+        {
+            ReshuffleFromDiscard();
+        }
+
+        if (_drawPile.Count == 0)
+        {
+            return null;
+        }
+
+        var card = _drawPile[^1];
+        _drawPile.RemoveAt(_drawPile.Count - 1);
+        return card;
+    }
+
+    public void Discard(Card card)
+    {
+        _discardPile.Add(card);
+    }
+
+    public void ReshuffleFromDiscard()
+    {
+        if (_discardPile.Count == 0)
+        {
+            return;
+        }
+
+        _drawPile.AddRange(_discardPile);
+        _discardPile.Clear();
+        Shuffle();
+    }
+}
