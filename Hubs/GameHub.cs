@@ -24,6 +24,9 @@ public class GameHub : Hub
     public async Task<string> CreateRoom(string playerName)
     {
         var roomId = _rooms.CreateRoom(Context.ConnectionId, playerName);
+        var creator = _rooms.GetRoom(roomId).Engine.Game.Players[0];
+        creator.ConnectionId = Context.ConnectionId;
+
         _rooms.RegisterConnection(Context.ConnectionId, roomId);
         await Groups.AddToGroupAsync(Context.ConnectionId, roomId);
         await Clients.Group(roomId).SendAsync("PlayerJoined", PlayerDto.From(_rooms.GetRoom(roomId).Engine.Game.Players[0]));
