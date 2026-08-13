@@ -8,7 +8,7 @@ Web aplikasi card game bertema **Organ Attack** (adaptasi dari OrganATTACK!). Se
 
 | Aspek | Pilihan |
 |---|---|
-| Backend | ASP.NET Core (.NET 9) + **SignalR** (server otoritatif) |
+| Backend | ASP.NET Core (.NET 10) + **SignalR** (server otoritatif) |
 | Frontend | **Vue 3 (JavaScript, Composition API)** via CDN/ES modules, tanpa build step |
 | Penyajian UI | Static files di `wwwroot/`, diserve langsung oleh ASP.NET Core |
 | Aturan | OrganATTACK! versi asli, mulai dari **MVP lalu expand bertahap** |
@@ -176,43 +176,50 @@ Validasi penting: **hanya pemain yang sedang giliran** yang boleh memanggil aksi
 
 ## 7. Fase Roadmap
 
-### Fase 0 — Fondasi Jaringan (verifikasi 2 client)
+### ✅ DONE — Fase 0 — Fondasi Jaringan
 - Serve static files `wwwroot/`, setup SignalR hub.
 - Vue root app + SignalR client connect ke room yang sama.
 - Deliverable: 2 tab browser terhubung & bisa saling `Ping`.
 
-### Fase 1 — Game Engine Murni (LOGIC UTAMA, bedah terbanyak)
+### ✅ DONE — Fase 1 — Game Engine Murni (LOGIC UTAMA)
 - Model 5 organ per player.
 - 4 tipe kartu inti.
 - Deck: build, shuffle, draw, discard pile, hand.
 - `TurnManager` (giliran & batas aksi), `CardResolver` (validasi & apply efek).
 - Win condition: semua organ lawan hancur.
-- **Deliverable:** bisa main penuh via console/unit test tanpa UI.
+- Deliverable: bisa main penuh via console/unit test tanpa UI.
 
-### Fase 2 — API SignalR + Room Management
-- Implement method hub `CreateRoom`, `JoinRoom`, `StartGame`, `PlayCard`, `DrawCard`, `EndTurn`.
+### ✅ DONE — Fase 2 — API SignalR + Room Management
+- Method hub `CreateRoom`, `JoinRoom`, `StartGame`, `PlayCard`, `DrawCard`, `EndTurn`.
 - Broadcast `GameStateUpdate` ke 2 client.
 - Validasi giliran di server.
 
-### Fase 3 — UI Vue
-- Komponen: board organ (saya vs lawan), hand, deck, discard, indikator giliran, action log.
-- Interaksi klik/drag untuk main kartu.
+### ✅ DONE — Fase 3 — UI Vue
+- Board organ (saya vs lawan), hand, deck, discard, indikator giliran, action log.
+- Interaksi klik untuk main kartu (pilih kartu → klik organ target).
 - Semua kartu & organ dirender **teks/emoji** (bukan gambar).
 
-### Fase 4 — Vertical Slice MVP
+### ✅ DONE — Fase 4 — Vertical Slice MVP (v1.0.0)
 - 2 client main penuh aturan inti end-to-end.
-- Milestone: **"logic gamenya bisa dimainkan 2 orang".**
+- Milestone tercapai: **"logic gamenya bisa dimainkan 2 orang".**
+- Terbukti lewat integration test `VerticalSliceTests` (buat/gabung room → start → draw → main kartu → end turn → menang).
 
-### Fase 5 — Expand Aturan Asli
-- Mekanik "catch", kartu special/wild, pengocokan posisi organ, efek tambahan.
-- Detail aturan asli diverifikasi ke rulebook resmi, di-encode bertahap.
+### 🔮 FUTURE DEVELOPMENT — Fase 5 & 6
 
-### Fase 6 — Polish
-- Reconnect & penanganan disconnect.
-- Timer giliran.
-- Animasi/sound.
-- Ganti placeholder teks → aset gambar.
-- Riwayat game.
+**Fase 5 — Expand Aturan Asli**
+- Mekanik **"catch"**: lawan bisa menangkap kartu (counter-play, menambah kartu ke tangan).
+- Kartu **special/wild**: kartu serbaguna yang tidak terikat tipe organ tertentu.
+- **Pengocokan posisi organ**: mengubah layout/urutan organ saat permainan.
+- Efek tambahan (mis. kartu yang menyerang >1 organ, affliction berantai, dll).
+- Detail aturan asli diverifikasi ke rulebook resmi, lalu di-encode bertahap ke `CardResolver`/`CardLibrary`.
+
+**Fase 6 — Polish**
+- **Reconnect & disconnect handling**: pulihkan session pemain yang terputus (saat ini koneksi yang putus hanya dibersihkan dari map, belum rejoin otomatis).
+- **Timer giliran**: batas waktu per giliran + auto end-turn.
+- **Animasi & sound**: transisi kartu/organ, efek visual, audio.
+- **Ganti placeholder** teks → aset gambar (kartu & organ di `wwwroot/assets/`).
+- **Riwayat game**: simpan log/permainan selesai (in-memory atau DB).
+- **Migrasi ke Vite + SFC** (opsional): pindah dari Vue CDN ke build step + hot-reload.
 
 ---
 
