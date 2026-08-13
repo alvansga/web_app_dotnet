@@ -20,16 +20,16 @@ public class TurnManager
             ActionsUsed = 0,
             MaxActionsPerTurn = GameRules.MaxActionsPerTurn
         };
-
-        if (GameRules.DrawAtTurnStart)
-        {
-            DrawForPlayer(playerId);
-        }
     }
 
     public void DrawForPlayer(string playerId)
     {
         var player = GetPlayer(playerId);
+
+        if (_game.Turn is not null && _game.Turn.HasDrawnThisTurn)
+        {
+            throw new GameRuleException("Already drawn this turn.");
+        }
 
         if (_game.Deck is null)
         {
@@ -45,6 +45,10 @@ public class TurnManager
         if (card is not null)
         {
             player.Hand.Add(card);
+            if (_game.Turn is not null)
+            {
+                _game.Turn.HasDrawnThisTurn = true;
+            }
         }
     }
 

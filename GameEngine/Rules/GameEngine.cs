@@ -101,6 +101,13 @@ public class OrganAttackGame
         CheckWinCondition();
     }
 
+    public void DrawCard(string playerId)
+    {
+        EnsurePlaying();
+        _turnManager.EnsureCurrentPlayer(playerId);
+        _turnManager.DrawForPlayer(playerId);
+    }
+
     public void EndTurn(string playerId)
     {
         EnsurePlaying();

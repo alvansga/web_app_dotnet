@@ -26,13 +26,35 @@ public class TurnTests
     }
 
     [Fact]
-    public void StartTurn_DrawsCardAutomatically()
+    public void StartTurn_DoesNotDrawAutomatically()
     {
         var engine = CreateStartedGame();
 
-        // Starting hand 5 + 1 drawn at turn start = 6
         var p1 = engine.Game.Players[0];
-        Assert.Equal(GameRules.StartingHandSize + 1, p1.Hand.Count);
+        Assert.Equal(GameRules.StartingHandSize, p1.Hand.Count);
+    }
+
+    [Fact]
+    public void DrawCard_AddsCardToHand()
+    {
+        var engine = CreateStartedGame();
+        var p1 = engine.Game.Players[0];
+        var before = p1.Hand.Count;
+
+        engine.DrawCard("p1");
+
+        Assert.Equal(before + 1, p1.Hand.Count);
+    }
+
+    [Fact]
+    public void DrawCard_TwiceInSameTurn_Throws()
+    {
+        var engine = CreateStartedGame();
+
+        engine.DrawCard("p1");
+
+        var ex = Assert.Throws<GameRuleException>(() => engine.DrawCard("p1"));
+        Assert.Contains("Already drawn", ex.Message);
     }
 
     [Fact]
