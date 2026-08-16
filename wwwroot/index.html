@@ -58,7 +58,7 @@
             <span class="label">{{ o.type }}</span>
             <span class="flags">
               <span v-if="o.isDestroyed" title="Destroyed">💀</span>
-              <span v-if="o.isAfflicted" title="Afflicted">❗</span>
+              <span v-if="o.isAfflicted" title="Afflicted">❗<template v-if="o.afflictionCount > 1">×{{ o.afflictionCount }}</template></span>
               <span v-if="o.isShielded" title="Shielded">🛡️</span>
             </span>
           </div>
@@ -94,7 +94,7 @@
             <span class="label">{{ o.type }}</span>
             <span class="flags">
               <span v-if="o.isDestroyed" title="Destroyed">💀</span>
-              <span v-if="o.isAfflicted" title="Afflicted">❗</span>
+              <span v-if="o.isAfflicted" title="Afflicted">❗<template v-if="o.afflictionCount > 1">×{{ o.afflictionCount }}</template></span>
               <span v-if="o.isShielded" title="Shielded">🛡️</span>
             </span>
           </div>

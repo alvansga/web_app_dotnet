@@ -43,9 +43,10 @@ public class OrganAttackGame
             throw new GameRuleException("Exactly 2 players are required to start.");
         }
 
+        var organTypes = PickRandomOrganTypes(random);
+
         foreach (var player in _game.Players)
         {
-            var organTypes = Enum.GetValues<OrganType>();
             foreach (var organ in organTypes)
             {
                 player.Organs.Add(new Organ(organ, (int)organ));
@@ -53,7 +54,7 @@ public class OrganAttackGame
         }
 
         _game.Deck = new Deck(random);
-        _game.Deck.Build(CardLibrary.BuildDeck());
+        _game.Deck.Build(CardLibrary.BuildDeck(organTypes));
 
         foreach (var player in _game.Players)
         {
@@ -112,6 +113,22 @@ public class OrganAttackGame
     {
         EnsurePlaying();
         _turnManager.EndTurn(playerId);
+    }
+
+    /// <summary>
+    /// Picks a random set of organ types for the game. The Wild organ is
+    /// always included; the rest are chosen randomly from the standard organs.
+    /// </summary>
+    private static IReadOnlyList<OrganType> PickRandomOrganTypes(Random random)
+    {
+        var selected = Enum.GetValues<OrganType>()
+            .Where(t => t != OrganType.Wild_Organ)
+            .OrderBy(_ => random.Next())
+            .Take(GameRules.OrganCount - 1)
+            .ToList();
+
+        selected.Add(OrganType.Wild_Organ);
+        return selected;
     }
 
     private void ValidateTargetSide(Card card, string playerId, string targetOwnerPlayerId)

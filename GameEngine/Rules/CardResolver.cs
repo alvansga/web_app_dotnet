@@ -45,12 +45,8 @@ public class CardResolver
             return;
         }
 
-        if (target.IsAfflicted)
-        {
-            throw new GameRuleException("Target organ is already afflicted.");
-        }
-
-        target.AddAffliction(card.AfflictionType);
+        int amount = card.AfflictionAmount > 0 ? card.AfflictionAmount : 1;
+        ApplyAfflictions(target, amount);
     }
 
     private void ResolveAttack(Card card, Organ target)
@@ -67,12 +63,38 @@ public class CardResolver
             return;
         }
 
+        // Necrosis-style attack: applies affliction counters instead of
+        // instantly destroying the organ.
+        if (card.AfflictionAmount > 0)
+        {
+            ApplyAfflictions(target, card.AfflictionAmount);
+            return;
+        }
+
+        if (target.Type == OrganType.Wild_Organ)
+        {
+            throw new GameRuleException("Wild organ cannot be destroyed by a standard attack. It needs 4 afflictions.");
+        }
+
         if (!target.IsAfflicted)
         {
             throw new GameRuleException("Attack requires the target organ to be afflicted.");
         }
 
         target.IsDestroyed = true;
+    }
+
+    private void ApplyAfflictions(Organ target, int amount)
+    {
+        for (int i = 0; i < amount; i++)
+        {
+            target.AddAffliction(AfflictionType.Afflicted);
+        }
+
+        if (target.Afflictions.Count >= target.AfflictionsToDestroy)
+        {
+            target.IsDestroyed = true;
+        }
     }
 
     private void ResolveTreatment(Organ target)

@@ -10,6 +10,12 @@ public class Organ
 
     public bool IsAfflicted => Afflictions.Count > 0;
 
+    /// <summary>
+    /// Number of affliction counters required to destroy this organ.
+    /// Standard organs die at 2; the Wild organ needs 4.
+    /// </summary>
+    public int AfflictionsToDestroy => Type == OrganType.Wild_Organ ? 4 : 2;
+
     public Organ(OrganType type, int position)
     {
         Type = type;
@@ -18,7 +24,7 @@ public class Organ
 
     public void AddAffliction(AfflictionType affliction)
     {
-        if (affliction != AfflictionType.None && !Afflictions.Contains(affliction))
+        if (affliction != AfflictionType.None)
         {
             Afflictions.Add(affliction);
         }

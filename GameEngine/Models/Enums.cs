@@ -11,11 +11,29 @@ public enum CardType
 
 public enum OrganType
 {
-    Heart,
+    Appendix,
+    Bladder,
+    Bones,
+    Bowels,
     Brain,
-    Lungs,
+    Esophagus,
+    Eyes,
+    Gallbladder,
+    Heart,
+    Kidneys,
     Liver,
-    Kidneys
+    Lungs,
+    Nose,
+    Pancreas,
+    Skin,
+    Spleen,
+    Stomach,
+    Teeth,
+    Thyroid,
+    Tongue,
+    Tonsils,
+    Trachea,
+    Wild_Organ,
 }
 
 public enum GamePhase

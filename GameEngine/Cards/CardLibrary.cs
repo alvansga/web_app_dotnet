@@ -4,15 +4,25 @@ namespace WebAppSandbox.GameEngine.Cards;
 
 public static class CardLibrary
 {
-    public static IReadOnlyList<Card> BuildDeck()
+    public const int AfflictionsPerOrgan = 2;
+    public const int AttacksPerOrgan = 2;
+    public const int TreatmentCopies = 4;
+    public const int DefenseCopies = 4;
+    public const int NecrosisCopies = 5;
+
+    /// <summary>
+    /// Builds the card library for a specific set of organ types.
+    /// The Wild organ gets affliction cards but no standard attack cards,
+    /// because it can only be destroyed by accumulating 4 afflictions.
+    /// </summary>
+    public static IReadOnlyList<Card> BuildDeck(IReadOnlyCollection<OrganType> organTypes)
     {
         var cards = new List<Card>();
-        var organTypes = Enum.GetValues<OrganType>();
 
-        // Affliction: 2 per organ type
         foreach (var organ in organTypes)
         {
-            for (int i = 0; i < 2; i++)
+            // Affliction: 2 per organ type (1 affliction counter each).
+            for (int i = 0; i < AfflictionsPerOrgan; i++)
             {
                 cards.Add(new Card
                 {
@@ -22,15 +32,19 @@ public static class CardLibrary
                     TargetSide = TargetSide.Opponent,
                     TargetOrganType = organ,
                     AfflictionType = AfflictionType.Afflicted,
+                    AfflictionAmount = 1,
                     Description = $"Afflict target's {organ}."
                 });
             }
-        }
 
-        // Attack: 2 per organ type (requires match + afflicted)
-        foreach (var organ in organTypes)
-        {
-            for (int i = 0; i < 2; i++)
+            // Wild organ cannot be destroyed by a standard attack.
+            if (organ == OrganType.Wild_Organ)
+            {
+                continue;
+            }
+
+            // Attack: 2 per organ type (requires match + afflicted).
+            for (int i = 0; i < AttacksPerOrgan; i++)
             {
                 cards.Add(new Card
                 {
@@ -44,8 +58,22 @@ public static class CardLibrary
             }
         }
 
+        // Necrosis: counts as 2 full afflictions on any organ.
+        for (int i = 0; i < NecrosisCopies; i++)
+        {
+            cards.Add(new Card
+            {
+                Id = $"necrosis-{i}",
+                Name = "Necrosis",
+                Type = CardType.Attack,
+                TargetSide = TargetSide.Opponent,
+                AfflictionAmount = 2,
+                Description = "Counts as 2 full afflictions on any organ."
+            });
+        }
+
         // Treatment: 4 generic (target self, remove affliction)
-        for (int i = 0; i < 4; i++)
+        for (int i = 0; i < TreatmentCopies; i++)
         {
             cards.Add(new Card
             {
@@ -53,12 +81,12 @@ public static class CardLibrary
                 Name = "Treatment",
                 Type = CardType.Treatment,
                 TargetSide = TargetSide.Self,
-                Description = "Remove an affliction from one of your organs."
+                Description = "Remove all afflictions from one of your organs."
             });
         }
 
         // Defense: 4 generic (target self, shield)
-        for (int i = 0; i < 4; i++)
+        for (int i = 0; i < DefenseCopies; i++)
         {
             cards.Add(new Card
             {
