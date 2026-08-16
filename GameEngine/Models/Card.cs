@@ -15,5 +15,10 @@ public class Card
     public int AfflictionAmount { get; init; }
     public required string Description { get; init; }
 
-    public bool RequiresOrganMatch => TargetOrganType.HasValue;
+    public bool RequiresOrganMatch()
+    {
+        // Cards with a specific organ printed on them must match the target organ.
+        // Wild-organ targeting exceptions live in GameEngine.ValidateOrganMatch.
+        return TargetOrganType.HasValue;
+    }
 }
