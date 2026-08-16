@@ -5,22 +5,35 @@ namespace WebAppSandbox.Tests;
 
 public class DeckTests
 {
+    private static readonly OrganType[] StandardOrgans =
+    {
+        OrganType.Heart,
+        OrganType.Brain,
+        OrganType.Lungs,
+        OrganType.Liver,
+        OrganType.Kidneys,
+    };
+
     [Fact]
     public void Build_Produces_ExpectedCardCount()
     {
         var deck = new Deck(new Random(1));
-        deck.Build(CardLibrary.BuildDeck());
+        deck.Build(CardLibrary.BuildDeck(StandardOrgans));
 
-        // 5 organs * 2 affliction + 5 organs * 2 attack + 4 treatment + 4 defense = 28
-        Assert.Equal(28, deck.DrawPile.Count);
+        int expected = StandardOrgans.Length * CardLibrary.AfflictionsPerOrgan
+                     + StandardOrgans.Length * CardLibrary.AttacksPerOrgan
+                     + CardLibrary.TreatmentCopies
+                     + CardLibrary.DefenseCopies
+                     + CardLibrary.NecrosisCopies;
+        Assert.Equal(expected, deck.DrawPile.Count);
     }
 
     [Fact]
     public void Shuffle_DoesNotChangeCardCountOrComposition()
     {
-        var expected = CardLibrary.BuildDeck();
+        var expected = CardLibrary.BuildDeck(StandardOrgans);
         var deck = new Deck(new Random(1));
-        deck.Build(CardLibrary.BuildDeck());
+        deck.Build(CardLibrary.BuildDeck(StandardOrgans));
         deck.Shuffle();
 
         Assert.Equal(expected.Count, deck.DrawPile.Count);
@@ -34,7 +47,7 @@ public class DeckTests
     public void Draw_MovesCardFromDeckToHand()
     {
         var deck = new Deck(new Random(1));
-        deck.Build(CardLibrary.BuildDeck());
+        deck.Build(CardLibrary.BuildDeck(StandardOrgans));
         var countBefore = deck.DrawPile.Count;
 
         var card = deck.Draw();
@@ -47,7 +60,7 @@ public class DeckTests
     public void Draw_WhenDrawPileEmpty_ReshufflesFromDiscard()
     {
         var deck = new Deck(new Random(1));
-        deck.Build(CardLibrary.BuildDeck());
+        deck.Build(CardLibrary.BuildDeck(StandardOrgans));
 
         // draw all cards into discard (simulate)
         int total = deck.DrawPile.Count;

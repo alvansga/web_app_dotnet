@@ -8,6 +8,11 @@ public class Card
     public TargetSide TargetSide { get; init; } = TargetSide.None;
     public OrganType? TargetOrganType { get; init; }
     public AfflictionType AfflictionType { get; init; } = AfflictionType.None;
+    /// <summary>
+    /// How many affliction counters this card applies (e.g. Necrosis applies 2).
+    /// 0 for cards that do not apply afflictions.
+    /// </summary>
+    public int AfflictionAmount { get; init; }
     public required string Description { get; init; }
 
     public bool RequiresOrganMatch => TargetOrganType.HasValue;

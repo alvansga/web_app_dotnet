@@ -5,7 +5,7 @@ public static class GameRules
     /// <summary>
     /// GameEngine rules version. Bump when the game logic changes.
     /// </summary>
-    public const string Version = "0.1.0";
+    public const string Version = "0.2.0";
 
     public const int OrganCount = 5;
     public const int MaxPlayers = 2;

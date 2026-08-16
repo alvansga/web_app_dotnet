@@ -46,30 +46,32 @@ public class VerticalSliceTests
         room.Engine.EndTurn("conn2");
         Assert.Equal("conn1", game.Turn.CurrentPlayerId);
 
-        // Force a winning position: Bob has only an afflicted Heart left.
-        foreach (var organ in bob.Organs.Where(o => o.Type != OrganType.Heart))
+        // Force a winning position: Bob has only one afflicted standard organ left.
+        var targetType = bob.Organs.First(o => o.Type != OrganType.Wild_Organ).Type;
+
+        foreach (var organ in bob.Organs.Where(o => o.Type != targetType))
         {
             organ.IsDestroyed = true;
         }
 
-        bob.Organs.First(o => o.Type == OrganType.Heart).AddAffliction(AfflictionType.Afflicted);
+        bob.Organs.First(o => o.Type == targetType).AddAffliction(AfflictionType.Afflicted);
 
         // Give Alice a matching Attack card.
         alice.Hand.Clear();
         alice.Hand.Add(new Card
         {
             Id = "attack-heart",
-            Name = "Attack Heart",
+            Name = "Attack",
             Type = CardType.Attack,
             TargetSide = TargetSide.Opponent,
-            TargetOrganType = OrganType.Heart,
-            Description = "Destroy target's afflicted Heart."
+            TargetOrganType = targetType,
+            Description = "Destroy target's afflicted organ."
         });
 
         // Play the winning card.
-        room.Engine.PlayCard("conn1", "attack-heart", "conn2", OrganType.Heart);
+        room.Engine.PlayCard("conn1", "attack-heart", "conn2", targetType);
 
-        Assert.True(bob.Organs.First(o => o.Type == OrganType.Heart).IsDestroyed);
+        Assert.True(bob.Organs.First(o => o.Type == targetType).IsDestroyed);
         Assert.Equal(GamePhase.GameOver, game.Phase);
         Assert.Equal("conn1", game.WinnerPlayerId);
     }

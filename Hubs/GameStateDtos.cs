@@ -29,6 +29,8 @@ public class OrganDto
     public bool IsDestroyed { get; init; }
     public bool IsShielded { get; init; }
     public bool IsAfflicted { get; init; }
+    public int AfflictionCount { get; init; }
+    public int AfflictionsToDestroy { get; init; }
 
     public static OrganDto From(Organ organ) => new()
     {
@@ -37,6 +39,8 @@ public class OrganDto
         IsDestroyed = organ.IsDestroyed,
         IsShielded = organ.IsShielded,
         IsAfflicted = organ.IsAfflicted,
+        AfflictionCount = organ.Afflictions.Count,
+        AfflictionsToDestroy = organ.AfflictionsToDestroy,
     };
 }
 

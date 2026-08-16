@@ -235,7 +235,7 @@ internal static class Program
 
         if (organ.IsAfflicted)
         {
-            flags.Add($"AFFLICTED({string.Join(",", organ.Afflictions)})");
+            flags.Add($"AFFLICTED x{organ.Afflictions.Count}");
         }
 
         var suffix = flags.Count > 0 ? $" [{string.Join(", ", flags)}]" : "";

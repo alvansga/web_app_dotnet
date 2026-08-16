@@ -5,7 +5,7 @@ namespace WebAppSandbox.Tests;
 
 public class CardResolverTests
 {
-    private static Card MakeCard(CardType type, OrganType? targetOrgan = null, TargetSide side = TargetSide.None)
+    private static Card MakeCard(CardType type, OrganType? targetOrgan = null, TargetSide side = TargetSide.None, int afflictionAmount = 0)
     {
         return new Card
         {
@@ -15,6 +15,7 @@ public class CardResolverTests
             TargetSide = side,
             TargetOrganType = targetOrgan,
             AfflictionType = type == CardType.Affliction ? AfflictionType.Afflicted : AfflictionType.None,
+            AfflictionAmount = afflictionAmount,
             Description = "test"
         };
     }
@@ -32,15 +33,80 @@ public class CardResolverTests
     }
 
     [Fact]
-    public void Affliction_AlreadyAfflicted_Throws()
+    public void Affliction_StandardOrgan_DiesAtTwoAfflictions()
     {
         var resolver = new CardResolver();
         var organ = new Organ(OrganType.Heart, 0);
-        organ.AddAffliction(AfflictionType.Afflicted);
         var card = MakeCard(CardType.Affliction, OrganType.Heart);
 
+        resolver.Resolve(card, organ);
+        Assert.True(organ.IsAfflicted);
+        Assert.False(organ.IsDestroyed);
+
+        resolver.Resolve(card, organ);
+
+        Assert.Equal(2, organ.Afflictions.Count);
+        Assert.True(organ.IsDestroyed);
+    }
+
+    [Fact]
+    public void Necrosis_AppliesTwoAfflictions_DestroysStandardOrgan()
+    {
+        var resolver = new CardResolver();
+        var organ = new Organ(OrganType.Heart, 0);
+        var card = MakeCard(CardType.Attack, null, TargetSide.Opponent, afflictionAmount: 2);
+
+        resolver.Resolve(card, organ);
+
+        Assert.Equal(2, organ.Afflictions.Count);
+        Assert.True(organ.IsDestroyed);
+    }
+
+    [Fact]
+    public void Necrosis_OnShieldedOrgan_ConsumesShield()
+    {
+        var resolver = new CardResolver();
+        var organ = new Organ(OrganType.Heart, 0) { IsShielded = true };
+        var card = MakeCard(CardType.Attack, null, TargetSide.Opponent, afflictionAmount: 2);
+
+        resolver.Resolve(card, organ);
+
+        Assert.False(organ.IsShielded);
+        Assert.False(organ.IsAfflicted);
+        Assert.True(resolver.ShieldConsumed);
+    }
+
+    [Fact]
+    public void WildOrgan_DiesAtFourAfflictions()
+    {
+        var resolver = new CardResolver();
+        var organ = new Organ(OrganType.Wild_Organ, 0);
+        var card = MakeCard(CardType.Affliction, OrganType.Wild_Organ);
+
+        for (int i = 0; i < 3; i++)
+        {
+            resolver.Resolve(card, organ);
+        }
+
+        Assert.False(organ.IsDestroyed);
+        Assert.Equal(3, organ.Afflictions.Count);
+
+        resolver.Resolve(card, organ);
+
+        Assert.Equal(4, organ.Afflictions.Count);
+        Assert.True(organ.IsDestroyed);
+    }
+
+    [Fact]
+    public void StandardAttack_OnWildOrgan_Throws()
+    {
+        var resolver = new CardResolver();
+        var organ = new Organ(OrganType.Wild_Organ, 0);
+        organ.AddAffliction(AfflictionType.Afflicted);
+        var card = MakeCard(CardType.Attack, OrganType.Wild_Organ);
+
         var ex = Assert.Throws<GameRuleException>(() => resolver.Resolve(card, organ));
-        Assert.Contains("already afflicted", ex.Message);
+        Assert.Contains("Wild organ", ex.Message);
     }
 
     [Fact]

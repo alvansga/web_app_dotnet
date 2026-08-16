@@ -53,15 +53,16 @@ public class GameEngineTests
         var engine = CreateStartedGame();
         var game = engine.Game;
         var p1 = game.Players[0];
+        var organType = p1.Organs.First(o => o.Type != OrganType.Wild_Organ).Type;
 
         // give p1 an opponent-only card
         var card = new Card
         {
             Id = "opp-card",
-            Name = "Attack Heart",
+            Name = "Attack",
             Type = CardType.Attack,
             TargetSide = TargetSide.Opponent,
-            TargetOrganType = OrganType.Heart,
+            TargetOrganType = organType,
             Description = "test"
         };
         p1.Hand.Clear();
@@ -70,7 +71,7 @@ public class GameEngineTests
         game.Turn.ActionsUsed = 0;
 
         var ex = Assert.Throws<GameRuleException>(() =>
-            engine.PlayCard("p1", "opp-card", "p1", OrganType.Heart));
+            engine.PlayCard("p1", "opp-card", "p1", organType));
 
         Assert.Contains("opponent", ex.Message);
     }
@@ -81,15 +82,19 @@ public class GameEngineTests
         var engine = CreateStartedGame();
         var game = engine.Game;
         var p1 = game.Players[0];
+        var p2 = game.Players[1];
+        var targetType = p2.Organs.First(o => o.Type != OrganType.Wild_Organ).Type;
+        var wrongType = Enum.GetValues<OrganType>().First(t => t != targetType);
 
         var card = new Card
         {
             Id = "brain-card",
-            Name = "Afflict Brain",
+            Name = "Afflict",
             Type = CardType.Affliction,
             TargetSide = TargetSide.Opponent,
-            TargetOrganType = OrganType.Brain,
+            TargetOrganType = wrongType,
             AfflictionType = AfflictionType.Afflicted,
+            AfflictionAmount = 1,
             Description = "test"
         };
         p1.Hand.Clear();
@@ -98,7 +103,7 @@ public class GameEngineTests
         game.Turn.ActionsUsed = 0;
 
         var ex = Assert.Throws<GameRuleException>(() =>
-            engine.PlayCard("p1", "brain-card", "p2", OrganType.Heart));
+            engine.PlayCard("p1", "brain-card", "p2", targetType));
 
         Assert.Contains("does not match", ex.Message);
     }
@@ -135,25 +140,26 @@ public class GameEngineTests
 
         var p1 = game.Players.First(p => p.Id == "p1");
         var p2 = game.Players.First(p => p.Id == "p2");
+        var targetType = p2.Organs.First(o => o.Type != OrganType.Wild_Organ).Type;
 
-        // Destroy 4 of p2's organs, leave Heart.
-        foreach (var organ in p2.Organs.Where(o => o.Type != OrganType.Heart))
+        // Destroy all of p2's organs except one.
+        foreach (var organ in p2.Organs.Where(o => o.Type != targetType))
         {
             organ.IsDestroyed = true;
         }
 
-        // Afflict p2's Heart.
-        var heart = p2.Organs.First(o => o.Type == OrganType.Heart);
-        heart.AddAffliction(AfflictionType.Afflicted);
+        // Afflict p2's remaining organ.
+        var target = p2.Organs.First(o => o.Type == targetType);
+        target.AddAffliction(AfflictionType.Afflicted);
 
-        // Give p1 an attack card for Heart.
+        // Give p1 an attack card for that organ.
         var attack = new Card
         {
             Id = "attack-heart",
-            Name = "Attack Heart",
+            Name = "Attack",
             Type = CardType.Attack,
             TargetSide = TargetSide.Opponent,
-            TargetOrganType = OrganType.Heart,
+            TargetOrganType = targetType,
             Description = "test"
         };
         p1.Hand.Clear();
@@ -162,11 +168,11 @@ public class GameEngineTests
         game.Turn!.CurrentPlayerId = "p1";
         game.Turn.ActionsUsed = 0;
 
-        engine.PlayCard("p1", "attack-heart", "p2", OrganType.Heart);
+        engine.PlayCard("p1", "attack-heart", "p2", targetType);
 
         Assert.Equal(GamePhase.GameOver, game.Phase);
         Assert.Equal("p1", game.WinnerPlayerId);
-        Assert.True(heart.IsDestroyed);
+        Assert.True(target.IsDestroyed);
     }
 
     [Fact]
@@ -177,16 +183,18 @@ public class GameEngineTests
 
         var p1 = game.Players.First(p => p.Id == "p1");
         var p2 = game.Players.First(p => p.Id == "p2");
+        var targetType = p2.Organs.First(o => o.Type != OrganType.Wild_Organ).Type;
 
-        // Setup affliction card for p1, target p2 Heart.
+        // Setup affliction card for p1, target p2's organ.
         var afflict = new Card
         {
             Id = "aff-heart",
-            Name = "Afflict Heart",
+            Name = "Afflict",
             Type = CardType.Affliction,
             TargetSide = TargetSide.Opponent,
-            TargetOrganType = OrganType.Heart,
+            TargetOrganType = targetType,
             AfflictionType = AfflictionType.Afflicted,
+            AfflictionAmount = 1,
             Description = "test"
         };
         p1.Hand.Clear();
@@ -194,8 +202,8 @@ public class GameEngineTests
         game.Turn!.CurrentPlayerId = "p1";
         game.Turn.ActionsUsed = 0;
 
-        engine.PlayCard("p1", "aff-heart", "p2", OrganType.Heart);
+        engine.PlayCard("p1", "aff-heart", "p2", targetType);
 
-        Assert.True(p2.Organs.First(o => o.Type == OrganType.Heart).IsAfflicted);
+        Assert.True(p2.Organs.First(o => o.Type == targetType).IsAfflicted);
     }
 }
