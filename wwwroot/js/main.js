@@ -64,14 +64,6 @@ createApp({
       }
     }
 
-    const organEmojiMap = {
-      Heart: '❤️',
-      Brain: '🧠',
-      Lungs: '🫁',
-      Liver: '🩸',
-      Kidneys: '🫘',
-    };
-
     const cardEmojiMap = {
       Affliction: '🦠',
       Attack: '⚔️',
@@ -80,8 +72,8 @@ createApp({
       Special: '✨',
     };
 
-    function organEmoji(o) {
-      return organEmojiMap[o.type] || '🫀';
+    function organImage() {
+      return 'assets/organs/placeholder.png';
     }
 
     function cardEmoji(c) {
@@ -205,7 +197,7 @@ createApp({
       isMyTurn,
       currentTurnName,
       winnerName,
-      organEmoji,
+      organImage,
       cardEmoji,
       isTargetable,
       createRoom,
