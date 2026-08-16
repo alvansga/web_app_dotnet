@@ -212,7 +212,7 @@ internal static class Program
 
     private static string DescribeCard(Card card)
     {
-        if (card.RequiresOrganMatch)
+        if (card.RequiresOrganMatch())
         {
             return $"{card.Name} ({card.Type} -> {card.TargetOrganType})";
         }
