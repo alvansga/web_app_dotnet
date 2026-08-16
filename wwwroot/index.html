@@ -73,10 +73,19 @@
         <div class="turn">
           <p v-if="winnerId">🏆 Pemenang: <strong>{{ winnerName }}</strong></p>
           <p v-else>Giliran: <strong>{{ currentTurnName }}</strong></p>
-          <p v-if="me && isMyTurn && !winnerId" class="hint">Kamu bisa Draw lalu main 1 kartu.</p>
+          <p v-if="me && swapMode && !winnerId" class="hint">Pilih 1–2 kartu untuk ditukar.</p>
+          <p v-else-if="me && isMyTurn && !winnerId" class="hint">Kamu bisa Draw lalu main 1 kartu.</p>
         </div>
         <div class="actions">
           <button v-if="me && isMyTurn && !winnerId" @click="drawCard" :disabled="turn && turn.hasDrawnThisTurn">Draw</button>
+          <button
+            v-if="me && canAct && !winnerId"
+            @click="toggleSwapMode"
+            :class="{ active: swapMode }">Swap</button>
+          <button
+            v-if="me && swapMode && !winnerId"
+            @click="confirmSwap"
+            :disabled="!swapCanConfirm">Confirm Swap ({{ swapSelectedIds.length }}/2)</button>
           <button v-if="me && isMyTurn && !winnerId" @click="endTurn">End Turn</button>
         </div>
       </div>
@@ -106,7 +115,7 @@
           v-for="c in hand"
           :key="c.id"
           class="card"
-          :class="{ selected: c.id === selectedCardId }"
+          :class="{ selected: c.id === selectedCardId, swapSelected: swapSelectedIds.includes(c.id) }"
           @click="clickCard(c)">
           <span class="card-type">{{ cardEmoji(c) }} {{ c.type }}</span>
           <span class="card-name">{{ c.name }}</span>

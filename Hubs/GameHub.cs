@@ -114,6 +114,23 @@ public class GameHub : Hub
         }
     }
 
+    public async Task SwapCards(IReadOnlyCollection<string> cardIds)
+    {
+        var room = GetCurrentRoom();
+
+        try
+        {
+            room.Engine.SwapCards(Context.ConnectionId, cardIds);
+        }
+        catch (GameRuleException ex)
+        {
+            throw new HubException(ex.Message);
+        }
+
+        await BroadcastPublicState(room.RoomId);
+        await BroadcastHands(room);
+    }
+
     public async Task EndTurn()
     {
         var room = GetCurrentRoom();

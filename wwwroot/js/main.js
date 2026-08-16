@@ -21,6 +21,8 @@ createApp({
       discardCount: 0,
       winnerId: null,
       selectedCardId: null,
+      swapMode: false,
+      swapSelectedIds: [],
       log: [],
       myId: null,
     });
@@ -34,6 +36,15 @@ createApp({
     const isMyTurn = computed(() =>
       state.turn && me.value && !state.winnerId &&
       state.turn.currentPlayerId === me.value.id
+    );
+
+    const canAct = computed(() =>
+      isMyTurn.value && !state.winnerId &&
+      state.turn && state.turn.actionsUsed < state.turn.maxActionsPerTurn
+    );
+
+    const swapCanConfirm = computed(() =>
+      canAct.value && state.swapSelectedIds.length >= 1 && state.swapSelectedIds.length <= 2
     );
 
     const currentTurnName = computed(() => {
@@ -132,7 +143,34 @@ createApp({
 
     function clickCard(card) {
       if (!isMyTurn.value) return;
+
+      if (state.swapMode) {
+        // Toggle card in/out of the swap selection (max 2).
+        const idx = state.swapSelectedIds.indexOf(card.id);
+        if (idx >= 0) {
+          state.swapSelectedIds.splice(idx, 1);
+        } else if (state.swapSelectedIds.length < 2) {
+          state.swapSelectedIds.push(card.id);
+        }
+        return;
+      }
+
       state.selectedCardId = state.selectedCardId === card.id ? null : card.id;
+    }
+
+    function toggleSwapMode() {
+      if (!canAct.value) return;
+      state.swapMode = !state.swapMode;
+      state.swapSelectedIds.length = 0;
+      state.selectedCardId = null;
+    }
+
+    function confirmSwap() {
+      if (!swapCanConfirm.value) return;
+      invoke('SwapCards', state.swapSelectedIds.slice());
+      state.swapMode = false;
+      state.swapSelectedIds.length = 0;
+      state.selectedCardId = null;
     }
 
     function clickOrgan(player, organ) {
@@ -203,6 +241,8 @@ createApp({
       myOrgans,
       opponentOrgans,
       isMyTurn,
+      canAct,
+      swapCanConfirm,
       currentTurnName,
       winnerName,
       organImage,
@@ -215,6 +255,8 @@ createApp({
       endTurn,
       clickCard,
       clickOrgan,
+      toggleSwapMode,
+      confirmSwap,
     };
   },
 }).mount('#app');

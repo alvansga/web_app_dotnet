@@ -109,6 +109,65 @@ public class OrganAttackGame
         _turnManager.DrawForPlayer(playerId);
     }
 
+    /// <summary>
+    /// Discards up to 2 selected cards from the player's hand, then draws the
+    /// same number of replacement cards from the deck. Consumes the turn's
+    /// action and prevents a normal draw for the rest of the turn.
+    /// </summary>
+    public void SwapCards(string playerId, IReadOnlyCollection<string> cardIds)
+    {
+        EnsurePlaying();
+        _turnManager.EnsureCurrentPlayer(playerId);
+
+        if (cardIds is null || cardIds.Count == 0)
+        {
+            throw new GameRuleException("Select at least 1 card to swap.");
+        }
+
+        if (cardIds.Count > GameRules.MaxSwapCards)
+        {
+            throw new GameRuleException($"You can swap at most {GameRules.MaxSwapCards} cards.");
+        }
+
+        if (cardIds.Distinct().Count() != cardIds.Count())
+        {
+            throw new GameRuleException("Cannot select the same card twice.");
+        }
+
+        var player = GetPlayer(playerId);
+
+        var cards = new List<Card>(cardIds.Count);
+        foreach (var id in cardIds)
+        {
+            cards.Add(player.Hand.FirstOrDefault(c => c.Id == id)
+                ?? throw new GameRuleException("Card not found in hand."));
+        }
+
+        // Discard first, then draw the same number of replacements.
+        foreach (var card in cards)
+        {
+            player.Hand.Remove(card);
+            _game.Deck!.Discard(card);
+        }
+
+        for (int i = 0; i < cards.Count; i++)
+        {
+            var drawn = _game.Deck!.Draw();
+            if (drawn is not null)
+            {
+                player.Hand.Add(drawn);
+            }
+        }
+
+        _turnManager.RecordAction(playerId);
+
+        // Swap blocks the normal draw for the rest of this turn.
+        if (_game.Turn is not null)
+        {
+            _game.Turn.HasDrawnThisTurn = true;
+        }
+    }
+
     public void EndTurn(string playerId)
     {
         EnsurePlaying();

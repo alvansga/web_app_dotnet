@@ -58,6 +58,10 @@ internal static class Program
                 case "d":
                     Safe(() => _engine.DrawCard(current.Id));
                     break;
+                case "swap":
+                case "s":
+                    HandleSwap(current);
+                    break;
                 case "end":
                 case "e":
                     Safe(() => _engine.EndTurn(current.Id));
@@ -87,10 +91,55 @@ internal static class Program
 
     private static string? Prompt(Player player)
     {
-        Console.Write($"[{player.Name}] aksi (play/draw/end/help/quit): ");
+        Console.Write($"[{player.Name}] aksi (play/draw/swap/end/help/quit): ");
         var input = Console.ReadLine()?.Trim().ToLowerInvariant();
         Console.WriteLine();
         return input;
+    }
+
+    private static void HandleSwap(Player player)
+    {
+        var hand = player.Hand;
+        if (hand.Count == 0)
+        {
+            Console.WriteLine("Tangan kosong.");
+            return;
+        }
+
+        Console.WriteLine("Pilih 1 sampai 2 kartu untuk ditukar (pisahkan pakai spasi):");
+        for (int i = 0; i < hand.Count; i++)
+        {
+            Console.WriteLine($"  [{i + 1}] {DescribeCard(hand[i])}");
+        }
+
+        Console.Write("Nomor kartu: ");
+        var input = Console.ReadLine()?.Trim();
+        if (string.IsNullOrWhiteSpace(input))
+        {
+            Console.WriteLine("Tidak ada kartu yang dipilih.");
+            return;
+        }
+
+        var parts = input.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        if (parts.Length == 0 || parts.Length > 2)
+        {
+            Console.WriteLine("Pilih 1 sampai 2 kartu.");
+            return;
+        }
+
+        var selected = new List<Card>();
+        foreach (var part in parts)
+        {
+            if (!int.TryParse(part, out var index) || index < 1 || index > hand.Count)
+            {
+                Console.WriteLine($"Nomor kartu tidak valid: {part}");
+                return;
+            }
+
+            selected.Add(hand[index - 1]);
+        }
+
+        Safe(() => _engine.SwapCards(player.Id, selected.Select(c => c.Id).ToArray()));
     }
 
     private static void HandlePlay(Player player)
@@ -247,6 +296,7 @@ internal static class Program
         Console.WriteLine("Perintah tersedia:");
         Console.WriteLine("  play  (p)  - mainkan kartu dari tangan");
         Console.WriteLine("  draw  (d)  - ambil satu kartu dari deck");
+        Console.WriteLine("  swap  (s)  - buang 1-2 kartu lalu tarik penggantinya");
         Console.WriteLine("  end   (e)  - akhiri giliran");
         Console.WriteLine("  help  (h)  - tampilkan bantuan ini");
         Console.WriteLine("  quit  (q)  - keluar dari permainan");

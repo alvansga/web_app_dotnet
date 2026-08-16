@@ -176,6 +176,13 @@ button:disabled { background: #334155; cursor: not-allowed; }
   border-color: #4ade80;
   box-shadow: 0 0 0 3px rgba(74, 222, 128, 0.25);
 }
+.card.swapSelected {
+  border-color: #f59e0b;
+  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.25);
+}
+.actions button.active {
+  background: #b45309;
+}
 .card-type { display: block; font-size: 0.85rem; color: #94a3b8; }
 .card-name { display: block; font-weight: 600; margin: 0.2rem 0; }
 .card-desc { display: block; font-size: 0.75rem; color: #94a3b8; }
