@@ -54,7 +54,7 @@
             class="organ"
             :class="{ destroyed: o.isDestroyed, afflicted: o.isAfflicted, shielded: o.isShielded, targetable: isTargetable(opponent, o) }"
             @click="clickOrgan(opponent, o)">
-            <img class="organ-img" src="assets/organs/placeholder.png" :alt="o.type" />
+            <img class="organ-img" :src="organImage(o)" :alt="o.type" />
             <span class="label">{{ o.type }}</span>
             <span class="flags">
               <span v-if="o.isDestroyed" title="Destroyed">💀</span>
@@ -90,7 +90,7 @@
             class="organ"
             :class="{ destroyed: o.isDestroyed, afflicted: o.isAfflicted, shielded: o.isShielded, targetable: isTargetable(me, o) }"
             @click="clickOrgan(me, o)">
-            <img class="organ-img" src="assets/organs/placeholder.png" :alt="o.type" />
+            <img class="organ-img" :src="organImage(o)" :alt="o.type" />
             <span class="label">{{ o.type }}</span>
             <span class="flags">
               <span v-if="o.isDestroyed" title="Destroyed">💀</span>

@@ -72,8 +72,16 @@ createApp({
       Special: '✨',
     };
 
-    function organImage() {
-      return 'assets/organs/placeholder.png';
+    function organImage(o) {
+      const name = (o.type || '').toLowerCase();
+      const map = {
+        heart: 'heart.png',
+        brain: 'brain.png',
+        lungs: 'lungs.png',
+        liver: 'liver.png',
+        kidneys: 'kidneys.png',
+      };
+      return `assets/organs/${map[name] || 'placeholder.png'}`;
     }
 
     function cardEmoji(c) {
