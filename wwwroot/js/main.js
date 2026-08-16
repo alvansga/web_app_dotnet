@@ -90,6 +90,7 @@ createApp({
         brain: 'brain.png',
         lungs: 'lungs.png',
         liver: 'liver.png',
+        teeth: 'teeth.png',
         kidneys: 'kidneys.png',
       };
       return `assets/organs/${map[name] || 'placeholder.png'}`;
