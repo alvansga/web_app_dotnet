@@ -1,5 +1,4 @@
-You are entirely correct. The core deck contains a massive array of individual afflictions.
-The exhaustive and complete list of every single card in the official standard edition of Organ Attack! (compiled directly from the [BoardGameGeek Card Index](https://boardgamegeek.com/thread/3465236/card-list)) provides the true full scope of the game. [1] 
+
 ------------------------------
 ## 🫁 The Complete Organ Cards (24)
 These are the vital body elements placed on the board. [1] 
@@ -134,23 +133,3 @@ These cards alter the field rules, manipulate players' hands, counter incoming a
 * POISONED!: An instant-trigger trap card. If you draw it from the deck, you must immediately play it and sacrifice one of your own healthy organs. [10] 
 * Necrosis! (5 copies): The ultimate attack. Counts as 2 full afflictions at once, immediately killing any standard organ card on the spot. [10, 17] 
 * 
-
-Now that you have the complete card list, would you like to explore how the deck mechanics shift when playing the high-chaos Expansion Packs?
-
-[1] [https://boardgamegeek.com](https://boardgamegeek.com/thread/3465236/card-list)
-[2] [https://boardgamegeek.com](https://boardgamegeek.com/thread/3465236/card-list)
-[3] [https://www.youtube.com](https://www.youtube.com/watch?v=vd8QnWOGBcE)
-[4] [https://www.reddit.com](https://www.reddit.com/r/KingdomHearts/comments/1q8ke8t/so_what_exactly_is_the_lingering_will/)
-[5] [https://desktopgames.com.ua](https://desktopgames.com.ua/games/7601/OARules.pdf)
-[6] [https://boardgamegeek.com](https://boardgamegeek.com/thread/3465236/card-list)
-[7] [https://boardgamegeek.com](https://boardgamegeek.com/thread/3465236/card-list)
-[8] [https://www.youtube.com](https://www.youtube.com/watch?v=vd8QnWOGBcE)
-[9] [https://boardgamegeek.com](https://boardgamegeek.com/thread/3465236/card-list)
-[10] [https://boardgamegeek.com](https://boardgamegeek.com/thread/3465236/card-list)
-[11] [https://memorycartridge.wordpress.com](https://memorycartridge.wordpress.com/tag/organ-attack/)
-[12] [https://officialgamerules.org](https://officialgamerules.org/game-rules/organ-attack/)
-[13] [https://www.youtube.com](https://www.youtube.com/watch?v=xLAnSFRG_74)
-[14] [https://www.instagram.com](https://www.instagram.com/reel/DSLQUgAidtG/)
-[15] [https://www.youtube.com](https://www.youtube.com/watch?v=vd8QnWOGBcE)
-[16] [https://www.facebook.com](https://www.facebook.com/MindGamesVic/posts/get-organ-attack-this-christmas-a-fast-paced-chaotic-game-thats-perfect-for-laug/1461561972637317/)
-[17] [https://www.youtube.com](https://www.youtube.com/watch?v=vd8QnWOGBcE&t=68)
