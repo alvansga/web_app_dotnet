@@ -16,18 +16,6 @@ public static class CardLibrary
     /// because it can only be destroyed by accumulating 4 afflictions.
     /// </summary>
     public static IReadOnlyList<Card> BuildDeck(IReadOnlyCollection<OrganType> organTypes)
-    public const int AfflictionsPerOrgan = 2;
-    public const int AttacksPerOrgan = 2;
-    public const int TreatmentCopies = 4;
-    public const int DefenseCopies = 4;
-    public const int NecrosisCopies = 5;
-
-    /// <summary>
-    /// Builds the card library for a specific set of organ types.
-    /// The Wild organ gets affliction cards but no standard attack cards,
-    /// because it can only be destroyed by accumulating 4 afflictions.
-    /// </summary>
-    public static IReadOnlyList<Card> BuildDeck(IReadOnlyCollection<OrganType> organTypes)
     {
         var cards = new List<Card>();
 
@@ -87,7 +75,6 @@ public static class CardLibrary
 
         // Treatment: 4 generic (target self, remove affliction)
         for (int i = 0; i < TreatmentCopies; i++)
-        for (int i = 0; i < TreatmentCopies; i++)
         {
             cards.Add(new Card
             {
@@ -96,12 +83,10 @@ public static class CardLibrary
                 Type = CardType.Treatment,
                 TargetSide = TargetSide.Self,
                 Description = "Remove all afflictions from one of your organs."
-                Description = "Remove all afflictions from one of your organs."
             });
         }
 
         // Defense: 4 generic (target self, shield)
-        for (int i = 0; i < DefenseCopies; i++)
         for (int i = 0; i < DefenseCopies; i++)
         {
             cards.Add(new Card
