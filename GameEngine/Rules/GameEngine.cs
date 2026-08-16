@@ -118,16 +118,17 @@ public class OrganAttackGame
     /// <summary>
     /// Picks a random set of organ types for the game. The Wild organ is
     /// always included; the rest are chosen randomly from the standard organs.
+    /// MODIFIED: wild organ will be include randomly, not always. The number of organs is determined by GameRules.OrganCount.
     /// </summary>
     private static IReadOnlyList<OrganType> PickRandomOrganTypes(Random random)
     {
         var selected = Enum.GetValues<OrganType>()
-            .Where(t => t != OrganType.Wild_Organ)
+            // .Where(t => t != OrganType.Wild_Organ)
             .OrderBy(_ => random.Next())
-            .Take(GameRules.OrganCount - 1)
+            .Take(GameRules.OrganCount)
             .ToList();
 
-        selected.Add(OrganType.Wild_Organ);
+        // selected.Add(OrganType.Wild_Organ);
         return selected;
     }
 
@@ -155,7 +156,14 @@ public class OrganAttackGame
 
     private void ValidateOrganMatch(Card card, Organ targetOrgan)
     {
-        if (card.RequiresOrganMatch && card.TargetOrganType != targetOrgan.Type)
+        // The Wild organ can be afflicted by any affliction card,
+        // regardless of the organ type printed on the card.
+        if (targetOrgan.Type == OrganType.Wild_Organ && card.Type == CardType.Affliction)
+        {
+            return;
+        }
+
+        if (card.RequiresOrganMatch() && card.TargetOrganType != targetOrgan.Type)
         {
             throw new GameRuleException("Card's organ type does not match the target.");
         }

@@ -109,6 +109,43 @@ public class GameEngineTests
     }
 
     [Fact]
+    public void PlayCard_AfflictionCard_CanAfflictWildOrgan()
+    {
+        var engine = CreateStartedGame();
+        var game = engine.Game;
+
+        var p1 = game.Players.First(p => p.Id == "p1");
+        var p2 = game.Players.First(p => p.Id == "p2");
+
+        // Ensure p2 has exactly one Wild organ to target.
+        p2.Organs.RemoveAll(o => o.Type == OrganType.Wild_Organ);
+        p2.Organs.Add(new Organ(OrganType.Wild_Organ, 999));
+
+        // An affliction card printed for a different organ (Heart) must still
+        // be able to afflict the Wild organ.
+        var afflict = new Card
+        {
+            Id = "aff-heart",
+            Name = "Afflict Heart",
+            Type = CardType.Affliction,
+            TargetSide = TargetSide.Opponent,
+            TargetOrganType = OrganType.Heart,
+            AfflictionType = AfflictionType.Afflicted,
+            AfflictionAmount = 1,
+            Description = "test"
+        };
+        p1.Hand.Clear();
+        p1.Hand.Add(afflict);
+        game.Turn!.CurrentPlayerId = "p1";
+        game.Turn.ActionsUsed = 0;
+
+        engine.PlayCard("p1", "aff-heart", "p2", OrganType.Wild_Organ);
+
+        var wild = p2.Organs.First(o => o.Type == OrganType.Wild_Organ);
+        Assert.True(wild.IsAfflicted);
+    }
+
+    [Fact]
     public void PlayCard_NotInHand_Throws()
     {
         var engine = CreateStartedGame();

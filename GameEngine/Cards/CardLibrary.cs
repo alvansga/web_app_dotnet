@@ -21,6 +21,13 @@ public static class CardLibrary
 
         foreach (var organ in organTypes)
         {
+            // Wild organ cannot be destroyed by a standard attack.
+            // MODIFIED: Wild organ can be destroyed by any standard attack or affliction, but it requires 4 afflictions to destroy it. So we will not add standard attack cards for the wild organ.
+            if (organ == OrganType.Wild_Organ)
+            {
+                continue;
+            }
+
             // Affliction: 2 per organ type (1 affliction counter each).
             for (int i = 0; i < AfflictionsPerOrgan; i++)
             {
@@ -35,12 +42,6 @@ public static class CardLibrary
                     AfflictionAmount = 1,
                     Description = $"Afflict target's {organ}."
                 });
-            }
-
-            // Wild organ cannot be destroyed by a standard attack.
-            if (organ == OrganType.Wild_Organ)
-            {
-                continue;
             }
 
             // Attack: 2 per organ type (requires match + afflicted).
