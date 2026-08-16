@@ -43,18 +43,20 @@ public class OrganAttackGame
             throw new GameRuleException("Exactly 2 players are required to start.");
         }
 
-        var organTypes = PickRandomOrganTypes(random);
+        var allOrganTypes = new List<OrganType>();
 
         foreach (var player in _game.Players)
         {
+            var organTypes = PickRandomOrganTypes(random);
             foreach (var organ in organTypes)
             {
                 player.Organs.Add(new Organ(organ, (int)organ));
             }
+            allOrganTypes.AddRange(organTypes);
         }
 
         _game.Deck = new Deck(random);
-        _game.Deck.Build(CardLibrary.BuildDeck(organTypes));
+        _game.Deck.Build(CardLibrary.BuildDeck(allOrganTypes));
 
         foreach (var player in _game.Players)
         {
