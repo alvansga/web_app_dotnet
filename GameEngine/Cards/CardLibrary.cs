@@ -156,103 +156,103 @@ public static class CardLibrary
     private static readonly IReadOnlyList<SpecificAffliction> SpecificAfflictions = new List<SpecificAffliction>
     {
         // Appendix
-        new("Appendicitis!", "Usus buntu membengkak, rasanya kayak ada bom waktu di perut bawah kanan.", OrganType.Appendix),
-        new("Ruptured Appendix!", "Usus buntu meledak dan menyebarkan bakteri jahat ke seluruh area perut.", OrganType.Appendix),
+        new("Appendicitis!", "Usus buntu membengkak, rasanya kayak ada bom waktu di perut bawah kanan. Target: Appendix", OrganType.Appendix),
+        new("Ruptured Appendix!", "Usus buntu meledak dan menyebarkan bakteri jahat ke seluruh area perut. Target: Appendix", OrganType.Appendix),
 
         // Bladder
-        new("Overactive Bladder!", "Kandung kemih terlalu sensitif, baru minum sedikit bawaannya mau beser terus.", OrganType.Bladder),
-        new("UTI!", "Bakteri jahat nongkrong di saluran kencing, bikin sensasi buang air kecil rasanya perih menari-nari.", OrganType.Bladder),
+        new("Overactive Bladder!", "Kandung kemih terlalu sensitif, baru minum sedikit bawaannya mau beser terus. Target: Bladder", OrganType.Bladder),
+        new("UTI!", "Bakteri jahat nongkrong di saluran kencing, bikin sensasi buang air kecil rasanya perih menari-nari. Target: Bladder", OrganType.Bladder),
 
         // Bones
-        new("Fracture!", "Tulang kamu retak atau patah gara-gara sok-sokan jadi atraksi stuntman.", OrganType.Bones),
-        new("Osteoporosis", "Tulang kamu pengeroposan, keroposnya bikin gampang retak kayak kerupuk.", OrganType.Bones),
+        new("Fracture!", "Tulang kamu retak atau patah gara-gara sok-sokan jadi atraksi stuntman. Target: Bones", OrganType.Bones),
+        new("Osteoporosis", "Tulang kamu pengeroposan, keroposnya bikin gampang retak kayak kerupuk. Target: Bones", OrganType.Bones),
 
         // Bowels
-        new("Crohn's!", "Saluran pencernaan peradangan hebat, bikin kamu bolak-balik ke toilet kayak latihan maraton.", OrganType.Bowels),
-        new("Day-Old Burrito!", "Makanan kemarin malam yang nekat dimakan, berujung bencana dahsyat di dalam perut.", OrganType.Bowels),
-        new("IBS-d!", "Perut mules mendadak yang bikin kamu ahli memetakan posisi toilet umum terdekat.", OrganType.Bowels),
+        new("Crohn's!", "Saluran pencernaan peradangan hebat, bikin kamu bolak-balik ke toilet kayak latihan maraton. Target: Bowels", OrganType.Bowels),
+        new("Day-Old Burrito!", "Makanan kemarin malam yang nekat dimakan, berujung bencana dahsyat di dalam perut. Target: Bowels", OrganType.Bowels),
+        new("IBS-d!", "Perut mules mendadak yang bikin kamu ahli memetakan posisi toilet umum terdekat. Target: Bowels", OrganType.Bowels),
 
         // Brain
-        new("Multiple Sclerosis!", "Kabel saraf di otak korsleting, bikin sinyal dari otak ke tubuh sering lag.", OrganType.Brain),
-        new("Narcolepsy!", "Otak kamu mendadak nge-brik dan bikin ketiduran di mana saja tanpa permisi.", OrganType.Brain, Copies: 2),
-        new("Stroke!", "Pasokan darah ke otak mendadak terputus, bikin sistem pusat tubuh mendadak down.", OrganType.Brain),
+        new("Multiple Sclerosis!", "Kabel saraf di otak korsleting, bikin sinyal dari otak ke tubuh sering lag. Target: Brain", OrganType.Brain),
+        new("Narcolepsy!", "Otak kamu mendadak nge-brik dan bikin ketiduran di mana saja tanpa permisi. Target: Brain", OrganType.Brain, Copies: 2),
+        new("Stroke!", "Pasokan darah ke otak mendadak terputus, bikin sistem pusat tubuh mendadak down. Target: Brain", OrganType.Brain),
 
         // Esophagus
-        new("Acid Reflux!", "Asam lambung naik bikin tenggorokan kerasa kayak kejatuhan lava panas.", OrganType.Esophagus),
-        new("Esophageal Stricture!", "Kerongkongan menyempit, bikin makanan berasa kayak kejebak macet sebelum nyampe lambung.", OrganType.Esophagus),
-        new("Heartburn!", "Dada kerasa terbakar hebat gara-gara asam lambung salah jalan naik ke atas.", OrganType.Esophagus),
+        new("Acid Reflux!", "Asam lambung naik bikin tenggorokan kerasa kayak kejatuhan lava panas. Target: Esophagus", OrganType.Esophagus),
+        new("Esophageal Stricture!", "Kerongkongan menyempit, bikin makanan berasa kayak kejebak macet sebelum nyampe lambung. Target: Esophagus", OrganType.Esophagus),
+        new("Heartburn!", "Dada kerasa terbakar hebat gara-gara asam lambung salah jalan naik ke atas. Target: Esophagus", OrganType.Esophagus),
 
         // Eyes
-        new("Conjunctivitis!", "Mata belekan dan merah membara, bikin kamu kelihatan kayak mata-mata alien.", OrganType.Eyes),
-        new("Foreign Object in the Eye!", "Debu sekecil debu atom masuk mata, tapi sakitnya serasa kemasukan kelapa.", OrganType.Eyes),
-        new("Glaucoma!", "Tekanan di bola mata meningkat, bikin pandangan menyempit kayak ngintip lewat lubang kunci.", OrganType.Eyes),
+        new("Conjunctivitis!", "Mata belekan dan merah membara, bikin kamu kelihatan kayak mata-mata alien. Target: Eyes", OrganType.Eyes),
+        new("Foreign Object in the Eye!", "Debu sekecil debu atom masuk mata, tapi sakitnya serasa kemasukan kelapa. Target: Eyes", OrganType.Eyes),
+        new("Glaucoma!", "Tekanan di bola mata meningkat, bikin pandangan menyempit kayak ngintip lewat lubang kunci. Target: Eyes", OrganType.Eyes),
 
         // Gallbladder
-        new("Biliary Dyskinesia!", "Kantung empedu kamu mendadak malas kerja dan menolak buat meremas asam empedu.", OrganType.Gallbladder),
-        new("Gallstones!", "Cairan empedu mengeras jadi kerikil padat yang nyangkut di saluran pencernaan.", OrganType.Gallbladder),
+        new("Biliary Dyskinesia!", "Kantung empedu kamu mendadak malas kerja dan menolak buat meremas asam empedu. Target: Gallbladder", OrganType.Gallbladder),
+        new("Gallstones!", "Cairan empedu mengeras jadi kerikil padat yang nyangkut di saluran pencernaan. Target: Gallbladder", OrganType.Gallbladder),
 
         // Heart
-        new("Arrhythmia!", "Jantung kamu ketukannya gak beraturan, serasa lagi nyetel musik heavy metal di dalam dada.", OrganType.Heart),
-        new("Heart Attack!", "Jantung mendadak kena shock karena aliran darah kebalap sumbatan lemak.", OrganType.Heart),
+        new("Arrhythmia!", "Jantung kamu ketukannya gak beraturan, serasa lagi nyetel musik heavy metal di dalam dada. Target: Heart", OrganType.Heart),
+        new("Heart Attack!", "Jantung mendadak kena shock karena aliran darah kebalap sumbatan lemak. Target: Heart", OrganType.Heart),
 
         // Kidneys
-        new("Calcium Stones!", "Ginjalmu iseng bikin koleksi batu akik dari endapan kalsium yang rasanya mules bukan main.", OrganType.Kidneys),
+        new("Calcium Stones!", "Ginjalmu iseng bikin koleksi batu akik dari endapan kalsium yang rasanya mules bukan main. Target: Kidneys", OrganType.Kidneys),
 
         // Liver
-        new("Cirrhosis!", "Hati kamu kapalan dan mengeras karena capek kebanyakan kerja keras memproses racun.", OrganType.Liver),
-        new("Fatty Liver!", "Hati kamu ketimbun lemak, penanda kurang gerak dan kebanyakan makan yang enak-enak.", OrganType.Liver),
+        new("Cirrhosis!", "Hati kamu kapalan dan mengeras karena capek kebanyakan kerja keras memproses racun. Target: Liver", OrganType.Liver),
+        new("Fatty Liver!", "Hati kamu ketimbun lemak, penanda kurang gerak dan kebanyakan makan yang enak-enak. Target: Liver", OrganType.Liver),
 
         // Lungs
-        new("Asthma!", "Sensasi bernapas kayak pake sedotan es teh yang kejepit: bengek dan ngos-ngosan.", OrganType.Lungs),
-        new("Cystic Fibrosis!", "Lendir tubuh mendadak tebal dan lengket, sampai organ pernapasan kerasa penuh lem.", OrganType.Lungs),
+        new("Asthma!", "Sensasi bernapas kayak pake sedotan es teh yang kejepit: bengek dan ngos-ngosan. Target: Lungs", OrganType.Lungs),
+        new("Cystic Fibrosis!", "Lendir tubuh mendadak tebal dan lengket, sampai organ pernapasan kerasa penuh lem. Target: Lungs", OrganType.Lungs),
 
         // Muscles
-        new("Muscle Contusion!", "Otot kamu kebentur keras sampai lebam kebiruan dan pegal-pegal.", OrganType.Muscles),
-        new("Muscular Dystrophy!", "Otot-otot tubuh pelan-pelan melemah dan kehilangan kekuatannya untuk beraktivitas.", OrganType.Muscles),
+        new("Muscle Contusion!", "Otot kamu kebentur keras sampai lebam kebiruan dan pegal-pegal. Target: Muscles", OrganType.Muscles),
+        new("Muscular Dystrophy!", "Otot-otot tubuh pelan-pelan melemah dan kehilangan kekuatannya untuk beraktivitas. Target: Muscles", OrganType.Muscles),
 
         // Nose
-        new("Common Cold!", "Penyakit langganan sejuta umat yang bikin kamu jadi pabrik ingus berjalan.", OrganType.Nose),
-        new("Congestion!", "Hidung tersumbat sebelah, dijamin bikin kamu menyesal karena pernah meremehkan indahnya bernapas lega.", OrganType.Nose),
-        new("Nosebleed!", "Pembuluh darah di hidung pecah, bikin kamu ngeluarin darah kayak adegan drama anime.", OrganType.Nose),
+        new("Common Cold!", "Penyakit langganan sejuta umat yang bikin kamu jadi pabrik ingus berjalan. Target: Nose", OrganType.Nose),
+        new("Congestion!", "Hidung tersumbat sebelah, dijamin bikin kamu menyesal karena pernah meremehkan indahnya bernapas lega. Target: Nose", OrganType.Nose),
+        new("Nosebleed!", "Pembuluh darah di hidung pecah, bikin kamu ngeluarin darah kayak adegan drama anime. Target: Nose", OrganType.Nose),
 
         // Pancreas
-        new("Diabetes! Type 1", "Pankreas kamu mogok kerja dan berhenti produksi insulin, jadinya gula darah naik kelas.", OrganType.Pancreas),
+        new("Diabetes! Type 1", "Pankreas kamu mogok kerja dan berhenti produksi insulin, jadinya gula darah naik kelas. Target: Pancreas", OrganType.Pancreas),
 
         // Skin
-        new("Acne!", "Bisul kecil di wajah yang selalu muncul pas kamu mau foto album atau first date.", OrganType.Skin),
-        new("Psoriasis!", "Kulit beregenerasi kelewat cepat, bikin bersisik dan gatal tiada tara.", OrganType.Skin),
-        new("Shingles!", "Cacar ular yang bikin kulit muncul ruam melepuh dan rasanya panas kayak disengat lebah.", OrganType.Skin),
+        new("Acne!", "Bisul kecil di wajah yang selalu muncul pas kamu mau foto album atau first date. Target: Skin", OrganType.Skin),
+        new("Psoriasis!", "Kulit beregenerasi kelewat cepat, bikin bersisik dan gatal tiada tara. Target: Skin", OrganType.Skin),
+        new("Shingles!", "Cacar ular yang bikin kulit muncul ruam melepuh dan rasanya panas kayak disengat lebah. Target: Skin", OrganType.Skin),
 
         // Spleen
-        new("Hypersplenism!", "Limpa kamu terlalu hiperaktif sampai-sampai sel darah yang sehat pun ikut disikat.", OrganType.Spleen),
-        new("Lacerated Spleen!", "Limpa kamu robek kena hantaman keras, bikin pendarahan di dalam perut.", OrganType.Spleen),
+        new("Hypersplenism!", "Limpa kamu terlalu hiperaktif sampai-sampai sel darah yang sehat pun ikut disikat. Target: Spleen", OrganType.Spleen),
+        new("Lacerated Spleen!", "Limpa kamu robek kena hantaman keras, bikin pendarahan di dalam perut. Target: Spleen", OrganType.Spleen),
 
         // Stomach
-        new("Ulcer!", "Dinding lambung kamu lecet dan borokan kena kikis asam lambung sendiri.", OrganType.Stomach),
+        new("Ulcer!", "Dinding lambung kamu lecet dan borokan kena kikis asam lambung sendiri. Target: Stomach", OrganType.Stomach),
 
         // Teeth
-        new("Cavity!", "Kamu malas sikat gigi, akhirnya bakteri bikin tempat nongkrong permanen di gigimu.", OrganType.Teeth),
-        new("Enamel Erosion!", "Lapisan pelindung gigi terkikis habis gara-gara hobi minum yang asam-asam.", OrganType.Teeth),
+        new("Cavity!", "Kamu malas sikat gigi, akhirnya bakteri bikin tempat nongkrong permanen di gigimu. Target: Teeth", OrganType.Teeth),
+        new("Enamel Erosion!", "Lapisan pelindung gigi terkikis habis gara-gara hobi minum yang asam-asam. Target: Teeth", OrganType.Teeth),
 
         // Thyroid
-        new("Hypothyroidism!", "Kelenjar tiroid kamu mager parah, bikin metabolisme tubuh berjalan kayak siput.", OrganType.Thyroid, Copies: 2),
+        new("Hypothyroidism!", "Kelenjar tiroid kamu mager parah, bikin metabolisme tubuh berjalan kayak siput. Target: Thyroid", OrganType.Thyroid, Copies: 2),
 
         // Tongue
-        new("Inflamed Taste Bud", "Lidah kamu bengkak dan perih gara-gara keseringan kegigit sendiri pas makan.", OrganType.Tongue),
+        new("Inflamed Taste Bud", "Lidah kamu bengkak dan perih gara-gara keseringan kegigit sendiri pas makan. Target: Tongue", OrganType.Tongue),
 
         // Tonsils
-        new("Chronic Strep Throat!", "Tenggorokan rasanya kayak diamplas tiap kali nelan ludah akibat bakteri membandel.", OrganType.Tonsils),
-        new("Tonsillitis!", "Amandel kamu membengkak merah dan siap memblokir saluran tenggorokan.", OrganType.Tonsils),
+        new("Chronic Strep Throat!", "Tenggorokan rasanya kayak diamplas tiap kali nelan ludah akibat bakteri membandel. Target: Tonsils", OrganType.Tonsils),
+        new("Tonsillitis!", "Amandel kamu membengkak merah dan siap memblokir saluran tenggorokan. Target: Tonsils", OrganType.Tonsils),
 
         // Trachea
-        new("Tracheitis!", "Batang tenggorokan kena infeksi, bikin batuk kamu bunyinya nyaring dan menyiksa.", OrganType.Trachea),
+        new("Tracheitis!", "Batang tenggorokan kena infeksi, bikin batuk kamu bunyinya nyaring dan menyiksa. Target: Trachea", OrganType.Trachea),
 
         // Multi-target afflictions
-        new("Hepatosplenomegaly!", "Hati dan limpa kamu kompak membengkak barengan karena ada infeksi berat.",
+        new("Hepatosplenomegaly!", "Hati dan limpa kamu kompak membengkak barengan karena ada infeksi berat. Target: Liver, Spleen",
             TargetOrganTypes: new[] { OrganType.Liver, OrganType.Spleen }),
-        new("Walking Pneumonia", "Paru-paru kamu kena infeksi ringan, masih bisa jalan-jalan tapi sambil batuk serak tanpa henti.",
+        new("Walking Pneumonia", "Paru-paru kamu kena infeksi ringan, masih bisa jalan-jalan tapi sambil batuk serak tanpa henti. Target: Lungs, Pancreas",
             TargetOrganTypes: new[] { OrganType.Lungs, OrganType.Pancreas }),
-        new("Vomit", "Kamu muntah-muntah hebat sampai tenggorokan perih dan asam melintasi mulut.",
+        new("Vomit", "Kamu muntah-muntah hebat sampai tenggorokan perih dan asam melintasi mulut. Target: Stomach, Esophagus, Tongue, Teeth",
             TargetOrganTypes: new[] { OrganType.Stomach, OrganType.Esophagus, OrganType.Tongue, OrganType.Teeth }),
     };
 
