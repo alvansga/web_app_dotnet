@@ -464,6 +464,9 @@ public class GameEngineTests
         Assert.Null(game.PendingAttack);
         Assert.False(targetOrgan.IsAfflicted);
         Assert.DoesNotContain(boost, p2.Hand);
+
+        // The defender draws a replacement so their hand stays full.
+        Assert.Single(p2.Hand);
     }
 
     [Fact]

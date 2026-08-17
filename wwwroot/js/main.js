@@ -211,13 +211,10 @@ createApp({
     }
 
     function clickCard(card) {
-      // Instants are played via the blocking prompt, not the normal click flow.
-      if (card.specialCard === 'ImmunityBoost') return;
-
       if (!isMyTurn.value) return;
 
       if (state.swapMode) {
-        // Toggle card in/out of the swap selection (max 2).
+        // Swap mode may select any card, including Instants.
         const idx = state.swapSelectedIds.indexOf(card.id);
         if (idx >= 0) {
           state.swapSelectedIds.splice(idx, 1);
@@ -226,6 +223,9 @@ createApp({
         }
         return;
       }
+
+      // Instants are played via the blocking prompt, not the normal click flow.
+      if (card.specialCard === 'ImmunityBoost') return;
 
       state.selectedCardId = state.selectedCardId === card.id ? null : card.id;
     }

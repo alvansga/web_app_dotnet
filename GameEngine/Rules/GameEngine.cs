@@ -152,6 +152,27 @@ public class OrganAttackGame
         _game.Deck!.Discard(card);
 
         ResolvePendingAttack(pending.Id, blocked: true);
+
+        RefillInstantReplacement(player);
+    }
+
+    /// <summary>
+    /// Draws a single replacement card after a successful Instant play so the
+    /// defender's hand size stays at the maximum. Does not touch the turn's
+    /// draw state because Instants can be played out of turn.
+    /// </summary>
+    private void RefillInstantReplacement(Player player)
+    {
+        if (_game.Deck is null || player.Hand.Count >= GameRules.MaxHandSize)
+        {
+            return;
+        }
+
+        var drawn = _game.Deck.Draw();
+        if (drawn is not null)
+        {
+            player.Hand.Add(drawn);
+        }
     }
 
     /// <summary>
