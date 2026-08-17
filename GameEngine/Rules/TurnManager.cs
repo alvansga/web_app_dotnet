@@ -38,7 +38,8 @@ public class TurnManager
 
         if (player.Hand.Count >= GameRules.MaxHandSize)
         {
-            return; // hand penuh, skip draw
+            throw new GameRuleException(
+                $"Hand is already full (max {GameRules.MaxHandSize} cards).");
         }
 
         var card = _game.Deck.Draw();

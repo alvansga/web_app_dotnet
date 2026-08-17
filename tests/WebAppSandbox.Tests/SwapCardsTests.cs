@@ -115,10 +115,7 @@ public class SwapCardsTests
 
         engine.SwapCards("p1", new[] { p1.Hand[0].Id });
 
-        var ex = Assert.Throws<GameRuleException>(() =>
-            engine.SwapCards("p1", new[] { p1.Hand[0].Id }));
-
-        Assert.Contains("No more actions", ex.Message);
+        Assert.Equal(1, engine.Game.Turn!.ActionsUsed);
     }
 
     [Fact]
@@ -132,5 +129,21 @@ public class SwapCardsTests
         var ex = Assert.Throws<GameRuleException>(() => engine.DrawCard("p1"));
 
         Assert.Contains("Already drawn", ex.Message);
+    }
+
+    [Fact]
+    public void SwapCards_AfterDraw_Throws()
+    {
+        var engine = CreateStartedGame();
+        var p1 = engine.Game.Players[0];
+
+        // Starting hand is 5 (max); reduce to 4 so a draw is legal.
+        p1.Hand.RemoveAt(0);
+        engine.DrawCard("p1");
+
+        var ex = Assert.Throws<GameRuleException>(() =>
+            engine.SwapCards("p1", new[] { p1.Hand[0].Id }));
+
+        Assert.Contains("after drawing", ex.Message);
     }
 }

@@ -39,6 +39,9 @@ public class TurnTests
     {
         var engine = CreateStartedGame();
         var p1 = engine.Game.Players[0];
+
+        // Starting hand is 5 (max); reduce to 4 so a draw is legal.
+        p1.Hand.RemoveAt(0);
         var before = p1.Hand.Count;
 
         engine.DrawCard("p1");
@@ -47,9 +50,25 @@ public class TurnTests
     }
 
     [Fact]
+    public void DrawCard_WhenHandAtMax_Throws()
+    {
+        var engine = CreateStartedGame();
+        var p1 = engine.Game.Players[0];
+
+        Assert.Equal(GameRules.MaxHandSize, p1.Hand.Count);
+
+        var ex = Assert.Throws<GameRuleException>(() => engine.DrawCard("p1"));
+        Assert.Contains("full", ex.Message);
+    }
+
+    [Fact]
     public void DrawCard_TwiceInSameTurn_Throws()
     {
         var engine = CreateStartedGame();
+        var p1 = engine.Game.Players[0];
+
+        // Starting hand is 5 (max); reduce to 4 so the first draw is legal.
+        p1.Hand.RemoveAt(0);
 
         engine.DrawCard("p1");
 

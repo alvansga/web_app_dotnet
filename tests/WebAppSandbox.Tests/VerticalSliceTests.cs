@@ -35,6 +35,8 @@ public class VerticalSliceTests
         var alice = game.Players.First(p => p.Id == "conn1");
         var bob = game.Players.First(p => p.Id == "conn2");
 
+        // Starting hand is 5 (max); reduce to 4 so a draw is legal.
+        alice.Hand.RemoveAt(0);
         var beforeDraw = alice.Hand.Count;
         room.Engine.DrawCard("conn1");
         Assert.Equal(beforeDraw + 1, alice.Hand.Count);

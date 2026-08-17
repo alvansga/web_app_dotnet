@@ -77,10 +77,11 @@
           <p v-else-if="me && isMyTurn && !winnerId" class="hint">Kamu bisa Draw lalu main 1 kartu.</p>
         </div>
         <div class="actions">
-          <button v-if="me && isMyTurn && !winnerId" @click="drawCard" :disabled="turn && turn.hasDrawnThisTurn">Draw</button>
+          <button v-if="me && isMyTurn && !winnerId" @click="drawCard" :disabled="!canDraw">Draw</button>
           <button
             v-if="me && canAct && !winnerId"
             @click="toggleSwapMode"
+            :disabled="!canSwap"
             :class="{ active: swapMode }">Swap</button>
           <button
             v-if="me && swapMode && !winnerId"

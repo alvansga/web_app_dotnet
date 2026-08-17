@@ -43,8 +43,18 @@ createApp({
       state.turn && state.turn.actionsUsed < state.turn.maxActionsPerTurn
     );
 
+    const canDraw = computed(() =>
+      isMyTurn.value && !state.winnerId &&
+      state.turn && !state.turn.hasDrawnThisTurn &&
+      state.hand.length < 5
+    );
+
+    const canSwap = computed(() =>
+      canAct.value && state.turn && !state.turn.hasDrawnThisTurn
+    );
+
     const swapCanConfirm = computed(() =>
-      canAct.value && state.swapSelectedIds.length >= 1 && state.swapSelectedIds.length <= 2
+      canSwap.value && state.swapSelectedIds.length >= 1 && state.swapSelectedIds.length <= 2
     );
 
     const currentTurnName = computed(() => {
@@ -160,7 +170,7 @@ createApp({
     }
 
     function toggleSwapMode() {
-      if (!canAct.value) return;
+      if (!canSwap.value) return;
       state.swapMode = !state.swapMode;
       state.swapSelectedIds.length = 0;
       state.selectedCardId = null;
@@ -243,6 +253,8 @@ createApp({
       opponentOrgans,
       isMyTurn,
       canAct,
+      canDraw,
+      canSwap,
       swapCanConfirm,
       currentTurnName,
       winnerName,

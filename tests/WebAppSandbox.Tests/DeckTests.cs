@@ -24,7 +24,8 @@ public class DeckTests
                      + StandardOrgans.Length * CardLibrary.AttacksPerOrgan
                      + CardLibrary.TreatmentCopies
                      + CardLibrary.DefenseCopies
-                     + CardLibrary.NecrosisCopies;
+                     + CardLibrary.NecrosisCopies
+                     + CardLibrary.TransplantCopies;
         Assert.Equal(expected, deck.DrawPile.Count);
     }
 

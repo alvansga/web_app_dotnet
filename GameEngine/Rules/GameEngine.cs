@@ -94,8 +94,15 @@ public class OrganAttackGame
         ValidateTargetSide(card, playerId, targetOwnerPlayerId);
         ValidateOrganMatch(card, targetOrgan);
 
-        var resolver = new CardResolver();
-        resolver.Resolve(card, targetOrgan);
+        if (card.Type == CardType.Special)
+        {
+            ResolveSpecial(card, player, targetOwner, targetOrgan);
+        }
+        else
+        {
+            var resolver = new CardResolver();
+            resolver.Resolve(card, targetOrgan);
+        }
 
         player.Hand.Remove(card);
         _game.Deck!.Discard(card);
@@ -120,6 +127,11 @@ public class OrganAttackGame
     {
         EnsurePlaying();
         _turnManager.EnsureCurrentPlayer(playerId);
+
+        if (_game.Turn is not null && _game.Turn.HasDrawnThisTurn)
+        {
+            throw new GameRuleException("Cannot swap after drawing this turn.");
+        }
 
         if (cardIds is null || cardIds.Count == 0)
         {
@@ -213,6 +225,42 @@ public class OrganAttackGame
             default:
                 throw new GameRuleException("Card has no valid target side.");
         }
+    }
+
+    private void ResolveSpecial(Card card, Player caster, Player targetOwner, Organ targetOrgan)
+    {
+        switch (card.SpecialCard)
+        {
+            case SpecialCardType.Transplant:
+                ResolveTransplant(caster, targetOwner, targetOrgan);
+                break;
+            default:
+                throw new GameRuleException(
+                    $"Special card '{card.Name}' is not implemented.");
+        }
+    }
+
+    private void ResolveTransplant(Player caster, Player targetOwner, Organ targetOrgan)
+    {
+        if (targetOrgan.IsDestroyed)
+        {
+            throw new GameRuleException("Cannot transplant a destroyed organ.");
+        }
+
+        if (targetOrgan.IsAfflicted)
+        {
+            throw new GameRuleException("Cannot transplant an afflicted organ.");
+        }
+
+        if (targetOrgan.IsShielded)
+        {
+            throw new GameRuleException("Cannot transplant a shielded organ.");
+        }
+
+        targetOwner.Organs.Remove(targetOrgan);
+
+        var position = caster.Organs.Count == 0 ? 0 : caster.Organs.Max(o => o.Position) + 1;
+        caster.Organs.Add(new Organ(targetOrgan.Type, position));
     }
 
     private void ValidateOrganMatch(Card card, Organ targetOrgan)

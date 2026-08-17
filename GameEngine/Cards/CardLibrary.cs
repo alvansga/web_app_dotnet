@@ -4,11 +4,12 @@ namespace WebAppSandbox.GameEngine.Cards;
 
 public static class CardLibrary
 {
-    public const int AfflictionsPerOrgan = 2;
+    public const int AfflictionsPerOrgan = 3;
     public const int AttacksPerOrgan = 2;
     public const int TreatmentCopies = 4;
     public const int DefenseCopies = 4;
     public const int NecrosisCopies = 5;
+    public const int TransplantCopies = 1;
 
     /// <summary>
     /// Builds the card library for a specific set of organ types.
@@ -70,6 +71,20 @@ public static class CardLibrary
                 TargetSide = TargetSide.Opponent,
                 AfflictionAmount = 2,
                 Description = "Counts as 2 full afflictions on any organ."
+            });
+        }
+
+        // Transplant: steal one completely healthy organ from an opponent.
+        for (int i = 0; i < TransplantCopies; i++)
+        {
+            cards.Add(new Card
+            {
+                Id = $"transplant-{i}",
+                Name = "Transplant",
+                Type = CardType.Special,
+                TargetSide = TargetSide.Opponent,
+                SpecialCard = SpecialCardType.Transplant,
+                Description = "Permanently steal one completely healthy organ from an opponent's body to add to your own."
             });
         }
 
