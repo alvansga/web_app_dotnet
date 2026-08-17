@@ -11,6 +11,7 @@ public static class CardLibrary
     public const int TransplantCopies = 1;
     public const int ItsAliveCopies = 1;
     public const int ImmunityBoostCopies = 7;
+    public const int ChartMixUpCopies = 1;
 
     /// <summary>
     /// Builds the card library for a specific set of organ types.
@@ -113,6 +114,20 @@ public static class CardLibrary
                 TargetSide = TargetSide.Self,
                 SpecialCard = SpecialCardType.ItsAlive,
                 Description = "A rare recovery card that can bring back a recently destroyed organ from the graveyard."
+            });
+        }
+
+        // Chart Mix-up: all players pool their hands, shuffle, and redeal equally.
+        for (int i = 0; i < ChartMixUpCopies; i++)
+        {
+            cards.Add(new Card
+            {
+                Id = $"chart-mix-up-{i}",
+                Name = "Chart Mix-up",
+                Type = CardType.Special,
+                TargetSide = TargetSide.None,
+                SpecialCard = SpecialCardType.ChartMixUp,
+                Description = "All players gather their current hands, shuffle them together, and deal them back out equally."
             });
         }
 

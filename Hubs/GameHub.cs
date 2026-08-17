@@ -163,6 +163,31 @@ public class GameHub : Hub
         }
     }
 
+    public async Task PlayNoTargetCard(string cardId)
+    {
+        var room = GetCurrentRoom();
+
+        var actor = PlayerName(room.Engine.Game, Context.ConnectionId);
+        var cardName = room.Engine.Game.Players
+            .FirstOrDefault(p => p.Id == Context.ConnectionId)?
+            .Hand.FirstOrDefault(c => c.Id == cardId)?.Name ?? cardId;
+
+        try
+        {
+            room.Engine.PlayNoTargetCard(Context.ConnectionId, cardId);
+        }
+        catch (GameRuleException ex)
+        {
+            throw new HubException(ex.Message);
+        }
+
+        await BroadcastPublicState(room.RoomId);
+        await BroadcastHands(room);
+
+        await BroadcastAction(room.RoomId,
+            $"{actor} memainkan {cardName}. Giliran {CurrentTurnName(room.Engine.Game)}.");
+    }
+
     public async Task PlayInstant(string cardId)
     {
         var room = GetCurrentRoom();

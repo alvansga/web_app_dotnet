@@ -30,7 +30,8 @@ public class DeckTests
                      + CardLibrary.NecrosisCopies
                      + CardLibrary.TransplantCopies
                      + CardLibrary.ItsAliveCopies
-                     + CardLibrary.ImmunityBoostCopies;
+                     + CardLibrary.ImmunityBoostCopies
+                     + CardLibrary.ChartMixUpCopies;
         Assert.Equal(expected, deck.DrawPile.Count);
     }
 

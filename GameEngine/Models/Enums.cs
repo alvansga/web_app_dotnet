@@ -63,5 +63,6 @@ public enum SpecialCardType
     None,
     Transplant,
     ItsAlive,
-    ImmunityBoost
+    ImmunityBoost,
+    ChartMixUp
 }

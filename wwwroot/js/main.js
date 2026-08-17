@@ -227,6 +227,12 @@ createApp({
       // Instants are played via the blocking prompt, not the normal click flow.
       if (card.specialCard === 'ImmunityBoost') return;
 
+      // Chart Mix-up affects all players and needs no organ target.
+      if (card.specialCard === 'ChartMixUp') {
+        invoke('PlayNoTargetCard', card.id);
+        return;
+      }
+
       state.selectedCardId = state.selectedCardId === card.id ? null : card.id;
     }
 

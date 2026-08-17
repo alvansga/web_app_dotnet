@@ -32,6 +32,23 @@ public class Deck
         }
     }
 
+    /// <summary>
+    /// Returns a shuffled copy of the provided cards without mutating the deck,
+    /// using the same seeded RNG. Used by effects that pool players' hands
+    /// (e.g. Chart Mix-up).
+    /// </summary>
+    public IReadOnlyList<Card> Shuffled(IEnumerable<Card> cards)
+    {
+        var list = cards.ToList();
+        for (int i = list.Count - 1; i > 0; i--)
+        {
+            int j = _random.Next(i + 1);
+            (list[i], list[j]) = (list[j], list[i]);
+        }
+
+        return list;
+    }
+
     public Card? Draw()
     {
         if (_drawPile.Count == 0)

@@ -587,4 +587,66 @@ public class GameEngineTests
 
         Assert.Contains("respons", ex.Message);
     }
+
+    [Fact]
+    public void ChartMixUp_PoolsAndRedealsHands_ExcludingPlayedCard()
+    {
+        var engine = CreateStartedGame();
+        var game = engine.Game;
+
+        var p1 = game.Players.First(p => p.Id == "p1");
+        var p2 = game.Players.First(p => p.Id == "p2");
+
+        // Give p1 the Chart Mix-up card plus one marker card.
+        var chartMixUp = new Card
+        {
+            Id = "chart-mix-up-0",
+            Name = "Chart Mix-up",
+            Type = CardType.Special,
+            TargetSide = TargetSide.None,
+            SpecialCard = SpecialCardType.ChartMixUp,
+            Description = "test"
+        };
+        var extraA = new Card
+        {
+            Id = "extra-a",
+            Name = "Extra A",
+            Type = CardType.Defense,
+            TargetSide = TargetSide.Self,
+            Description = "test"
+        };
+        p1.Hand.Clear();
+        p1.Hand.Add(chartMixUp);
+        p1.Hand.Add(extraA);
+
+        // Give p2 one marker card.
+        var extraB = new Card
+        {
+            Id = "extra-b",
+            Name = "Extra B",
+            Type = CardType.Defense,
+            TargetSide = TargetSide.Self,
+            Description = "test"
+        };
+        p2.Hand.Clear();
+        p2.Hand.Add(extraB);
+
+        game.Turn!.CurrentPlayerId = "p1";
+        game.Turn.ActionsUsed = 0;
+
+        engine.PlayNoTargetCard("p1", "chart-mix-up-0");
+
+        // Played card is consumed and discarded.
+        Assert.DoesNotContain(chartMixUp, p1.Hand);
+        Assert.Contains(chartMixUp, game.Deck!.DiscardPile);
+
+        // Pooled hands after excluding the played card had 2 cards total;
+        // round-robin from the caster means p1 and p2 each receive 1.
+        Assert.Single(p1.Hand);
+        Assert.Single(p2.Hand);
+
+        // Union of remaining hands is exactly the two pooled cards.
+        var union = p1.Hand.Concat(p2.Hand).Select(c => c.Id).OrderBy(x => x).ToArray();
+        Assert.Equal(new[] { "extra-a", "extra-b" }, union);
+    }
 }

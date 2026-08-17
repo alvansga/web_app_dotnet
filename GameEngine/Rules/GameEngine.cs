@@ -124,6 +124,59 @@ public class OrganAttackGame
     }
 
     /// <summary>
+    /// Plays a special card that has no organ/player target (Chart Mix-up).
+    /// Unlike other specials, this does not go through the normal
+    /// target-validation flow.
+    /// </summary>
+    public void PlayNoTargetCard(string playerId, string cardId)
+    {
+        EnsurePlaying();
+        _turnManager.EnsureCurrentPlayer(playerId);
+        _turnManager.EnsureCanAct(playerId);
+
+        var player = GetPlayer(playerId);
+        var card = player.Hand.FirstOrDefault(c => c.Id == cardId)
+            ?? throw new GameRuleException("Card not found in hand.");
+
+        if (card.Type != CardType.Special || card.SpecialCard != SpecialCardType.ChartMixUp)
+        {
+            throw new GameRuleException("This card requires an organ target.");
+        }
+
+        // The played card is consumed (discarded) and excluded from the pool.
+        player.Hand.Remove(card);
+        _game.Deck!.Discard(card);
+
+        ResolveChartMixUp(player);
+
+        _turnManager.RecordAction(playerId);
+
+        CheckWinCondition();
+    }
+
+    /// <summary>
+    /// All players pool their current hands, shuffle them together, and deal
+    /// them back out equally (round-robin starting from the caster).
+    /// </summary>
+    private void ResolveChartMixUp(Player caster)
+    {
+        var pool = _game.Players.SelectMany(p => p.Hand).ToList();
+        foreach (var player in _game.Players)
+        {
+            player.Hand.Clear();
+        }
+
+        var shuffled = _game.Deck!.Shuffled(pool);
+
+        int startIndex = _game.Players.FindIndex(p => p.Id == caster.Id);
+        for (int i = 0; i < shuffled.Count; i++)
+        {
+            var recipient = _game.Players[(startIndex + i) % _game.Players.Count];
+            recipient.Hand.Add(shuffled[i]);
+        }
+    }
+
+    /// <summary>
     /// Plays an Instant card out of turn to block the currently staged attack.
     /// The only Instant in the MVP is Immunity Boost.
     /// </summary>
