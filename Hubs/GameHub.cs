@@ -23,9 +23,9 @@ public class GameHub : Hub
 
     // ---- Room lifecycle ----
 
-    public async Task<string> CreateRoom(string playerName)
+    public async Task<string> CreateRoom(string playerId, string playerName)
     {
-        var roomId = _rooms.CreateRoom(Context.ConnectionId, playerName);
+        var roomId = _rooms.CreateRoom(playerId, playerName);
         var creator = _rooms.GetRoom(roomId).Engine.Game.Players[0];
         creator.ConnectionId = Context.ConnectionId;
 
@@ -36,10 +36,10 @@ public class GameHub : Hub
         return roomId;
     }
 
-    public async Task<string> JoinRoom(string roomId, string playerName)
+    public async Task<string> JoinRoom(string roomId, string playerId, string playerName)
     {
-        var room = _rooms.JoinRoom(roomId, Context.ConnectionId, playerName);
-        var player = room.Engine.Game.Players.First(p => p.Id == Context.ConnectionId);
+        var room = _rooms.JoinRoom(roomId, playerId, playerName);
+        var player = room.Engine.Game.Players.First(p => p.Id == playerId);
         player.ConnectionId = Context.ConnectionId;
 
         _rooms.RegisterConnection(Context.ConnectionId, roomId);
@@ -47,6 +47,25 @@ public class GameHub : Hub
         await Clients.Group(roomId).SendAsync("PlayerJoined", PlayerDto.From(player));
         await BroadcastPublicState(roomId);
         return roomId;
+    }
+
+    /// <summary>
+    /// Re-establishes a player's session after a SignalR reconnect. The player
+    /// identity is a stable, client-generated id, so only the transport binding
+    /// (connection id and group membership) needs to be refreshed.
+    /// </summary>
+    public async Task ReconnectToRoom(string roomId, string playerId)
+    {
+        var room = _rooms.GetRoom(roomId);
+        var player = room.Engine.Game.Players.FirstOrDefault(p => p.Id == playerId)
+            ?? throw new HubException("Player not found in room.");
+
+        player.ConnectionId = Context.ConnectionId;
+        _rooms.RegisterConnection(Context.ConnectionId, roomId);
+        await Groups.AddToGroupAsync(Context.ConnectionId, roomId);
+
+        await BroadcastPublicState(roomId);
+        await Clients.Caller.SendAsync("YourHand", player.Hand.Select(CardDto.From).ToList());
     }
 
     public Task<List<RoomDto>> ListRooms()

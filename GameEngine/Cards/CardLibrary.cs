@@ -54,7 +54,9 @@ public static class CardLibrary
         }
 
         // Standard attacks per organ (not for the Wild organ).
-        foreach (var organ in organTypes)
+        // Distinct: both players can share an organ, which would otherwise
+        // produce duplicate card ids for the same attack.
+        foreach (var organ in organTypes.Distinct())
         {
             if (organ == OrganType.Wild_Organ)
             {

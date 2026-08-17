@@ -6,6 +6,18 @@ const connection = new signalR.HubConnectionBuilder()
   .build();
 
 const NAME_KEY = 'organ_attack_player_name';
+const PLAYER_ID_KEY = 'organ_attack_player_id';
+
+function getPlayerId() {
+  let id = localStorage.getItem(PLAYER_ID_KEY);
+  if (!id) {
+    id = 'p-' + Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
+    localStorage.setItem(PLAYER_ID_KEY, id);
+  }
+  return id;
+}
+
+const playerId = getPlayerId();
 
 createApp({
   setup() {
@@ -29,7 +41,7 @@ createApp({
       swapMode: false,
       swapSelectedIds: [],
       log: [],
-      myId: null,
+      myId: playerId,
       pendingAttack: null,
     });
 
@@ -177,17 +189,17 @@ createApp({
     // ---- Rooms ----
 
     function createRoom() {
-      invoke('CreateRoom', state.playerName.trim());
+      invoke('CreateRoom', playerId, state.playerName.trim());
     }
 
     function joinRoom() {
       const code = state.joinRoomId.trim();
       if (!code) return;
-      invoke('JoinRoom', code, state.playerName.trim());
+      invoke('JoinRoom', code, playerId, state.playerName.trim());
     }
 
     function joinKnownRoom(roomId) {
-      invoke('JoinRoom', roomId, state.playerName.trim());
+      invoke('JoinRoom', roomId, playerId, state.playerName.trim());
     }
 
     async function refreshRooms() {
@@ -341,13 +353,26 @@ createApp({
     });
 
     connection.onreconnecting(() => { state.connectionStatus = 'Menyambung ulang...'; });
-    connection.onreconnected(() => { state.connectionStatus = 'Terhubung'; });
+    connection.onreconnected(async () => {
+      state.connectionStatus = 'Terhubung';
+      if (state.roomId) {
+        try {
+          await connection.invoke('ReconnectToRoom', state.roomId, playerId);
+          log('Tersambung kembali ke room.');
+        } catch (err) {
+          state.roomId = null;
+          state.players = [];
+          state.hand = [];
+          state.view = 'lobby';
+          setError('Gagal menyambung kembali ke room.');
+        }
+      }
+    });
     connection.onclose(() => { state.connectionStatus = 'Terputus'; });
 
     connection.start()
       .then(() => {
         state.connectionStatus = 'Terhubung';
-        state.myId = connection.connectionId;
         log('Terhubung ke server.');
         if (state.view === 'lobby') refreshRooms();
       })
