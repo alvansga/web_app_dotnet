@@ -97,12 +97,14 @@ button:disabled { background: #334155; cursor: not-allowed; }
   background: #1b222c;
   border-radius: 12px;
   padding: 1rem;
+  text-align: center;
 }
 
 .organs {
   display: flex;
   gap: 0.75rem;
   flex-wrap: wrap;
+  justify-content: center;
 }
 
 .organ {
@@ -138,11 +140,13 @@ button:disabled { background: #334155; cursor: not-allowed; }
 .center {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 1.5rem;
   flex-wrap: wrap;
+  text-align: center;
 }
 
-.piles { display: flex; gap: 0.75rem; }
+.piles { display: flex; gap: 0.75rem; justify-content: center; }
 .pile {
   background: #1b222c;
   padding: 0.5rem 0.9rem;
@@ -154,11 +158,12 @@ button:disabled { background: #334155; cursor: not-allowed; }
 .pile strong { color: #e6e6e6; font-size: 1.3rem; }
 
 .turn p { margin: 0 0 0.5rem; }
-.actions { display: flex; gap: 0.5rem; }
+.actions { display: flex; gap: 0.5rem; justify-content: center; }
 
 /* HAND */
 .hand {
   display: flex;
+  justify-content: center;
   gap: 0.6rem;
   flex-wrap: wrap;
   min-height: 110px;
@@ -171,6 +176,7 @@ button:disabled { background: #334155; cursor: not-allowed; }
   padding: 0.6rem;
   width: 150px;
   cursor: pointer;
+  text-align: center;
 }
 .card.selected {
   border-color: #4ade80;
