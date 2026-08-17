@@ -6,9 +6,23 @@ const connection = new signalR.HubConnectionBuilder()
   .build();
 
 const NAME_KEY = 'organ_attack_player_name';
+const CLIENT_ID_KEY = 'organ_attack_client_id';
+const ROOM_ID_KEY = 'organ_attack_room_id';
+
+function getOrCreateClientId() {
+  let id = localStorage.getItem(CLIENT_ID_KEY);
+  if (!id) {
+    id = (crypto.randomUUID && crypto.randomUUID()) ||
+         `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
+    localStorage.setItem(CLIENT_ID_KEY, id);
+  }
+  return id;
+}
 
 createApp({
   setup() {
+    const clientId = getOrCreateClientId();
+    const savedRoomId = localStorage.getItem(ROOM_ID_KEY) || '';
     const savedName = localStorage.getItem(NAME_KEY) || '';
 
     const state = reactive({
@@ -29,7 +43,7 @@ createApp({
       swapMode: false,
       swapSelectedIds: [],
       log: [],
-      myId: null,
+      myId: clientId,
       pendingAttack: null,
     });
 
@@ -156,6 +170,11 @@ createApp({
     }
 
     async function invoke(method, ...args) {
+      if (connection.state !== signalR.HubConnectionState.Connected) {
+        setError('Koneksi terputus. Menunggu menyambung ulang...');
+        return;
+      }
+
       try {
         await connection.invoke(method, ...args);
       } catch (err) {
@@ -177,17 +196,22 @@ createApp({
     // ---- Rooms ----
 
     function createRoom() {
-      invoke('CreateRoom', state.playerName.trim());
+      invoke('CreateRoom', clientId, state.playerName.trim());
     }
 
     function joinRoom() {
       const code = state.joinRoomId.trim();
       if (!code) return;
-      invoke('JoinRoom', code, state.playerName.trim());
+      invoke('JoinRoom', code, clientId, state.playerName.trim());
     }
 
     function joinKnownRoom(roomId) {
-      invoke('JoinRoom', roomId, state.playerName.trim());
+      invoke('JoinRoom', roomId, clientId, state.playerName.trim());
+    }
+
+    function rejoinRoom() {
+      if (!state.roomId || !clientId) return;
+      invoke('RejoinRoom', state.roomId, clientId);
     }
 
     async function refreshRooms() {
@@ -297,7 +321,10 @@ createApp({
     });
 
     connection.on('GameStateUpdate', (gs) => {
-      state.roomId = gs.roomId;
+      if (gs.roomId) {
+        state.roomId = gs.roomId;
+        localStorage.setItem(ROOM_ID_KEY, gs.roomId);
+      }
       state.players = gs.players || [];
       state.turn = gs.turn;
       state.deckCount = gs.deckCount;
@@ -341,13 +368,19 @@ createApp({
     });
 
     connection.onreconnecting(() => { state.connectionStatus = 'Menyambung ulang...'; });
-    connection.onreconnected(() => { state.connectionStatus = 'Terhubung'; });
+    connection.onreconnected(() => {
+      state.connectionStatus = 'Terhubung';
+      if (state.roomId) rejoinRoom();
+    });
     connection.onclose(() => { state.connectionStatus = 'Terputus'; });
 
     connection.start()
       .then(() => {
         state.connectionStatus = 'Terhubung';
-        state.myId = connection.connectionId;
+        if (savedRoomId) {
+          state.roomId = savedRoomId;
+          rejoinRoom();
+        }
         log('Terhubung ke server.');
         if (state.view === 'lobby') refreshRooms();
       })

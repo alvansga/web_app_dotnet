@@ -17,15 +17,26 @@ public class GameHub : Hub
 
     public override async Task OnDisconnectedAsync(Exception? exception)
     {
+        var roomId = _rooms.GetRoomIdForConnection(Context.ConnectionId);
+        if (roomId is not null && _rooms.TryGetRoom(roomId, out var room))
+        {
+            var player = room!.Engine.Game.Players
+                .FirstOrDefault(p => p.ConnectionId == Context.ConnectionId);
+            if (player is not null)
+            {
+                player.ConnectionId = null;
+            }
+        }
+
         _rooms.RemoveConnection(Context.ConnectionId);
         await base.OnDisconnectedAsync(exception);
     }
 
     // ---- Room lifecycle ----
 
-    public async Task<string> CreateRoom(string playerName)
+    public async Task<string> CreateRoom(string playerId, string playerName)
     {
-        var roomId = _rooms.CreateRoom(Context.ConnectionId, playerName);
+        var roomId = _rooms.CreateRoom(playerId, playerName);
         var creator = _rooms.GetRoom(roomId).Engine.Game.Players[0];
         creator.ConnectionId = Context.ConnectionId;
 
@@ -36,10 +47,10 @@ public class GameHub : Hub
         return roomId;
     }
 
-    public async Task<string> JoinRoom(string roomId, string playerName)
+    public async Task<string> JoinRoom(string roomId, string playerId, string playerName)
     {
-        var room = _rooms.JoinRoom(roomId, Context.ConnectionId, playerName);
-        var player = room.Engine.Game.Players.First(p => p.Id == Context.ConnectionId);
+        var room = _rooms.JoinRoom(roomId, playerId, playerName);
+        var player = room.Engine.Game.Players.First(p => p.Id == playerId);
         player.ConnectionId = Context.ConnectionId;
 
         _rooms.RegisterConnection(Context.ConnectionId, roomId);
@@ -47,6 +58,27 @@ public class GameHub : Hub
         await Clients.Group(roomId).SendAsync("PlayerJoined", PlayerDto.From(player));
         await BroadcastPublicState(roomId);
         return roomId;
+    }
+
+    public async Task RejoinRoom(string roomId, string playerId)
+    {
+        if (!_rooms.TryGetRoom(roomId, out var room))
+        {
+            throw new HubException("Room not found.");
+        }
+
+        var player = room!.Engine.Game.Players.FirstOrDefault(p => p.Id == playerId);
+        if (player is null)
+        {
+            throw new HubException("You are not in this room.");
+        }
+
+        player.ConnectionId = Context.ConnectionId;
+        _rooms.RegisterConnection(Context.ConnectionId, room.RoomId);
+        await Groups.AddToGroupAsync(Context.ConnectionId, room.RoomId);
+
+        await BroadcastPublicState(room.RoomId);
+        await BroadcastHands(room);
     }
 
     public Task<List<RoomDto>> ListRooms()
@@ -83,17 +115,18 @@ public class GameHub : Hub
     public async Task DrawCard()
     {
         var room = GetCurrentRoom();
+        var playerId = CurrentPlayerId(room);
 
         try
         {
-            room.Engine.DrawCard(Context.ConnectionId);
+            room.Engine.DrawCard(playerId);
         }
         catch (GameRuleException ex)
         {
             throw new HubException(ex.Message);
         }
 
-        var drawActor = PlayerName(room.Engine.Game, Context.ConnectionId);
+        var drawActor = PlayerName(room.Engine.Game, playerId);
         await BroadcastAction(room.RoomId,
             $"{drawActor} menarik kartu. Giliran {CurrentTurnName(room.Engine.Game)}.");
 
@@ -104,13 +137,14 @@ public class GameHub : Hub
     public async Task PlayCard(string cardId, string targetOwnerPlayerId, string targetOrganType)
     {
         var room = GetCurrentRoom();
+        var playerId = CurrentPlayerId(room);
 
         if (!Enum.TryParse<OrganType>(targetOrganType, out var organType))
         {
             throw new HubException("Invalid target organ type.");
         }
 
-        var actor = Context.ConnectionId;
+        var actor = playerId;
         var cardName = cardId;
         var cardType = "Kartu";
         var targetName = targetOwnerPlayerId;
@@ -118,15 +152,15 @@ public class GameHub : Hub
         try
         {
             var game = room.Engine.Game;
-            var player = game.Players.FirstOrDefault(p => p.Id == Context.ConnectionId);
+            var player = game.Players.FirstOrDefault(p => p.Id == playerId);
             var card = player?.Hand.FirstOrDefault(c => c.Id == cardId);
 
-            actor = player?.Name ?? Context.ConnectionId;
+            actor = player?.Name ?? playerId;
             cardName = card?.Name ?? cardId;
             cardType = card?.Type.ToString() ?? "Kartu";
             targetName = PlayerName(game, targetOwnerPlayerId);
 
-            room.Engine.PlayCard(Context.ConnectionId, cardId, targetOwnerPlayerId, organType);
+            room.Engine.PlayCard(playerId, cardId, targetOwnerPlayerId, organType);
         }
         catch (GameRuleException ex)
         {
@@ -166,15 +200,16 @@ public class GameHub : Hub
     public async Task PlayNoTargetCard(string cardId)
     {
         var room = GetCurrentRoom();
+        var playerId = CurrentPlayerId(room);
 
-        var actor = PlayerName(room.Engine.Game, Context.ConnectionId);
+        var actor = PlayerName(room.Engine.Game, playerId);
         var cardName = room.Engine.Game.Players
-            .FirstOrDefault(p => p.Id == Context.ConnectionId)?
+            .FirstOrDefault(p => p.Id == playerId)?
             .Hand.FirstOrDefault(c => c.Id == cardId)?.Name ?? cardId;
 
         try
         {
-            room.Engine.PlayNoTargetCard(Context.ConnectionId, cardId);
+            room.Engine.PlayNoTargetCard(playerId, cardId);
         }
         catch (GameRuleException ex)
         {
@@ -191,10 +226,11 @@ public class GameHub : Hub
     public async Task PlayInstant(string cardId)
     {
         var room = GetCurrentRoom();
+        var playerId = CurrentPlayerId(room);
 
         try
         {
-            room.Engine.PlayInstant(Context.ConnectionId, cardId);
+            room.Engine.PlayInstant(playerId, cardId);
         }
         catch (GameRuleException ex)
         {
@@ -205,23 +241,24 @@ public class GameHub : Hub
         await BroadcastHands(room);
 
         await BroadcastAction(room.RoomId,
-            $"{PlayerName(room.Engine.Game, Context.ConnectionId)} memblokir serangan dengan Immunity Boost! Giliran {CurrentTurnName(room.Engine.Game)}.");
+            $"{PlayerName(room.Engine.Game, playerId)} memblokir serangan dengan Immunity Boost! Giliran {CurrentTurnName(room.Engine.Game)}.");
     }
 
     public async Task SwapCards(IReadOnlyCollection<string> cardIds)
     {
         var room = GetCurrentRoom();
+        var playerId = CurrentPlayerId(room);
 
         try
         {
-            room.Engine.SwapCards(Context.ConnectionId, cardIds);
+            room.Engine.SwapCards(playerId, cardIds);
         }
         catch (GameRuleException ex)
         {
             throw new HubException(ex.Message);
         }
 
-        var swapActor = PlayerName(room.Engine.Game, Context.ConnectionId);
+        var swapActor = PlayerName(room.Engine.Game, playerId);
         await BroadcastAction(room.RoomId,
             $"{swapActor} menukar {cardIds.Count} kartu. Giliran {CurrentTurnName(room.Engine.Game)}.");
 
@@ -232,17 +269,18 @@ public class GameHub : Hub
     public async Task EndTurn()
     {
         var room = GetCurrentRoom();
+        var playerId = CurrentPlayerId(room);
 
         try
         {
-            room.Engine.EndTurn(Context.ConnectionId);
+            room.Engine.EndTurn(playerId);
         }
         catch (GameRuleException ex)
         {
             throw new HubException(ex.Message);
         }
 
-        var endActor = PlayerName(room.Engine.Game, Context.ConnectionId);
+        var endActor = PlayerName(room.Engine.Game, playerId);
         await BroadcastAction(room.RoomId,
             $"{endActor} mengakhiri giliran. Giliran {CurrentTurnName(room.Engine.Game)}.");
 
@@ -277,6 +315,22 @@ public class GameHub : Hub
         }
 
         return _rooms.GetRoom(roomId);
+    }
+
+    private string CurrentPlayerId(GameRoom room)
+    {
+        var player = room.Engine.Game.Players
+            .FirstOrDefault(p => p.ConnectionId == Context.ConnectionId);
+
+        if (player is null)
+        {
+            throw new HubException("You are not in a room.");
+        }
+
+        // Self-heal the connection mapping in case it was lost during reconnect.
+        _rooms.RegisterConnection(Context.ConnectionId, room.RoomId);
+
+        return player.Id;
     }
 
     private async Task BroadcastPublicState(string roomId)

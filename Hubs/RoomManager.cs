@@ -55,6 +55,11 @@ public class RoomManager
         return room;
     }
 
+    public bool TryGetRoom(string roomId, out GameRoom? room)
+    {
+        return _rooms.TryGetValue(roomId, out room);
+    }
+
     public void RegisterConnection(string connectionId, string roomId)
     {
         _connectionToRoom[connectionId] = roomId;
