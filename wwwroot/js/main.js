@@ -5,15 +5,20 @@ const connection = new signalR.HubConnectionBuilder()
   .withAutomaticReconnect()
   .build();
 
+const NAME_KEY = 'organ_attack_player_name';
+
 createApp({
   setup() {
+    const savedName = localStorage.getItem(NAME_KEY) || '';
+
     const state = reactive({
       connectionStatus: 'Menghubungkan...',
-      view: 'lobby',
+      view: savedName ? 'lobby' : 'setup',
       roomId: null,
       error: '',
-      playerName: '',
+      playerName: savedName,
       joinRoomId: '',
+      rooms: [],
       players: [],
       hand: [],
       turn: null,
@@ -93,17 +98,27 @@ createApp({
       Special: '✨',
     };
 
+    const organImageMap = {
+      heart: 'heart.png',
+      brain: 'brain.png',
+      lungs: 'lungs.png',
+      liver: 'liver.png',
+      teeth: 'teeth.png',
+      kidneys: 'kidneys.png',
+    };
+
     function organImage(o) {
       const name = (o.type || '').toLowerCase();
-      const map = {
-        heart: 'heart.png',
-        brain: 'brain.png',
-        lungs: 'lungs.png',
-        liver: 'liver.png',
-        teeth: 'teeth.png',
-        kidneys: 'kidneys.png',
-      };
-      return `assets/organs/${map[name] || 'placeholder.png'}`;
+      return `assets/organs/${organImageMap[name] || 'placeholder.png'}`;
+    }
+
+    function organLabel(type) {
+      if (!type) return '';
+      // Insert a space before capital letters and replace underscores.
+      return type
+        .replace(/_/g, ' ')
+        .replace(/([a-z])([A-Z])/g, '$1 $2')
+        .replace(/\b\w/g, c => c.toUpperCase());
     }
 
     function cardEmoji(c) {
@@ -132,12 +147,39 @@ createApp({
       }
     }
 
+    // ---- Name setup ----
+
+    function saveName() {
+      const name = state.playerName.trim();
+      if (!name) return;
+      localStorage.setItem(NAME_KEY, name);
+      state.playerName = name;
+      state.view = 'lobby';
+      refreshRooms();
+    }
+
+    // ---- Rooms ----
+
     function createRoom() {
-      invoke('CreateRoom', state.playerName);
+      invoke('CreateRoom', state.playerName.trim());
     }
 
     function joinRoom() {
-      invoke('JoinRoom', state.joinRoomId.trim(), state.playerName);
+      const code = state.joinRoomId.trim();
+      if (!code) return;
+      invoke('JoinRoom', code, state.playerName.trim());
+    }
+
+    function joinKnownRoom(roomId) {
+      invoke('JoinRoom', roomId, state.playerName.trim());
+    }
+
+    async function refreshRooms() {
+      try {
+        state.rooms = await connection.invoke('ListRooms');
+      } catch (err) {
+        setError(err.message || String(err));
+      }
     }
 
     function startGame() {
@@ -239,11 +281,28 @@ createApp({
         state.connectionStatus = 'Terhubung';
         state.myId = connection.connectionId;
         log('Terhubung ke server.');
+        if (state.view === 'lobby') refreshRooms();
       })
       .catch((err) => {
         state.connectionStatus = 'Gagal terhubung';
         setError('Error: ' + err);
       });
+
+    // Poll the room list while the player is in the lobby.
+    let pollTimer = null;
+    function startPolling() {
+      stopPolling();
+      pollTimer = setInterval(() => {
+        if (state.view === 'lobby') refreshRooms();
+      }, 3000);
+    }
+    function stopPolling() {
+      if (pollTimer) {
+        clearInterval(pollTimer);
+        pollTimer = null;
+      }
+    }
+    startPolling();
 
     return {
       ...toRefs(state),
@@ -259,10 +318,14 @@ createApp({
       currentTurnName,
       winnerName,
       organImage,
+      organLabel,
       cardEmoji,
       isTargetable,
+      saveName,
       createRoom,
       joinRoom,
+      joinKnownRoom,
+      refreshRooms,
       startGame,
       drawCard,
       endTurn,

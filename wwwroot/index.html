@@ -4,49 +4,134 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Organ Attack</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="css/style.css" />
   <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@microsoft/signalr@8/dist/browser/signalr.min.js"></script>
 </head>
 <body>
   <div id="app">
-    <header>
-      <h1>🫀 Organ Attack</h1>
+    <div class="bg-glow glow-1"></div>
+    <div class="bg-glow glow-2"></div>
+
+    <header class="app-header">
+      <div class="brand">
+        <div class="brand-logo">🫀</div>
+        <div>
+          <h1>Organ Attack</h1>
+          <p class="tagline">Serang organ lawan, lindungi organmu.</p>
+        </div>
+      </div>
       <div class="meta">
-        <span class="status"><span class="dot"></span> {{ connectionStatus }}</span>
-        <span v-if="roomId" class="room">Room: <strong>{{ roomId }}</strong></span>
+        <span class="status-pill">
+          <span class="dot" :class="{ offline: connectionStatus !== 'Terhubung' }"></span>
+          {{ connectionStatus }}
+        </span>
+        <span v-if="roomId" class="room-pill">Room <strong>{{ roomId }}</strong></span>
       </div>
     </header>
 
-    <p v-if="error" class="error">{{ error }}</p>
+    <p v-if="error" class="error-banner">{{ error }}</p>
 
-    <!-- LOBBY -->
-    <section v-if="view === 'lobby'" class="panel">
-      <h2>Masuk Permainan</h2>
-      <div class="row">
-        <input v-model="playerName" placeholder="Nama kamu" />
-        <button @click="createRoom" :disabled="!playerName">Buat Room</button>
+    <!-- ===================== SETUP NAME ===================== -->
+    <main v-if="view === 'setup'" class="page-center">
+      <section class="card setup-card">
+        <div class="setup-emoji">🩺</div>
+        <h2>Selamat Datang!</h2>
+        <p class="muted">Masukkan namamu sekali saja untuk mulai bermain.</p>
+        <input
+          v-model="playerName"
+          class="input-lg"
+          maxlength="20"
+          placeholder="Nama kamu"
+          @keyup.enter="saveName"
+        />
+        <button class="btn btn-primary btn-lg btn-block" :disabled="!playerName.trim()" @click="saveName">
+          Simpan & Lanjut
+        </button>
+      </section>
+    </main>
+
+    <!-- ===================== LOBBY ===================== -->
+    <main v-else-if="view === 'lobby'" class="lobby">
+      <section class="lobby-hero">
+        <div>
+          <h2>Halo, <span class="accent">{{ playerName }}</span> 👋</h2>
+          <p class="muted">Buat room baru atau gabung ke room yang tersedia.</p>
+        </div>
+        <button class="btn btn-ghost" @click="view = 'setup'">Ubah Nama</button>
+      </section>
+
+      <div class="lobby-grid">
+        <section class="card">
+          <h3>🆕 Buat Room</h3>
+          <p class="muted">Buat room dan bagikan kodenya ke temanmu.</p>
+          <button class="btn btn-primary btn-block" :disabled="!playerName.trim()" @click="createRoom">
+            Buat Room Baru
+          </button>
+        </section>
+
+        <section class="card">
+          <h3>🔑 Gabung dengan Kode</h3>
+          <p class="muted">Sudah punya kode room? Masukkan di sini.</p>
+          <div class="row">
+            <input v-model="joinRoomId" class="input-room" maxlength="6" placeholder="KODE123" @keyup.enter="joinRoom" />
+            <button class="btn btn-primary" :disabled="!playerName.trim() || !joinRoomId.trim()" @click="joinRoom">
+              Gabung
+            </button>
+          </div>
+        </section>
       </div>
-      <div class="row">
-        <input v-model="joinRoomId" placeholder="Kode room" />
-        <button @click="joinRoom" :disabled="!playerName || !joinRoomId">Gabung Room</button>
-      </div>
-    </section>
 
-    <!-- WAITING ROOM -->
-    <section v-else-if="view === 'waiting'" class="panel">
-      <h2>Menunggu Pemain... ({{ players.length }}/2)</h2>
-      <p class="hint">Bagikan kode room <strong>{{ roomId }}</strong> ke pemain kedua.</p>
-      <ul class="players">
-        <li v-for="p in players" :key="p.id">{{ p.name }}</li>
-      </ul>
-      <button @click="startGame" :disabled="players.length !== 2">Mulai Permainan</button>
-    </section>
+      <section class="card room-list">
+        <div class="room-list-head">
+          <h3>🕹️ Room Tersedia</h3>
+          <button class="btn btn-ghost btn-sm" @click="refreshRooms">↻ Refresh</button>
+        </div>
+        <p v-if="!rooms.length" class="muted">Belum ada room. Jadilah yang pertama membuat room!</p>
+        <div v-else class="room-cards">
+          <div v-for="r in rooms" :key="r.roomId" class="room-card">
+            <div class="room-card-main">
+              <span class="room-code">{{ r.roomId }}</span>
+              <span class="room-players">
+                <span v-for="(name, i) in r.playerNames" :key="i" class="player-chip">{{ name }}</span>
+                <span v-if="!r.playerNames.length" class="muted">menunggu pemain</span>
+              </span>
+            </div>
+            <button class="btn btn-primary btn-sm" :disabled="!r.canJoin" @click="joinKnownRoom(r.roomId)">
+              Gabung
+            </button>
+          </div>
+        </div>
+      </section>
+    </main>
 
-    <!-- GAME -->
-    <section v-else class="game">
+    <!-- ===================== WAITING ROOM ===================== -->
+    <main v-else-if="view === 'waiting'" class="page-center">
+      <section class="card waiting-card">
+        <div class="setup-emoji">⏳</div>
+        <h2>Menunggu Pemain...</h2>
+        <p class="muted">Bagikan kode room ke pemain kedua.</p>
+        <div class="room-code-big">{{ roomId }}</div>
+        <ul class="player-list">
+          <li v-for="p in players" :key="p.id">
+            <span class="avatar">{{ p.name.charAt(0).toUpperCase() }}</span>
+            {{ p.name }}
+          </li>
+        </ul>
+        <p class="player-count">{{ players.length }}/2 pemain</p>
+        <button class="btn btn-primary btn-block" :disabled="players.length !== 2" @click="startGame">
+          Mulai Permainan
+        </button>
+      </section>
+    </main>
+
+    <!-- ===================== GAME ===================== -->
+    <main v-else class="game">
       <div class="board opponent">
-        <h3>{{ opponent ? opponent.name : 'Lawan' }}</h3>
+        <h3 class="board-title">👤 {{ opponent ? opponent.name : 'Lawan' }}</h3>
         <div class="organs">
           <div
             v-for="o in opponentOrgans"
@@ -55,7 +140,7 @@
             :class="{ destroyed: o.isDestroyed, afflicted: o.isAfflicted, shielded: o.isShielded, targetable: isTargetable(opponent, o) }"
             @click="clickOrgan(opponent, o)">
             <img class="organ-img" :src="organImage(o)" :alt="o.type" />
-            <span class="label">{{ o.type }}</span>
+            <span class="label">{{ organLabel(o.type) }}</span>
             <span class="flags">
               <span v-if="o.isDestroyed" title="Destroyed">💀</span>
               <span v-if="o.isAfflicted" title="Afflicted">❗<template v-if="o.afflictionCount > 1">×{{ o.afflictionCount }}</template></span>
@@ -71,28 +156,30 @@
           <div class="pile">Discard<br><strong>{{ discardCount }}</strong></div>
         </div>
         <div class="turn">
-          <p v-if="winnerId">🏆 Pemenang: <strong>{{ winnerName }}</strong></p>
-          <p v-else>Giliran: <strong>{{ currentTurnName }}</strong></p>
+          <p v-if="winnerId" class="winner">🏆 {{ winnerName }} menang!</p>
+          <p v-else class="turn-label">Giliran <strong>{{ currentTurnName }}</strong></p>
           <p v-if="me && swapMode && !winnerId" class="hint">Pilih 1–2 kartu untuk ditukar.</p>
-          <p v-else-if="me && isMyTurn && !winnerId" class="hint">Kamu bisa Draw lalu main 1 kartu.</p>
+          <p v-else-if="me && isMyTurn && !winnerId" class="hint">Draw kartu lalu mainkan 1 kartu.</p>
         </div>
         <div class="actions">
-          <button v-if="me && isMyTurn && !winnerId" @click="drawCard" :disabled="!canDraw">Draw</button>
+          <button v-if="me && isMyTurn && !winnerId" class="btn btn-primary btn-sm" @click="drawCard" :disabled="!canDraw">🎴 Draw</button>
           <button
             v-if="me && canAct && !winnerId"
+            class="btn btn-ghost btn-sm"
+            :class="{ active: swapMode }"
             @click="toggleSwapMode"
-            :disabled="!canSwap"
-            :class="{ active: swapMode }">Swap</button>
+            :disabled="!canSwap">🔁 Swap</button>
           <button
             v-if="me && swapMode && !winnerId"
+            class="btn btn-warning btn-sm"
             @click="confirmSwap"
-            :disabled="!swapCanConfirm">Confirm Swap ({{ swapSelectedIds.length }}/2)</button>
-          <button v-if="me && isMyTurn && !winnerId" @click="endTurn">End Turn</button>
+            :disabled="!swapCanConfirm">Konfirmasi ({{ swapSelectedIds.length }}/2)</button>
+          <button v-if="me && isMyTurn && !winnerId" class="btn btn-ghost btn-sm" @click="endTurn">⏭️ End Turn</button>
         </div>
       </div>
 
       <div class="board mine">
-        <h3>{{ me ? me.name : 'Kamu' }}</h3>
+        <h3 class="board-title">🧑 {{ me ? me.name : 'Kamu' }}</h3>
         <div class="organs">
           <div
             v-for="o in myOrgans"
@@ -101,7 +188,7 @@
             :class="{ destroyed: o.isDestroyed, afflicted: o.isAfflicted, shielded: o.isShielded, targetable: isTargetable(me, o) }"
             @click="clickOrgan(me, o)">
             <img class="organ-img" :src="organImage(o)" :alt="o.type" />
-            <span class="label">{{ o.type }}</span>
+            <span class="label">{{ organLabel(o.type) }}</span>
             <span class="flags">
               <span v-if="o.isDestroyed" title="Destroyed">💀</span>
               <span v-if="o.isAfflicted" title="Afflicted">❗<template v-if="o.afflictionCount > 1">×{{ o.afflictionCount }}</template></span>
@@ -111,27 +198,30 @@
         </div>
       </div>
 
-      <div class="hand">
-        <div
-          v-for="c in hand"
-          :key="c.id"
-          class="card"
-          :class="{ selected: c.id === selectedCardId, swapSelected: swapSelectedIds.includes(c.id) }"
-          @click="clickCard(c)">
-          <span class="card-type">{{ cardEmoji(c) }} {{ c.type }}</span>
-          <span class="card-name">{{ c.name }}</span>
-          <span class="card-desc">{{ c.description }}</span>
+      <div class="hand-area">
+        <p class="hand-label">Tangan Kamu</p>
+        <div class="hand">
+          <div
+            v-for="c in hand"
+            :key="c.id"
+            class="card"
+            :class="{ selected: c.id === selectedCardId, swapSelected: swapSelectedIds.includes(c.id) }"
+            @click="clickCard(c)">
+            <span class="card-type">{{ cardEmoji(c) }} {{ c.type }}</span>
+            <span class="card-name">{{ c.name }}</span>
+            <span class="card-desc">{{ c.description }}</span>
+          </div>
+          <p v-if="!hand.length" class="hint">Tangan kosong.</p>
         </div>
-        <p v-if="!hand.length" class="hint">Tangan kosong.</p>
       </div>
 
       <div class="log">
-        <strong>Log aksi</strong>
+        <strong>📜 Log aksi</strong>
         <ul>
-          <li v-for="e in log" :key="e.id">{{ e.time }} — {{ e.message }}</li>
+          <li v-for="e in log" :key="e.id"><span class="log-time">{{ e.time }}</span> {{ e.message }}</li>
         </ul>
       </div>
-    </section>
+    </main>
   </div>
 
   <script src="js/main.js"></script>

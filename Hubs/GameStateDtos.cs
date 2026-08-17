@@ -1,4 +1,5 @@
 using WebAppSandbox.GameEngine.Models;
+using WebAppSandbox.GameEngine.Rules;
 
 namespace WebAppSandbox.Hubs;
 
@@ -68,6 +69,21 @@ public class TurnDto
     public int ActionsUsed { get; init; }
     public int MaxActionsPerTurn { get; init; }
     public bool HasDrawnThisTurn { get; init; }
+}
+
+public class RoomDto
+{
+    public string RoomId { get; init; } = "";
+    public List<string> PlayerNames { get; init; } = new();
+    public bool CanJoin { get; init; }
+
+    public static RoomDto From(GameRoom room) => new()
+    {
+        RoomId = room.RoomId,
+        PlayerNames = room.Engine.Game.Players.Select(p => p.Name).ToList(),
+        CanJoin = room.Engine.Game.Phase == GamePhase.WaitingForPlayer &&
+                  room.Engine.Game.Players.Count < GameRules.MaxPlayers,
+    };
 }
 
 public class GameStateDto

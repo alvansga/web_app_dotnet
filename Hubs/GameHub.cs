@@ -47,6 +47,15 @@ public class GameHub : Hub
         return roomId;
     }
 
+    public Task<List<RoomDto>> ListRooms()
+    {
+        var rooms = _rooms.GetOpenRooms()
+            .Select(RoomDto.From)
+            .ToList();
+
+        return Task.FromResult(rooms);
+    }
+
     public async Task StartGame()
     {
         var room = GetCurrentRoom();

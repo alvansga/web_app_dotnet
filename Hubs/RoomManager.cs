@@ -37,6 +37,14 @@ public class RoomManager
         return room;
     }
 
+    public List<GameRoom> GetOpenRooms()
+    {
+        return _rooms.Values
+            .Where(r => r.Engine.Game.Phase == GamePhase.WaitingForPlayer &&
+                        r.Engine.Game.Players.Count < GameRules.MaxPlayers)
+            .ToList();
+    }
+
     public GameRoom GetRoom(string roomId)
     {
         if (!_rooms.TryGetValue(roomId, out var room))
