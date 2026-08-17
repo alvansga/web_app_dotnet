@@ -62,7 +62,7 @@ public class TurnManager
         StartTurn(nextPlayer.Id);
     }
 
-    public void RecordAction(string playerId)
+    public void EnsureCanAct(string playerId)
     {
         EnsureCurrentPlayer(playerId);
 
@@ -70,6 +70,11 @@ public class TurnManager
         {
             throw new GameRuleException("No more actions this turn.");
         }
+    }
+
+    public void RecordAction(string playerId)
+    {
+        EnsureCanAct(playerId);
 
         _game.Turn.ActionsUsed++;
     }

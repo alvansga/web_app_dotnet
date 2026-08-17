@@ -82,6 +82,7 @@ public class OrganAttackGame
     {
         EnsurePlaying();
         _turnManager.EnsureCurrentPlayer(playerId);
+        _turnManager.EnsureCanAct(playerId);
 
         var player = GetPlayer(playerId);
         var card = player.Hand.FirstOrDefault(c => c.Id == cardId)
@@ -127,6 +128,7 @@ public class OrganAttackGame
     {
         EnsurePlaying();
         _turnManager.EnsureCurrentPlayer(playerId);
+        _turnManager.EnsureCanAct(playerId);
 
         if (_game.Turn is not null && _game.Turn.HasDrawnThisTurn)
         {

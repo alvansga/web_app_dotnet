@@ -243,4 +243,63 @@ public class GameEngineTests
 
         Assert.True(p2.Organs.First(o => o.Type == targetType).IsAfflicted);
     }
+
+    [Fact]
+    public void PlayCard_WhenNoActionsLeft_ThrowsWithoutChangingState()
+    {
+        var engine = CreateStartedGame();
+        var game = engine.Game;
+
+        var p1 = game.Players.First(p => p.Id == "p1");
+        var p2 = game.Players.First(p => p.Id == "p2");
+        var targetType = p2.Organs.First(o => o.Type != OrganType.Wild_Organ).Type;
+
+        var afflict = new Card
+        {
+            Id = "aff-heart",
+            Name = "Afflict",
+            Type = CardType.Affliction,
+            TargetSide = TargetSide.Opponent,
+            TargetOrganType = targetType,
+            AfflictionType = AfflictionType.Afflicted,
+            AfflictionAmount = 1,
+            Description = "test"
+        };
+        p1.Hand.Clear();
+        p1.Hand.Add(afflict);
+        game.Turn!.CurrentPlayerId = "p1";
+        game.Turn.ActionsUsed = game.Turn.MaxActionsPerTurn; // no actions left
+
+        var ex = Assert.Throws<GameRuleException>(() =>
+            engine.PlayCard("p1", "aff-heart", "p2", targetType));
+
+        Assert.Contains("No more actions", ex.Message);
+        Assert.False(p2.Organs.First(o => o.Type == targetType).IsAfflicted);
+        Assert.Contains(afflict, p1.Hand);
+    }
+
+    [Fact]
+    public void SwapCards_WhenNoActionsLeft_ThrowsWithoutChangingHand()
+    {
+        var engine = CreateStartedGame();
+        var game = engine.Game;
+
+        var p1 = game.Players.First(p => p.Id == "p1");
+        var cardIds = p1.Hand.Select(c => c.Id).ToList();
+        var handBefore = p1.Hand.Count;
+        var deckBefore = game.Deck!.DrawPile.Count;
+        var discardBefore = game.Deck.DiscardPile.Count;
+
+        game.Turn!.CurrentPlayerId = "p1";
+        game.Turn.ActionsUsed = game.Turn.MaxActionsPerTurn; // no actions left
+        game.Turn.HasDrawnThisTurn = false;
+
+        var ex = Assert.Throws<GameRuleException>(() =>
+            engine.SwapCards("p1", cardIds.Take(1).ToList()));
+
+        Assert.Contains("No more actions", ex.Message);
+        Assert.Equal(handBefore, p1.Hand.Count);
+        Assert.Equal(deckBefore, game.Deck!.DrawPile.Count);
+        Assert.Equal(discardBefore, game.Deck.DiscardPile.Count);
+    }
 }
