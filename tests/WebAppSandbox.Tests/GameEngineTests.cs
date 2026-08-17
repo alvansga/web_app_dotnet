@@ -141,6 +141,8 @@ public class GameEngineTests
 
         engine.PlayCard("p1", "aff-heart", "p2", OrganType.Wild_Organ);
 
+        engine.ResolvePendingAttack(game.PendingAttack!.Id, blocked: false);
+
         var wild = p2.Organs.First(o => o.Type == OrganType.Wild_Organ);
         Assert.True(wild.IsAfflicted);
     }
@@ -207,6 +209,8 @@ public class GameEngineTests
 
         engine.PlayCard("p1", "attack-heart", "p2", targetType);
 
+        engine.ResolvePendingAttack(game.PendingAttack!.Id, blocked: false);
+
         Assert.Equal(GamePhase.GameOver, game.Phase);
         Assert.Equal("p1", game.WinnerPlayerId);
         Assert.True(target.IsDestroyed);
@@ -240,6 +244,8 @@ public class GameEngineTests
         game.Turn.ActionsUsed = 0;
 
         engine.PlayCard("p1", "aff-heart", "p2", targetType);
+
+        engine.ResolvePendingAttack(game.PendingAttack!.Id, blocked: false);
 
         Assert.True(p2.Organs.First(o => o.Type == targetType).IsAfflicted);
     }
@@ -367,5 +373,215 @@ public class GameEngineTests
             engine.PlayCard("p1", "its-alive", "p1", target.Type));
 
         Assert.Contains("not destroyed", ex.Message);
+    }
+
+    [Fact]
+    public void PlayCard_InstantCard_Throws()
+    {
+        var engine = CreateStartedGame();
+        var game = engine.Game;
+
+        var p1 = game.Players.First(p => p.Id == "p1");
+        var p2 = game.Players.First(p => p.Id == "p2");
+        var targetType = p2.Organs.First(o => o.Type != OrganType.Wild_Organ).Type;
+
+        var instant = new Card
+        {
+            Id = "immunity-boost-0",
+            Name = "Immunity Boost",
+            Type = CardType.Instant,
+            SpecialCard = SpecialCardType.ImmunityBoost,
+            Description = "test"
+        };
+        p1.Hand.Clear();
+        p1.Hand.Add(instant);
+
+        game.Turn!.CurrentPlayerId = "p1";
+        game.Turn.ActionsUsed = 0;
+
+        var ex = Assert.Throws<GameRuleException>(() =>
+            engine.PlayCard("p1", "immunity-boost-0", "p1", targetType));
+
+        Assert.Contains("response", ex.Message);
+        Assert.Contains(instant, p1.Hand);
+    }
+
+    [Fact]
+    public void PlayInstant_WithNoPendingAttack_Throws()
+    {
+        var engine = CreateStartedGame();
+
+        var ex = Assert.Throws<GameRuleException>(() =>
+            engine.PlayInstant("p2", "immunity-boost-0"));
+
+        Assert.Contains("no incoming attack", ex.Message);
+    }
+
+    [Fact]
+    public void PlayInstant_BlocksIncomingAffliction()
+    {
+        var engine = CreateStartedGame();
+        var game = engine.Game;
+
+        var p1 = game.Players.First(p => p.Id == "p1");
+        var p2 = game.Players.First(p => p.Id == "p2");
+        var targetType = p2.Organs.First(o => o.Type != OrganType.Wild_Organ).Type;
+        var targetOrgan = p2.Organs.First(o => o.Type == targetType);
+
+        var afflict = new Card
+        {
+            Id = "aff-heart",
+            Name = "Afflict",
+            Type = CardType.Affliction,
+            TargetSide = TargetSide.Opponent,
+            TargetOrganType = targetType,
+            AfflictionType = AfflictionType.Afflicted,
+            AfflictionAmount = 1,
+            Description = "test"
+        };
+        p1.Hand.Clear();
+        p1.Hand.Add(afflict);
+
+        game.Turn!.CurrentPlayerId = "p1";
+        game.Turn.ActionsUsed = 0;
+
+        engine.PlayCard("p1", "aff-heart", "p2", targetType);
+        Assert.NotNull(game.PendingAttack);
+
+        var boost = new Card
+        {
+            Id = "immunity-boost-0",
+            Name = "Immunity Boost",
+            Type = CardType.Instant,
+            SpecialCard = SpecialCardType.ImmunityBoost,
+            Description = "test"
+        };
+        p2.Hand.Clear();
+        p2.Hand.Add(boost);
+
+        engine.PlayInstant("p2", "immunity-boost-0");
+
+        Assert.Null(game.PendingAttack);
+        Assert.False(targetOrgan.IsAfflicted);
+        Assert.DoesNotContain(boost, p2.Hand);
+    }
+
+    [Fact]
+    public void PlayInstant_WrongTarget_Throws()
+    {
+        var engine = CreateStartedGame();
+        var game = engine.Game;
+
+        var p1 = game.Players.First(p => p.Id == "p1");
+        var p2 = game.Players.First(p => p.Id == "p2");
+        var targetType = p2.Organs.First(o => o.Type != OrganType.Wild_Organ).Type;
+
+        var afflict = new Card
+        {
+            Id = "aff-heart",
+            Name = "Afflict",
+            Type = CardType.Affliction,
+            TargetSide = TargetSide.Opponent,
+            TargetOrganType = targetType,
+            AfflictionType = AfflictionType.Afflicted,
+            AfflictionAmount = 1,
+            Description = "test"
+        };
+        p1.Hand.Clear();
+        p1.Hand.Add(afflict);
+
+        game.Turn!.CurrentPlayerId = "p1";
+        game.Turn.ActionsUsed = 0;
+
+        engine.PlayCard("p1", "aff-heart", "p2", targetType);
+
+        var ex = Assert.Throws<GameRuleException>(() =>
+            engine.PlayInstant("p1", "immunity-boost-0"));
+
+        Assert.Contains("not the target", ex.Message);
+        Assert.NotNull(game.PendingAttack);
+    }
+
+    [Fact]
+    public void PlayInstant_OutOfTurn_DoesNotConsumeAction()
+    {
+        var engine = CreateStartedGame();
+        var game = engine.Game;
+
+        var p1 = game.Players.First(p => p.Id == "p1");
+        var p2 = game.Players.First(p => p.Id == "p2");
+        var targetType = p2.Organs.First(o => o.Type != OrganType.Wild_Organ).Type;
+
+        var afflict = new Card
+        {
+            Id = "aff-heart",
+            Name = "Afflict",
+            Type = CardType.Affliction,
+            TargetSide = TargetSide.Opponent,
+            TargetOrganType = targetType,
+            AfflictionType = AfflictionType.Afflicted,
+            AfflictionAmount = 1,
+            Description = "test"
+        };
+        p1.Hand.Clear();
+        p1.Hand.Add(afflict);
+
+        game.Turn!.CurrentPlayerId = "p1";
+        game.Turn.ActionsUsed = 0;
+
+        engine.PlayCard("p1", "aff-heart", "p2", targetType);
+
+        // It is p1's turn; p2 responds out of turn.
+        var actionsBefore = game.Turn.ActionsUsed;
+        var boost = new Card
+        {
+            Id = "immunity-boost-0",
+            Name = "Immunity Boost",
+            Type = CardType.Instant,
+            SpecialCard = SpecialCardType.ImmunityBoost,
+            Description = "test"
+        };
+        p2.Hand.Clear();
+        p2.Hand.Add(boost);
+
+        engine.PlayInstant("p2", "immunity-boost-0");
+
+        // p1's action usage and turn ownership are unchanged.
+        Assert.Equal(actionsBefore, game.Turn.ActionsUsed);
+        Assert.Equal("p1", game.Turn.CurrentPlayerId);
+    }
+
+    [Fact]
+    public void EndTurn_DuringPendingAttack_Throws()
+    {
+        var engine = CreateStartedGame();
+        var game = engine.Game;
+
+        var p1 = game.Players.First(p => p.Id == "p1");
+        var p2 = game.Players.First(p => p.Id == "p2");
+        var targetType = p2.Organs.First(o => o.Type != OrganType.Wild_Organ).Type;
+
+        var afflict = new Card
+        {
+            Id = "aff-heart",
+            Name = "Afflict",
+            Type = CardType.Affliction,
+            TargetSide = TargetSide.Opponent,
+            TargetOrganType = targetType,
+            AfflictionType = AfflictionType.Afflicted,
+            AfflictionAmount = 1,
+            Description = "test"
+        };
+        p1.Hand.Clear();
+        p1.Hand.Add(afflict);
+
+        game.Turn!.CurrentPlayerId = "p1";
+        game.Turn.ActionsUsed = 0;
+
+        engine.PlayCard("p1", "aff-heart", "p2", targetType);
+
+        var ex = Assert.Throws<GameRuleException>(() => engine.EndTurn("p1"));
+
+        Assert.Contains("respons", ex.Message);
     }
 }

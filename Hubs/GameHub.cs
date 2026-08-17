@@ -7,10 +7,12 @@ namespace WebAppSandbox.Hubs;
 public class GameHub : Hub
 {
     private readonly RoomManager _rooms;
+    private readonly IHubContext<GameHub> _hubContext;
 
-    public GameHub(RoomManager rooms)
+    public GameHub(RoomManager rooms, IHubContext<GameHub> hubContext)
     {
         _rooms = rooms;
+        _hubContext = hubContext;
     }
 
     public override async Task OnDisconnectedAsync(Exception? exception)
@@ -134,8 +136,22 @@ public class GameHub : Hub
         await BroadcastPublicState(room.RoomId);
         await BroadcastHands(room);
 
-        await BroadcastAction(room.RoomId,
-            $"{actor} memainkan {cardName} ({cardType}) ke {targetOrganType} milik {targetName}. Giliran {CurrentTurnName(room.Engine.Game)}.");
+        var pending = room.Engine.Game.PendingAttack;
+        if (pending is not null)
+        {
+            await Clients.Group(room.RoomId).SendAsync("PendingAttack",
+                PendingAttackDto.From(pending, GameRules.ResponseTimeoutSeconds));
+
+            await BroadcastAction(room.RoomId,
+                $"{actor} meluncurkan {cardName} ({cardType}) ke {targetOrganType} milik {targetName}. Menunggu respons...");
+
+            SchedulePendingAttackResolution(room.RoomId, pending.Id);
+        }
+        else
+        {
+            await BroadcastAction(room.RoomId,
+                $"{actor} memainkan {cardName} ({cardType}) ke {targetOrganType} milik {targetName}. Giliran {CurrentTurnName(room.Engine.Game)}.");
+        }
 
         if (room.Engine.Game.Phase == GamePhase.GameOver)
         {
@@ -145,6 +161,26 @@ public class GameHub : Hub
                 await Clients.Group(room.RoomId).SendAsync("GameOver", winnerId);
             }
         }
+    }
+
+    public async Task PlayInstant(string cardId)
+    {
+        var room = GetCurrentRoom();
+
+        try
+        {
+            room.Engine.PlayInstant(Context.ConnectionId, cardId);
+        }
+        catch (GameRuleException ex)
+        {
+            throw new HubException(ex.Message);
+        }
+
+        await BroadcastPublicState(room.RoomId);
+        await BroadcastHands(room);
+
+        await BroadcastAction(room.RoomId,
+            $"{PlayerName(room.Engine.Game, Context.ConnectionId)} memblokir serangan dengan Immunity Boost! Giliran {CurrentTurnName(room.Engine.Game)}.");
     }
 
     public async Task SwapCards(IReadOnlyCollection<string> cardIds)
@@ -226,6 +262,11 @@ public class GameHub : Hub
 
     private async Task BroadcastHands(GameRoom room)
     {
+        await BroadcastHandsTo(room, _hubContext.Clients);
+    }
+
+    private static async Task BroadcastHandsTo(GameRoom room, IHubClients clients)
+    {
         foreach (var player in room.Engine.Game.Players)
         {
             if (player.ConnectionId is null)
@@ -234,7 +275,48 @@ public class GameHub : Hub
             }
 
             var hand = player.Hand.Select(CardDto.From).ToList();
-            await Clients.Client(player.ConnectionId).SendAsync("YourHand", hand);
+            await clients.Client(player.ConnectionId).SendAsync("YourHand", hand);
+        }
+    }
+
+    private void SchedulePendingAttackResolution(string roomId, string pendingId)
+    {
+        var hubContext = _hubContext;
+        var rooms = _rooms;
+
+        _ = ResolveAfterDelayAsync(roomId, pendingId, hubContext, rooms);
+    }
+
+    private static async Task ResolveAfterDelayAsync(
+        string roomId,
+        string pendingId,
+        IHubContext<GameHub> hubContext,
+        RoomManager rooms)
+    {
+        await Task.Delay(TimeSpan.FromSeconds(GameRules.ResponseTimeoutSeconds));
+
+        var room = rooms.GetRoom(roomId);
+        var game = room.Engine.Game;
+
+        // If the defender already responded, the pending attack is gone; do nothing.
+        if (game.PendingAttack?.Id != pendingId)
+        {
+            return;
+        }
+
+        var pending = game.PendingAttack;
+        room.Engine.ResolvePendingAttack(pendingId, blocked: false);
+
+        var clients = hubContext.Clients;
+        await clients.Group(roomId).SendAsync("GameStateUpdate", BuildPublicState(room));
+        await BroadcastHandsTo(room, clients);
+
+        await clients.Group(roomId).SendAsync("ActionLog",
+            $"{pending.Caster.Name} mengenai {pending.TargetOrgan.Type} milik {pending.TargetOwner.Name}.");
+
+        if (game.Phase == GamePhase.GameOver && game.WinnerPlayerId is not null)
+        {
+            await clients.Group(roomId).SendAsync("GameOver", game.WinnerPlayerId);
         }
     }
 

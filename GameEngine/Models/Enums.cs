@@ -6,7 +6,8 @@ public enum CardType
     Attack,
     Treatment,
     Defense,
-    Special
+    Special,
+    Instant
 }
 
 public enum OrganType
@@ -61,5 +62,6 @@ public enum SpecialCardType
 {
     None,
     Transplant,
-    ItsAlive
+    ItsAlive,
+    ImmunityBoost
 }

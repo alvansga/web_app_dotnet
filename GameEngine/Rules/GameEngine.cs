@@ -88,12 +88,23 @@ public class OrganAttackGame
         var card = player.Hand.FirstOrDefault(c => c.Id == cardId)
             ?? throw new GameRuleException("Card not found in hand.");
 
+        if (card.IsInstant)
+        {
+            throw new GameRuleException("Instant cards must be played as a response.");
+        }
+
         var targetOwner = GetPlayer(targetOwnerPlayerId);
         var targetOrgan = targetOwner.Organs.FirstOrDefault(o => o.Type == targetOrganType)
             ?? throw new GameRuleException("Target organ not found.");
 
         ValidateTargetSide(card, playerId, targetOwnerPlayerId);
         ValidateOrganMatch(card, targetOrgan);
+
+        if (card.IsOffensive)
+        {
+            StagePendingAttack(card, player, targetOwner, targetOrgan);
+            return;
+        }
 
         if (card.Type == CardType.Special)
         {
@@ -110,6 +121,84 @@ public class OrganAttackGame
         _turnManager.RecordAction(playerId);
 
         CheckWinCondition();
+    }
+
+    /// <summary>
+    /// Plays an Instant card out of turn to block the currently staged attack.
+    /// The only Instant in the MVP is Immunity Boost.
+    /// </summary>
+    public void PlayInstant(string playerId, string cardId)
+    {
+        EnsurePlaying();
+
+        var pending = _game.PendingAttack
+            ?? throw new GameRuleException("There is no incoming attack to respond to.");
+
+        if (pending.TargetOwner.Id != playerId)
+        {
+            throw new GameRuleException("You are not the target of the incoming attack.");
+        }
+
+        var player = GetPlayer(playerId);
+        var card = player.Hand.FirstOrDefault(c => c.Id == cardId)
+            ?? throw new GameRuleException("Card not found in hand.");
+
+        if (!card.IsInstant || card.SpecialCard != SpecialCardType.ImmunityBoost)
+        {
+            throw new GameRuleException("Only Immunity Boost can block an incoming attack.");
+        }
+
+        player.Hand.Remove(card);
+        _game.Deck!.Discard(card);
+
+        ResolvePendingAttack(pending.Id, blocked: true);
+    }
+
+    /// <summary>
+    /// Resolves (or cancels) a staged attack. Idempotent: if the pending attack
+    /// no longer exists or its id does not match, nothing happens. This guards
+    /// against a defender's response racing the timeout.
+    /// </summary>
+    public void ResolvePendingAttack(string pendingId, bool blocked)
+    {
+        var pending = _game.PendingAttack;
+        if (pending is null || pending.Id != pendingId)
+        {
+            return;
+        }
+
+        _game.PendingAttack = null;
+
+        if (!blocked)
+        {
+            var resolver = new CardResolver();
+            resolver.Resolve(pending.Card, pending.TargetOrgan);
+            CheckWinCondition();
+        }
+    }
+
+    private void StagePendingAttack(Card card, Player player, Player targetOwner, Organ targetOrgan)
+    {
+        if (_game.PendingAttack is not null)
+        {
+            throw new GameRuleException("Another attack is already awaiting a response.");
+        }
+
+        var resolver = new CardResolver();
+        resolver.ValidateOffensiveTarget(card, targetOrgan);
+
+        player.Hand.Remove(card);
+        _game.Deck!.Discard(card);
+        _turnManager.RecordAction(playerId: player.Id);
+
+        _game.PendingAttack = new PendingAttack
+        {
+            Id = Guid.NewGuid().ToString("N"),
+            Card = card,
+            Caster = player,
+            TargetOwner = targetOwner,
+            TargetOrgan = targetOrgan,
+        };
     }
 
     public void DrawCard(string playerId)
@@ -187,7 +276,16 @@ public class OrganAttackGame
     public void EndTurn(string playerId)
     {
         EnsurePlaying();
+        EnsureNoPendingAttack();
         _turnManager.EndTurn(playerId);
+    }
+
+    private void EnsureNoPendingAttack()
+    {
+        if (_game.PendingAttack is not null)
+        {
+            throw new GameRuleException("Tunggu respons lawan sebelum mengakhiri giliran.");
+        }
     }
 
     /// <summary>

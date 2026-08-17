@@ -31,12 +31,36 @@ public class CardResolver
         }
     }
 
-    private void ResolveAffliction(Card card, Organ target)
+    /// <summary>
+    /// Validates that an offensive card can legally target the given organ,
+    /// without mutating any state. Used when staging a PendingAttack so the
+    /// attacker's card is not discarded if the target is invalid.
+    /// </summary>
+    public void ValidateOffensiveTarget(Card card, Organ target)
     {
         if (target.IsDestroyed)
         {
-            throw new GameRuleException("Cannot afflict a destroyed organ.");
+            throw new GameRuleException(
+                $"Cannot {(card.Type == CardType.Affliction ? "afflict" : "attack")} a destroyed organ.");
         }
+
+        if (card.Type == CardType.Attack && card.AfflictionAmount <= 0)
+        {
+            if (target.Type == OrganType.Wild_Organ)
+            {
+                throw new GameRuleException("Wild organ cannot be destroyed by a standard attack. It needs 4 afflictions.");
+            }
+
+            if (!target.IsAfflicted)
+            {
+                throw new GameRuleException("Attack requires the target organ to be afflicted.");
+            }
+        }
+    }
+
+    private void ResolveAffliction(Card card, Organ target)
+    {
+        ValidateOffensiveTarget(card, target);
 
         if (target.IsShielded)
         {
@@ -51,10 +75,7 @@ public class CardResolver
 
     private void ResolveAttack(Card card, Organ target)
     {
-        if (target.IsDestroyed)
-        {
-            throw new GameRuleException("Cannot attack a destroyed organ.");
-        }
+        ValidateOffensiveTarget(card, target);
 
         if (target.IsShielded)
         {
@@ -69,16 +90,6 @@ public class CardResolver
         {
             ApplyAfflictions(target, card.AfflictionAmount);
             return;
-        }
-
-        if (target.Type == OrganType.Wild_Organ)
-        {
-            throw new GameRuleException("Wild organ cannot be destroyed by a standard attack. It needs 4 afflictions.");
-        }
-
-        if (!target.IsAfflicted)
-        {
-            throw new GameRuleException("Attack requires the target organ to be afflicted.");
         }
 
         target.IsDestroyed = true;

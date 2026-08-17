@@ -67,6 +67,26 @@ public class PlayerDto
     };
 }
 
+public class PendingAttackDto
+{
+    public string Id { get; init; } = "";
+    public string CasterName { get; init; } = "";
+    public string TargetOwnerId { get; init; } = "";
+    public string CardName { get; init; } = "";
+    public string TargetOrganType { get; init; } = "";
+    public int SecondsRemaining { get; init; }
+
+    public static PendingAttackDto From(PendingAttack pending, int secondsRemaining) => new()
+    {
+        Id = pending.Id,
+        CasterName = pending.Caster.Name,
+        TargetOwnerId = pending.TargetOwner.Id,
+        CardName = pending.Card.Name,
+        TargetOrganType = pending.TargetOrgan.Type.ToString(),
+        SecondsRemaining = secondsRemaining,
+    };
+}
+
 public class TurnDto
 {
     public string CurrentPlayerId { get; init; } = "";

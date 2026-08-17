@@ -23,4 +23,13 @@ public class Card
         // the target organ. Wild-organ targeting exceptions live in GameEngine.ValidateOrganMatch.
         return TargetOrganType.HasValue || TargetOrganTypes.Count > 0;
     }
+
+    public bool IsInstant => Type == CardType.Instant;
+
+    /// <summary>
+    /// Whether this card is offensive (applies damage to an opponent's organ) and
+    /// therefore should be staged as a PendingAttack so the defender can respond.
+    /// </summary>
+    public bool IsOffensive => Type is CardType.Affliction or CardType.Attack
+        && TargetSide == TargetSide.Opponent;
 }

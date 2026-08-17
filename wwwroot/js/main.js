@@ -30,6 +30,7 @@ createApp({
       swapSelectedIds: [],
       log: [],
       myId: null,
+      pendingAttack: null,
     });
 
     const me = computed(() => state.players.find(p => p.id === state.myId) || null);
@@ -73,7 +74,18 @@ createApp({
       return p ? p.name : '';
     });
 
+    const isPendingTarget = computed(() =>
+      state.pendingAttack && me.value &&
+      state.pendingAttack.targetOwnerId === me.value.id
+    );
+
+    const canBlock = computed(() =>
+      isPendingTarget.value && !state.winnerId &&
+      state.hand.some(c => c.specialCard === 'ImmunityBoost')
+    );
+
     let logId = 1;
+    let pendingTimer = null;
     function log(message) {
       state.log.unshift({
         id: logId++,
@@ -96,6 +108,7 @@ createApp({
       Treatment: '💊',
       Defense: '🛡️',
       Special: '✨',
+      Instant: '⚡',
     };
 
     const organImageMap = {
@@ -198,6 +211,9 @@ createApp({
     }
 
     function clickCard(card) {
+      // Instants are played via the blocking prompt, not the normal click flow.
+      if (card.specialCard === 'ImmunityBoost') return;
+
       if (!isMyTurn.value) return;
 
       if (state.swapMode) {
@@ -227,6 +243,28 @@ createApp({
       state.swapMode = false;
       state.swapSelectedIds.length = 0;
       state.selectedCardId = null;
+    }
+
+    function clearPendingAttack() {
+      if (pendingTimer) {
+        clearTimeout(pendingTimer);
+        pendingTimer = null;
+      }
+      state.pendingAttack = null;
+    }
+
+    function blockAttack() {
+      if (!canBlock.value || !state.pendingAttack) return;
+
+      const card = state.hand.find(c => c.specialCard === 'ImmunityBoost');
+      if (!card) return;
+
+      invoke('PlayInstant', card.id);
+      clearPendingAttack();
+    }
+
+    function skipBlock() {
+      clearPendingAttack();
     }
 
     function clickOrgan(player, organ) {
@@ -271,6 +309,20 @@ createApp({
 
     connection.on('YourHand', (hand) => {
       state.hand = hand;
+    });
+
+    connection.on('PendingAttack', (pending) => {
+      if (!pending || !me.value || pending.targetOwnerId !== me.value.id) {
+        return;
+      }
+
+      clearPendingAttack();
+      state.pendingAttack = pending;
+
+      const seconds = Math.max(1, pending.secondsRemaining || 5);
+      pendingTimer = setTimeout(() => {
+        state.pendingAttack = null;
+      }, seconds * 1000);
     });
 
     connection.on('GameOver', (winnerId) => {
@@ -331,6 +383,10 @@ createApp({
       organLabel,
       cardEmoji,
       isTargetable,
+      isPendingTarget,
+      canBlock,
+      blockAttack,
+      skipBlock,
       saveName,
       createRoom,
       joinRoom,

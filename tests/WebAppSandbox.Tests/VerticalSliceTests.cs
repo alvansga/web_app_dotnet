@@ -70,8 +70,10 @@ public class VerticalSliceTests
             Description = "Destroy target's afflicted organ."
         });
 
-        // Play the winning card.
+        // Play the winning card, then let the response window resolve it.
         room.Engine.PlayCard("conn1", "attack-heart", "conn2", targetType);
+
+        room.Engine.ResolvePendingAttack(game.PendingAttack!.Id, blocked: false);
 
         Assert.True(bob.Organs.First(o => o.Type == targetType).IsDestroyed);
         Assert.Equal(GamePhase.GameOver, game.Phase);

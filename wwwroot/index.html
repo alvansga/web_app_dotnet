@@ -150,33 +150,41 @@
         </div>
       </div>
 
-      <div class="center">
-        <div class="piles">
-          <div class="pile">Deck<br><strong>{{ deckCount }}</strong></div>
-          <div class="pile">Discard<br><strong>{{ discardCount }}</strong></div>
+        <div class="center">
+          <div class="piles">
+            <div class="pile">Deck<br><strong>{{ deckCount }}</strong></div>
+            <div class="pile">Discard<br><strong>{{ discardCount }}</strong></div>
+          </div>
+          <div class="turn">
+            <p v-if="winnerId" class="winner">🏆 {{ winnerName }} menang!</p>
+            <p v-else class="turn-label">Giliran <strong>{{ currentTurnName }}</strong></p>
+            <p v-if="me && isPendingTarget && pendingAttack" class="hint alert">
+              💥 {{ pendingAttack.casterName }} menyerang {{ organLabel(pendingAttack.targetOrganType) }}-mu!
+              <template v-if="canBlock"> Balas dengan Immunity Boost?</template>
+            </p>
+            <p v-else-if="me && swapMode && !winnerId" class="hint">Pilih 1–2 kartu untuk ditukar.</p>
+            <p v-else-if="me && isMyTurn && !winnerId" class="hint">Draw kartu lalu mainkan 1 kartu.</p>
+          </div>
+          <div class="actions">
+            <template v-if="me && isPendingTarget && !winnerId">
+              <button class="btn btn-danger btn-sm" @click="blockAttack" :disabled="!canBlock">⚡ Block</button>
+              <button class="btn btn-ghost btn-sm" @click="skipBlock">Lewati</button>
+            </template>
+            <button v-if="me && isMyTurn && !winnerId" class="btn btn-primary btn-sm" @click="drawCard" :disabled="!canDraw">🎴 Draw</button>
+            <button
+              v-if="me && canAct && !winnerId"
+              class="btn btn-ghost btn-sm"
+              :class="{ active: swapMode }"
+              @click="toggleSwapMode"
+              :disabled="!canSwap">🔁 Swap</button>
+            <button
+              v-if="me && swapMode && !winnerId"
+              class="btn btn-warning btn-sm"
+              @click="confirmSwap"
+              :disabled="!swapCanConfirm">Konfirmasi ({{ swapSelectedIds.length }}/2)</button>
+            <button v-if="me && isMyTurn && !winnerId" class="btn btn-ghost btn-sm" @click="endTurn" :disabled="isPendingTarget">⏭️ End Turn</button>
+          </div>
         </div>
-        <div class="turn">
-          <p v-if="winnerId" class="winner">🏆 {{ winnerName }} menang!</p>
-          <p v-else class="turn-label">Giliran <strong>{{ currentTurnName }}</strong></p>
-          <p v-if="me && swapMode && !winnerId" class="hint">Pilih 1–2 kartu untuk ditukar.</p>
-          <p v-else-if="me && isMyTurn && !winnerId" class="hint">Draw kartu lalu mainkan 1 kartu.</p>
-        </div>
-        <div class="actions">
-          <button v-if="me && isMyTurn && !winnerId" class="btn btn-primary btn-sm" @click="drawCard" :disabled="!canDraw">🎴 Draw</button>
-          <button
-            v-if="me && canAct && !winnerId"
-            class="btn btn-ghost btn-sm"
-            :class="{ active: swapMode }"
-            @click="toggleSwapMode"
-            :disabled="!canSwap">🔁 Swap</button>
-          <button
-            v-if="me && swapMode && !winnerId"
-            class="btn btn-warning btn-sm"
-            @click="confirmSwap"
-            :disabled="!swapCanConfirm">Konfirmasi ({{ swapSelectedIds.length }}/2)</button>
-          <button v-if="me && isMyTurn && !winnerId" class="btn btn-ghost btn-sm" @click="endTurn">⏭️ End Turn</button>
-        </div>
-      </div>
 
       <div class="board mine">
         <h3 class="board-title">🧑 {{ me ? me.name : 'Kamu' }}</h3>

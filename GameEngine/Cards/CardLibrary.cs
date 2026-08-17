@@ -10,6 +10,7 @@ public static class CardLibrary
     public const int NecrosisCopies = 5;
     public const int TransplantCopies = 1;
     public const int ItsAliveCopies = 1;
+    public const int ImmunityBoostCopies = 7;
 
     /// <summary>
     /// Builds the card library for a specific set of organ types.
@@ -138,6 +139,20 @@ public static class CardLibrary
                 Type = CardType.Defense,
                 TargetSide = TargetSide.Self,
                 Description = "Shield one of your organs."
+            });
+        }
+
+        // Immunity Boost: 7 instant counters that block an incoming attack
+        // without consuming the turn, playable out of turn.
+        for (int i = 0; i < ImmunityBoostCopies; i++)
+        {
+            cards.Add(new Card
+            {
+                Id = $"immunity-boost-{i}",
+                Name = "Immunity Boost",
+                Type = CardType.Instant,
+                SpecialCard = SpecialCardType.ImmunityBoost,
+                Description = "Play out of turn to completely block any single attack or action card targeting you."
             });
         }
 

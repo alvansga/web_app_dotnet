@@ -8,6 +8,7 @@ public class Game
     public Deck? Deck { get; set; }
     public TurnState? Turn { get; set; }
     public string? WinnerPlayerId { get; set; }
+    public PendingAttack? PendingAttack { get; set; }
 
     public Player? CurrentPlayer =>
         Turn is null ? null : Players.FirstOrDefault(p => p.Id == Turn.CurrentPlayerId);
