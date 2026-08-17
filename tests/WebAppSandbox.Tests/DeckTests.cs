@@ -20,7 +20,10 @@ public class DeckTests
         var deck = new Deck(new Random(1));
         deck.Build(CardLibrary.BuildDeck(StandardOrgans));
 
-        int expected = StandardOrgans.Length * CardLibrary.AfflictionsPerOrgan
+        // Specific afflictions for {Heart, Brain, Lungs, Liver, Kidneys}:
+        // Heart 2, Brain 4, Lungs 2, Liver 2, Kidneys 1,
+        // Hepatosplenomegaly (Liver) 1, Walking Pneumonia (Lungs) 1 = 13.
+        int expected = 13
                      + StandardOrgans.Length * CardLibrary.AttacksPerOrgan
                      + CardLibrary.TreatmentCopies
                      + CardLibrary.DefenseCopies

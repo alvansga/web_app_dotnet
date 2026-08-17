@@ -35,57 +35,105 @@ These are the vital body elements placed on the board. [1]
 These cards apply physical damage tokens directly onto corresponding opponent organs based on matching icons. [5] 
 ## Specific Afflictions (Targeted)
 
-* 
-* Acne!: Targets Skin.
-* Appendicitis!: Targets Appendix.
-* Arrhythmia!: Targets Heart.
-* Asthma!: Targets Lungs.
-* Biliary Dyskinesia!: Targets Gallbladder.
-* Calcium Stones!: Targets Kidneys.
-* Cavity!: Targets Teeth.
-* Chronic Strep Throat!: Targets Tonsils.
-* Cirrhosis!: Targets Liver.
-* Common Cold!: Targets Nose.
-* Congestion!: Targets Nose.
-* Conjunctivitis!: Targets Eyes.
-* Crohn's!: Targets Bowels.
-* Cystic Fibrosis!: Targets Lungs.
-* Day-Old Burrito!: Targets Bowels.
-* Diabetes! Type 1: Targets Pancreas.
-* Enamel Erosion!: Targets Teeth.
-* Esophageal Stricture!: Targets Esophagus.
-* Fatty Liver!: Targets Liver.
-* Foreign Object in the Eye!: Targets Eyes.
-* Fracture!: Targets Bones.
-* Gallstones!: Targets Gallbladder.
-* Glaucoma!: Targets Eyes.
-* Heart Attack!: Instantly applies to Heart.
-* Heartburn!: Targets Esophagus.
-* Hepatosplenomegaly!: Targets either Liver or Spleen.
-* Hypersplenism!: Targets Spleen.
-* Hypothyroidism! (2 copies): Targets Thyroid.
-* IBS-d!: Targets Bowels.
-* Infection!: Target depends on the variable bacterial text line.
-* Inflamed Taste Bud: Targets Tongue.
-* Lacerated Spleen!: Targets Spleen.
-* Multiple Sclerosis!: Targets Brain.
-* Muscle Contusion!: Targets Skeletal Muscles.
-* Muscular Dystrophy!: Targets Skeletal Muscles.
-* Narcolepsy! (2 copies): Targets Brain.
-* Nosebleed!: Targets Nose.
-* Osteoporosis: Targets Bones.
-* Overactive Bladder!: Targets Bladder.
-* Psoriasis!: Targets Skin.
-* Ruptured Appendix!: Immediately discards the Appendix card if unblocked.
-* Shingles!: Targets Skin.
-* Stroke!: Targets Brain.
-* Tonsillitis!: Targets Tonsils.
-* Tracheitis!: Targets Trachea.
-* Ulcer!: Targets Stomach.
-* UTI!: Targets Bladder.
-* Vomit: Targets any one of Stomach, Esophagus, Tongue, or Teeth.
-* Walking Pneumonia: Targets either Lungs or Pancreas. [5, 6, 7, 8, 9, 10, 11] 
-* 
+    Acid Reflux!: Asam lambung naik bikin tenggorokan kerasa kayak kejatuhan lava panas. Targets Esophagus.
+
+    Acne!: Bisul kecil di wajah yang selalu muncul pas kamu mau foto album atau first date. Targets Skin.
+
+    Appendicitis!: Usus buntu membengkak, rasanya kayak ada bom waktu di perut bawah kanan. Targets Appendix.
+
+    Arrhythmia!: Jantung kamu ketukannya gak beraturan, serasa lagi nyetel musik heavy metal di dalam dada. Targets Heart.
+
+    Asthma!: Sensasi bernapas kayak pake sedotan es teh yang kejepit: bengek dan ngos-ngosan. Targets Lungs.
+
+    Biliary Dyskinesia!: Kantung empedu kamu mendadak malas kerja dan menolak buat meremas asam empedu. Targets Gallbladder.
+
+    Calcium Stones!: Ginjalmu iseng bikin koleksi batu akik dari endapan kalsium yang rasanya mules bukan main. Targets Kidneys.
+
+    Cavity!: Kamu malas sikat gigi, akhirnya bakteri bikin tempat nongkrong permanen di gigimu. Targets Teeth.
+
+    Chronic Strep Throat!: Tenggorokan rasanya kayak diamplas tiap kali nelan ludah akibat bakteri membandel. Targets Tonsils.
+
+    Cirrhosis!: Hati kamu kapalan dan mengeras karena capek kebanyakan kerja keras memproses racun. Targets Liver.
+
+    Common Cold!: Penyakit langganan sejuta umat yang bikin kamu jadi pabrik ingus berjalan. Targets Nose.
+
+    Congestion!: Hidung tersumbat sebelah, dijamin bikin kamu menyesal karena pernah meremehkan indahnya bernapas lega. Targets Nose.
+
+    Conjunctivitis!: Mata belekan dan merah membara, bikin kamu kelihatan kayak mata-mata alien. Targets Eyes.
+
+    Crohn's!: Saluran pencernaan peradangan hebat, bikin kamu bolak-balik ke toilet kayak latihan maraton. Targets Bowels.
+
+    Cystic Fibrosis!: Lendir tubuh mendadak tebal dan lengket, sampai organ pernapasan kerasa penuh lem. Targets Lungs.
+
+    Day-Old Burrito!: Makanan kemarin malam yang nekat dimakan, berujung bencana dahsyat di dalam perut. Targets Bowels.
+
+    Diabetes! Type 1: Pankreas kamu mogok kerja dan berhenti produksi insulin, jadinya gula darah naik kelas. Targets Pancreas.
+
+    Enamel Erosion!: Lapisan pelindung gigi terkikis habis gara-gara hobi minum yang asam-asam. Targets Teeth.
+
+    Esophageal Stricture!: Kerongkongan menyempit, bikin makanan berasa kayak kejebak macet sebelum nyampe lambung. Targets Esophagus.
+
+    Fatty Liver!: Hati kamu ketimbun lemak, penanda kurang gerak dan kebanyakan makan yang enak-enak. Targets Liver.
+
+    Foreign Object in the Eye!: Debu sekecil debu atom masuk mata, tapi sakitnya serasa kemasukan kelapa. Targets Eyes.
+
+    Fracture!: Tulang kamu retak atau patah gara-gara sok-sokan jadi atraksi stuntman. Targets Bones.
+
+    Gallstones!: Cairan empedu mengeras jadi kerikil padat yang nyangkut di saluran pencernaan. Targets Gallbladder.
+
+    Glaucoma!: Tekanan di bola mata meningkat, bikin pandangan menyempit kayak ngintip lewat lubang kunci. Targets Eyes.
+
+    Heart Attack!: Jantung mendadak kena shock karena aliran darah kebalap sumbatan lemak. Instantly applies to Heart.
+
+    Heartburn!: Dada kerasa terbakar hebat gara-gara asam lambung salah jalan naik ke atas. Targets Esophagus.
+
+    Hepatosplenomegaly!: Hati dan limpa kamu kompak membengkak barengan karena ada infeksi berat. Targets either Liver or Spleen.
+
+    Hypersplenism!: Limpa kamu terlalu hiperaktif sampai-sampai sel darah yang sehat pun ikut disikat. Targets Spleen.
+
+    Hypothyroidism! (2 copies): Kelenjar tiroid kamu mager parah, bikin metabolisme tubuh berjalan kayak siput. Targets Thyroid.
+
+    IBS-d!: Perut mules mendadak yang bikin kamu ahli memetakan posisi toilet umum terdekat. Targets Bowels.
+
+    Infection!: Pasukan bakteri nakal berhasil membobol benteng pertahanan organ tubuhmu. Target depends on the variable bacterial text line.
+
+    Inflamed Taste Bud: Lidah kamu bengkak dan perih gara-gara keseringan kegigit sendiri pas makan. Targets Tongue.
+
+    Lacerated Spleen!: Limpa kamu robek kena hantaman keras, bikin pendarahan di dalam perut. Targets Spleen.
+
+    Multiple Sclerosis!: Kabel saraf di otak korsleting, bikin sinyal dari otak ke tubuh sering lag. Targets Brain.
+
+    Muscle Contusion!: Otot kamu kebentur keras sampai lebam kebiruan dan pegal-pegal. Targets Muscles.
+
+    Muscular Dystrophy!: Otot-otot tubuh pelan-pelan melemah dan kehilangan kekuatannya untuk beraktivitas. Targets Muscles.
+
+    Narcolepsy! (2 copies): Otak kamu mendadak nge-brik dan bikin ketiduran di mana saja tanpa permisi. Targets Brain.
+
+    Nosebleed!: Pembuluh darah di hidung pecah, bikin kamu ngeluarin darah kayak adegan drama anime. Targets Nose.
+
+    Osteoporosis: Tulang kamu pengeroposan, keroposnya bikin gampang retak kayak kerupuk. Targets Bones.
+
+    Overactive Bladder!: Kandung kemih terlalu sensitif, baru minum sedikit bawaannya mau beser terus. Targets Bladder.
+
+    Psoriasis!: Kulit beregenerasi kelewat cepat, bikin bersisik dan gatal tiada tara. Targets Skin.
+
+    Ruptured Appendix!: Usus buntu meledak dan menyebarkan bakteri jahat ke seluruh area perut. Immediately discards the Appendix card if unblocked.
+
+    Shingles!: Cacar ular yang bikin kulit muncul ruam melepuh dan rasanya panas kayak disengat lebah. Targets Skin.
+
+    Stroke!: Pasokan darah ke otak mendadak terputus, bikin sistem pusat tubuh mendadak down. Targets Brain.
+
+    Tonsillitis!: Amandel kamu membengkak merah dan siap memblokir saluran tenggorokan. Targets Tonsils.
+
+    Tracheitis!: Batang tenggorokan kena infeksi, bikin batuk kamu bunyinya nyaring dan menyiksa. Targets Trachea.
+
+    Ulcer!: Dinding lambung kamu lecet dan borokan kena kikis asam lambung sendiri. Targets Stomach.
+
+    UTI!: Bakteri jahat nongkrong di saluran kencing, bikin sensasi buang air kecil rasanya perih menari-nari. Targets Bladder.
+
+    Vomit: Kamu muntah-muntah hebat sampai tenggorokan perih dan asam melintasi mulut. Targets any one of Stomach, Esophagus, Tongue, or Teeth.
+
+    Walking Pneumonia: Paru-paru kamu kena infeksi ringan, masih bisa jalan-jalan tapi sambil batuk serak tanpa henti. Targets either Lungs or Pancreas.
 
 ## General Wild Afflictions (Target Any Organ)
 

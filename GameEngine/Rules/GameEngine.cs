@@ -272,9 +272,22 @@ public class OrganAttackGame
             return;
         }
 
-        if (card.RequiresOrganMatch() && card.TargetOrganType != targetOrgan.Type)
+        if (card.RequiresOrganMatch())
         {
-            throw new GameRuleException("Card's organ type does not match the target.");
+            if (card.TargetOrganType.HasValue)
+            {
+                if (card.TargetOrganType != targetOrgan.Type)
+                {
+                    throw new GameRuleException("Card's organ type does not match the target.");
+                }
+
+                return;
+            }
+
+            if (!card.TargetOrganTypes.Contains(targetOrgan.Type))
+            {
+                throw new GameRuleException("Card's organ type does not match the target.");
+            }
         }
     }
 

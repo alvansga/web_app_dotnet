@@ -33,6 +33,7 @@ public enum OrganType
     Tongue,
     Tonsils,
     Trachea,
+    Muscles,
     Wild_Organ,
 }
 

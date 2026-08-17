@@ -7,6 +7,7 @@ public class Card
     public CardType Type { get; init; }
     public TargetSide TargetSide { get; init; } = TargetSide.None;
     public OrganType? TargetOrganType { get; init; }
+    public IReadOnlyList<OrganType> TargetOrganTypes { get; init; } = Array.Empty<OrganType>();
     public AfflictionType AfflictionType { get; init; } = AfflictionType.None;
     public SpecialCardType SpecialCard { get; init; } = SpecialCardType.None;
     /// <summary>
@@ -18,8 +19,8 @@ public class Card
 
     public bool RequiresOrganMatch()
     {
-        // Cards with a specific organ printed on them must match the target organ.
-        // Wild-organ targeting exceptions live in GameEngine.ValidateOrganMatch.
-        return TargetOrganType.HasValue;
+        // Cards with a specific organ (or set of organs) printed on them must match
+        // the target organ. Wild-organ targeting exceptions live in GameEngine.ValidateOrganMatch.
+        return TargetOrganType.HasValue || TargetOrganTypes.Count > 0;
     }
 }
