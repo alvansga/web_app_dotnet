@@ -97,6 +97,7 @@ public class GameHub : Hub
         try
         {
             room.Engine.StartGame(new Random());
+            _rooms.SaveRoom(room.RoomId);
         }
         catch (GameRuleException ex)
         {
@@ -120,6 +121,7 @@ public class GameHub : Hub
         try
         {
             room.Engine.DrawCard(playerId);
+            _rooms.SaveRoom(room.RoomId);
         }
         catch (GameRuleException ex)
         {
@@ -161,6 +163,7 @@ public class GameHub : Hub
             targetName = PlayerName(game, targetOwnerPlayerId);
 
             room.Engine.PlayCard(playerId, cardId, targetOwnerPlayerId, organType);
+            _rooms.SaveRoom(room.RoomId);
         }
         catch (GameRuleException ex)
         {
@@ -210,6 +213,7 @@ public class GameHub : Hub
         try
         {
             room.Engine.PlayNoTargetCard(playerId, cardId);
+            _rooms.SaveRoom(room.RoomId);
         }
         catch (GameRuleException ex)
         {
@@ -231,6 +235,7 @@ public class GameHub : Hub
         try
         {
             room.Engine.PlayInstant(playerId, cardId);
+            _rooms.SaveRoom(room.RoomId);
         }
         catch (GameRuleException ex)
         {
@@ -252,6 +257,7 @@ public class GameHub : Hub
         try
         {
             room.Engine.SwapCards(playerId, cardIds);
+            _rooms.SaveRoom(room.RoomId);
         }
         catch (GameRuleException ex)
         {
@@ -274,6 +280,7 @@ public class GameHub : Hub
         try
         {
             room.Engine.EndTurn(playerId);
+            _rooms.SaveRoom(room.RoomId);
         }
         catch (GameRuleException ex)
         {
@@ -385,6 +392,8 @@ public class GameHub : Hub
 
         var pending = game.PendingAttack;
         room.Engine.ResolvePendingAttack(pendingId, blocked: false);
+
+        rooms.SaveRoom(roomId);
 
         var clients = hubContext.Clients;
         await clients.Group(roomId).SendAsync("GameStateUpdate", BuildPublicState(room));

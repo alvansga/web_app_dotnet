@@ -55,6 +55,7 @@ public class OrganAttackGame
             allOrganTypes.AddRange(organTypes);
         }
 
+        _game.DeckOrganTypes = allOrganTypes;
         _game.Deck = new Deck(random);
         _game.Deck.Build(CardLibrary.BuildDeck(allOrganTypes));
 

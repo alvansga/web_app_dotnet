@@ -1,6 +1,7 @@
 using System.Collections.Concurrent;
 using WebAppSandbox.GameEngine.Models;
 using WebAppSandbox.GameEngine.Rules;
+using WebAppSandbox.Persistence;
 
 namespace WebAppSandbox.Hubs;
 
@@ -8,6 +9,17 @@ public class RoomManager
 {
     private readonly ConcurrentDictionary<string, GameRoom> _rooms = new();
     private readonly ConcurrentDictionary<string, string> _connectionToRoom = new();
+    private readonly IRoomStore _store;
+
+    public RoomManager()
+        : this(new InMemoryRoomStore())
+    {
+    }
+
+    public RoomManager(IRoomStore store)
+    {
+        _store = store;
+    }
 
     public string CreateRoom(string playerId, string playerName)
     {
@@ -23,22 +35,32 @@ public class RoomManager
             throw new InvalidOperationException("Failed to create room.");
         }
 
+        SaveRoom(room);
         return roomId;
     }
 
     public GameRoom JoinRoom(string roomId, string playerId, string playerName)
     {
-        if (!_rooms.TryGetValue(roomId, out var room))
-        {
-            throw new GameRuleException("Room not found.");
-        }
+        var room = GetOrLoadRoom(roomId)
+            ?? throw new GameRuleException("Room not found.");
 
         room.Engine.AddPlayer(playerId, playerName);
+
+        SaveRoom(room);
         return room;
     }
 
     public List<GameRoom> GetOpenRooms()
     {
+        // Make persisted rooms visible in the lobby even after a server restart.
+        foreach (var roomId in _store.GetRoomIds())
+        {
+            if (!_rooms.ContainsKey(roomId))
+            {
+                GetOrLoadRoom(roomId);
+            }
+        }
+
         return _rooms.Values
             .Where(r => r.Engine.Game.Phase == GamePhase.WaitingForPlayer &&
                         r.Engine.Game.Players.Count < GameRules.MaxPlayers)
@@ -47,17 +69,28 @@ public class RoomManager
 
     public GameRoom GetRoom(string roomId)
     {
-        if (!_rooms.TryGetValue(roomId, out var room))
-        {
-            throw new GameRuleException("Room not found.");
-        }
-
-        return room;
+        return GetOrLoadRoom(roomId)
+            ?? throw new GameRuleException("Room not found.");
     }
 
     public bool TryGetRoom(string roomId, out GameRoom? room)
     {
-        return _rooms.TryGetValue(roomId, out room);
+        room = GetOrLoadRoom(roomId);
+        return room is not null;
+    }
+
+    public void SaveRoom(string roomId)
+    {
+        if (_rooms.TryGetValue(roomId, out var room))
+        {
+            SaveRoom(room);
+        }
+    }
+
+    public void DeleteRoom(string roomId)
+    {
+        _rooms.TryRemove(roomId, out _);
+        _store.Delete(roomId);
     }
 
     public void RegisterConnection(string connectionId, string roomId)
@@ -75,6 +108,28 @@ public class RoomManager
     public void RemoveConnection(string connectionId)
     {
         _connectionToRoom.TryRemove(connectionId, out _);
+    }
+
+    private GameRoom? GetOrLoadRoom(string roomId)
+    {
+        if (_rooms.TryGetValue(roomId, out var room))
+        {
+            return room;
+        }
+
+        if (_store.TryLoad(roomId, out var snapshot) && snapshot is not null)
+        {
+            var restored = GameStateRestorer.Restore(snapshot);
+            _rooms.TryAdd(roomId, restored);
+            return _rooms[roomId];
+        }
+
+        return null;
+    }
+
+    private void SaveRoom(GameRoom room)
+    {
+        _store.Save(GameStateSerializer.ToSnapshot(room));
     }
 }
 

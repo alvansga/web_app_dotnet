@@ -14,6 +14,16 @@ public class Deck
         _random = random;
     }
 
+    /// <summary>
+    /// Restores a deck from previously saved piles (used by persistence).
+    /// </summary>
+    public Deck(Random random, IEnumerable<Card> drawPile, IEnumerable<Card> discardPile)
+    {
+        _random = random;
+        _drawPile.AddRange(drawPile);
+        _discardPile.AddRange(discardPile);
+    }
+
     public void Build(IEnumerable<Card> cards)
     {
         _drawPile.Clear();

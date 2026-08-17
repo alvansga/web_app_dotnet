@@ -209,9 +209,19 @@ createApp({
       invoke('JoinRoom', roomId, clientId, state.playerName.trim());
     }
 
-    function rejoinRoom() {
+    async function rejoinRoom() {
       if (!state.roomId || !clientId) return;
-      invoke('RejoinRoom', state.roomId, clientId);
+
+      try {
+        await connection.invoke('RejoinRoom', state.roomId, clientId);
+      } catch (err) {
+        // Room/player gone (e.g. database wiped or game cleaned up).
+        localStorage.removeItem(ROOM_ID_KEY);
+        state.roomId = null;
+        state.view = 'lobby';
+        setError('Room tidak ditemukan. Kembali ke lobby.');
+        refreshRooms();
+      }
     }
 
     async function refreshRooms() {
