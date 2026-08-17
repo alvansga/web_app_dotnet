@@ -236,10 +236,25 @@ public class OrganAttackGame
             case SpecialCardType.Transplant:
                 ResolveTransplant(caster, targetOwner, targetOrgan);
                 break;
+            case SpecialCardType.ItsAlive:
+                ResolveItsAlive(targetOrgan);
+                break;
             default:
                 throw new GameRuleException(
                     $"Special card '{card.Name}' is not implemented.");
         }
+    }
+
+    private void ResolveItsAlive(Organ targetOrgan)
+    {
+        if (!targetOrgan.IsDestroyed)
+        {
+            throw new GameRuleException("Cannot revive an organ that is not destroyed.");
+        }
+
+        targetOrgan.IsDestroyed = false;
+        targetOrgan.IsShielded = false;
+        targetOrgan.Afflictions.Clear();
     }
 
     private void ResolveTransplant(Player caster, Player targetOwner, Organ targetOrgan)

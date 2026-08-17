@@ -302,4 +302,70 @@ public class GameEngineTests
         Assert.Equal(deckBefore, game.Deck!.DrawPile.Count);
         Assert.Equal(discardBefore, game.Deck.DiscardPile.Count);
     }
+
+    [Fact]
+    public void ItsAlive_RevivesOwnDestroyedOrgan()
+    {
+        var engine = CreateStartedGame();
+        var game = engine.Game;
+
+        var p1 = game.Players.First(p => p.Id == "p1");
+
+        // Pick one of p1's organs to "destroy", keeping the rest alive so the game is not over.
+        var target = p1.Organs.First(o => o.Type != OrganType.Wild_Organ);
+        target.IsDestroyed = true;
+        target.IsShielded = true;
+        target.AddAffliction(AfflictionType.Afflicted);
+
+        var itsAlive = new Card
+        {
+            Id = "its-alive",
+            Name = "It's Alive",
+            Type = CardType.Special,
+            TargetSide = TargetSide.Self,
+            SpecialCard = SpecialCardType.ItsAlive,
+            Description = "test"
+        };
+        p1.Hand.Clear();
+        p1.Hand.Add(itsAlive);
+
+        game.Turn!.CurrentPlayerId = "p1";
+        game.Turn.ActionsUsed = 0;
+
+        engine.PlayCard("p1", "its-alive", "p1", target.Type);
+
+        Assert.False(target.IsDestroyed);
+        Assert.False(target.IsShielded);
+        Assert.False(target.IsAfflicted);
+    }
+
+    [Fact]
+    public void ItsAlive_OnLivingOrgan_Throws()
+    {
+        var engine = CreateStartedGame();
+        var game = engine.Game;
+
+        var p1 = game.Players.First(p => p.Id == "p1");
+        var target = p1.Organs.First(o => !o.IsDestroyed);
+
+        var itsAlive = new Card
+        {
+            Id = "its-alive",
+            Name = "It's Alive",
+            Type = CardType.Special,
+            TargetSide = TargetSide.Self,
+            SpecialCard = SpecialCardType.ItsAlive,
+            Description = "test"
+        };
+        p1.Hand.Clear();
+        p1.Hand.Add(itsAlive);
+
+        game.Turn!.CurrentPlayerId = "p1";
+        game.Turn.ActionsUsed = 0;
+
+        var ex = Assert.Throws<GameRuleException>(() =>
+            engine.PlayCard("p1", "its-alive", "p1", target.Type));
+
+        Assert.Contains("not destroyed", ex.Message);
+    }
 }

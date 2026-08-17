@@ -9,6 +9,7 @@ public static class CardLibrary
     public const int DefenseCopies = 4;
     public const int NecrosisCopies = 5;
     public const int TransplantCopies = 1;
+    public const int ItsAliveCopies = 1;
 
     /// <summary>
     /// Builds the card library for a specific set of organ types.
@@ -100,13 +101,27 @@ public static class CardLibrary
             });
         }
 
+        // It's Alive: revive one of your destroyed organs.
+        for (int i = 0; i < ItsAliveCopies; i++)
+        {
+            cards.Add(new Card
+            {
+                Id = $"its-alive-{i}",
+                Name = "It's Alive",
+                Type = CardType.Special,
+                TargetSide = TargetSide.Self,
+                SpecialCard = SpecialCardType.ItsAlive,
+                Description = "A rare recovery card that can bring back a recently destroyed organ from the graveyard."
+            });
+        }
+
         // Treatment: 4 generic (target self, remove affliction)
         for (int i = 0; i < TreatmentCopies; i++)
         {
             cards.Add(new Card
             {
                 Id = $"treatment-{i}",
-                Name = "Treatment",
+                Name = "Medicine",
                 Type = CardType.Treatment,
                 TargetSide = TargetSide.Self,
                 Description = "Remove all afflictions from one of your organs."
@@ -119,7 +134,7 @@ public static class CardLibrary
             cards.Add(new Card
             {
                 Id = $"defense-{i}",
-                Name = "Defense",
+                Name = "Vaccine",
                 Type = CardType.Defense,
                 TargetSide = TargetSide.Self,
                 Description = "Shield one of your organs."

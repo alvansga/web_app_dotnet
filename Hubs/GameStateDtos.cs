@@ -11,6 +11,7 @@ public class CardDto
     public string TargetSide { get; init; } = "";
     public string? TargetOrganType { get; init; }
     public List<string> TargetOrganTypes { get; init; } = new();
+    public string SpecialCard { get; init; } = "";
     public string Description { get; init; } = "";
 
     public static CardDto From(Card card) => new()
@@ -21,6 +22,7 @@ public class CardDto
         TargetSide = card.TargetSide.ToString(),
         TargetOrganType = card.TargetOrganType?.ToString(),
         TargetOrganTypes = card.TargetOrganTypes.Select(t => t.ToString()).ToList(),
+        SpecialCard = card.SpecialCard.ToString(),
         Description = card.Description,
     };
 }

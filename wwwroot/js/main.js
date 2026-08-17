@@ -130,6 +130,9 @@ createApp({
       const card = state.hand.find(c => c.id === state.selectedCardId);
       if (!card) return false;
 
+      // Only "It's Alive" may target a destroyed organ.
+      if (organ.isDestroyed && card.specialCard !== 'ItsAlive') return false;
+
       if (card.targetSide === 'Self') {
         return player.id === me.value.id;
       }
@@ -227,10 +230,13 @@ createApp({
     }
 
     function clickOrgan(player, organ) {
-      if (!state.selectedCardId || !player || organ.isDestroyed) return;
+      if (!state.selectedCardId || !player) return;
 
       const card = state.hand.find(c => c.id === state.selectedCardId);
       if (!card) return;
+
+      // Only "It's Alive" may target a destroyed organ.
+      if (organ.isDestroyed && card.specialCard !== 'ItsAlive') return;
 
       if (card.targetSide === 'Self' && player.id !== me.value.id) return;
       if (card.targetSide === 'Opponent' && player.id === me.value.id) return;

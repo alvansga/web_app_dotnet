@@ -28,7 +28,8 @@ public class DeckTests
                      + CardLibrary.TreatmentCopies
                      + CardLibrary.DefenseCopies
                      + CardLibrary.NecrosisCopies
-                     + CardLibrary.TransplantCopies;
+                     + CardLibrary.TransplantCopies
+                     + CardLibrary.ItsAliveCopies;
         Assert.Equal(expected, deck.DrawPile.Count);
     }
 

@@ -60,5 +60,6 @@ public enum AfflictionType
 public enum SpecialCardType
 {
     None,
-    Transplant
+    Transplant,
+    ItsAlive
 }
