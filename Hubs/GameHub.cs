@@ -71,6 +71,9 @@ public class GameHub : Hub
 
         await BroadcastPublicState(room.RoomId);
         await BroadcastHands(room);
+
+        await BroadcastAction(room.RoomId,
+            $"Permainan dimulai. Giliran {CurrentTurnName(room.Engine.Game)}.");
     }
 
     // ---- Game actions ----
@@ -88,6 +91,10 @@ public class GameHub : Hub
             throw new HubException(ex.Message);
         }
 
+        var drawActor = PlayerName(room.Engine.Game, Context.ConnectionId);
+        await BroadcastAction(room.RoomId,
+            $"{drawActor} menarik kartu. Giliran {CurrentTurnName(room.Engine.Game)}.");
+
         await BroadcastPublicState(room.RoomId);
         await BroadcastHands(room);
     }
@@ -101,8 +108,22 @@ public class GameHub : Hub
             throw new HubException("Invalid target organ type.");
         }
 
+        var actor = Context.ConnectionId;
+        var cardName = cardId;
+        var cardType = "Kartu";
+        var targetName = targetOwnerPlayerId;
+
         try
         {
+            var game = room.Engine.Game;
+            var player = game.Players.FirstOrDefault(p => p.Id == Context.ConnectionId);
+            var card = player?.Hand.FirstOrDefault(c => c.Id == cardId);
+
+            actor = player?.Name ?? Context.ConnectionId;
+            cardName = card?.Name ?? cardId;
+            cardType = card?.Type.ToString() ?? "Kartu";
+            targetName = PlayerName(game, targetOwnerPlayerId);
+
             room.Engine.PlayCard(Context.ConnectionId, cardId, targetOwnerPlayerId, organType);
         }
         catch (GameRuleException ex)
@@ -112,6 +133,9 @@ public class GameHub : Hub
 
         await BroadcastPublicState(room.RoomId);
         await BroadcastHands(room);
+
+        await BroadcastAction(room.RoomId,
+            $"{actor} memainkan {cardName} ({cardType}) ke {targetOrganType} milik {targetName}. Giliran {CurrentTurnName(room.Engine.Game)}.");
 
         if (room.Engine.Game.Phase == GamePhase.GameOver)
         {
@@ -136,6 +160,10 @@ public class GameHub : Hub
             throw new HubException(ex.Message);
         }
 
+        var swapActor = PlayerName(room.Engine.Game, Context.ConnectionId);
+        await BroadcastAction(room.RoomId,
+            $"{swapActor} menukar {cardIds.Count} kartu. Giliran {CurrentTurnName(room.Engine.Game)}.");
+
         await BroadcastPublicState(room.RoomId);
         await BroadcastHands(room);
     }
@@ -153,11 +181,30 @@ public class GameHub : Hub
             throw new HubException(ex.Message);
         }
 
+        var endActor = PlayerName(room.Engine.Game, Context.ConnectionId);
+        await BroadcastAction(room.RoomId,
+            $"{endActor} mengakhiri giliran. Giliran {CurrentTurnName(room.Engine.Game)}.");
+
         await BroadcastPublicState(room.RoomId);
         await BroadcastHands(room);
     }
 
     // ---- Helpers ----
+
+    private async Task BroadcastAction(string roomId, string message)
+    {
+        await Clients.Group(roomId).SendAsync("ActionLog", message);
+    }
+
+    private static string PlayerName(Game game, string playerId)
+    {
+        return game.Players.FirstOrDefault(p => p.Id == playerId)?.Name ?? playerId;
+    }
+
+    private string CurrentTurnName(Game game)
+    {
+        return game.Turn is null ? "-" : PlayerName(game, game.Turn.CurrentPlayerId);
+    }
 
     private GameRoom GetCurrentRoom()
     {

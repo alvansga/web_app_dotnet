@@ -272,6 +272,10 @@ createApp({
       log('Ada pemenang!');
     });
 
+    connection.on('ActionLog', (message) => {
+      log(message);
+    });
+
     connection.onreconnecting(() => { state.connectionStatus = 'Menyambung ulang...'; });
     connection.onreconnected(() => { state.connectionStatus = 'Terhubung'; });
     connection.onclose(() => { state.connectionStatus = 'Terputus'; });

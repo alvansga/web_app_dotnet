@@ -682,8 +682,23 @@ input:focus {
   border: 1px solid var(--border);
   border-radius: var(--radius);
   padding: 1rem;
-  max-height: 150px;
+  max-height: 220px;
   overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(148, 163, 184, 0.45) transparent;
+}
+
+.log::-webkit-scrollbar {
+  width: 8px;
+}
+
+.log::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.4);
+  border-radius: 999px;
+}
+
+.log::-webkit-scrollbar-track {
+  background: transparent;
 }
 
 .log strong {
